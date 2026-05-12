@@ -474,6 +474,20 @@ function buildResponse(text, profile) {
     <p>${isOr ? ODIA_DICT.disclaimerBody : "This analysis is for informational purposes only. Please consult a qualified medical professional before starting any treatment. Self-medication can be dangerous."}</p>
   </div>`;
 
+  // Auto-generate and append Health ID
+  if (!currentHealthId) saveHealthSession();
+  html += `
+    <div class="hid-card" style="margin-top: 20px;">
+      <div class="hid-card-header">🎉 YOUR HEALTH ID IS READY</div>
+      <div class="hid-card-body">
+        <div class="hid-code">${currentHealthId}</div>
+        <p class="hid-card-desc">Your consultation is complete. Save this ID. Next visit, enter it in the Session Manager to instantly restore your profile and full consultation history.</p>
+        <div class="hid-card-actions">
+          <button class="hid-action-btn" onclick="navigator.clipboard.writeText('${currentHealthId}').then(()=>{this.textContent='✅ Copied!';setTimeout(()=>{this.textContent='📋 Copy ID'},1500)}).catch(()=>prompt('Copy your Health ID:','${currentHealthId}'))">📋 Copy ID</button>
+        </div>
+      </div>
+    </div>`;
+
   return html;
 }
 
@@ -532,6 +546,53 @@ function buildGenericResponse(text, profile, profileCtx) {
   </div>
   <p>${footerHint}</p>`;
 }
+
+// ── Profile Automation & Inactivity Timer ────────────────
+let profileGreeted = false;
+let inactivityTimer = null;
+
+function resetInactivityTimer() {
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    if (currentHealthId) {
+      addMessage('ai', '<div class="med-section warning"><p>🔒 <strong>Session Locked:</strong> 15 minutes of inactivity detected. Your data has been securely saved.</p></div>', true);
+      endCurrentSession();
+    }
+  }, 15 * 60 * 1000);
+}
+
+// Ensure the inactivity timer resets on user interaction
+document.addEventListener('mousemove', resetInactivityTimer);
+document.addEventListener('keydown', resetInactivityTimer);
+
+function updateProfileCompleteness(skipGreeting = false) {
+  const p = getProfile();
+  let filled = 0;
+  if (p.name) filled++;
+  if (p.age) filled++;
+  if (p.gender) filled++;
+  if (p.blood) filled++;
+  if (p.allergies) filled++;
+  
+  const pct = (filled / 5) * 100;
+  const fillEl = document.getElementById('completenessFill');
+  const txtEl = document.getElementById('completenessText');
+  if (fillEl) fillEl.style.width = pct + '%';
+  if (txtEl) txtEl.textContent = Math.round(pct) + '% Complete';
+  
+  if (pct === 100 && !profileGreeted && !skipGreeting) {
+    profileGreeted = true;
+    setTimeout(() => {
+      addMessage('ai', `<div class="med-section info"><p>👋 Hello <strong>${p.name}</strong>! Your profile is complete. How can I assist you with your health today?</p></div>`, true);
+    }, 600);
+  }
+}
+
+// Attach listeners to profile inputs
+['patientName', 'patientAge', 'patientGender', 'patientBlood', 'patientAllergies'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => { updateProfileCompleteness(false); saveProfile(); });
+});
 
 // ── Chat Functions ──────────────────────────────────────
 function getProfile() {
@@ -621,9 +682,14 @@ function showTyping(show) {
 }
 
 async function sendMessage() {
+  resetInactivityTimer();
+  
   const input = document.getElementById("userInput");
   const text = input.value.trim();
   if (!text) return;
+
+  const p = getProfile();
+  const isProfileComplete = p.name && p.age && p.gender && p.blood && p.allergies;
 
   addMessage("user", text);
   // Capture to chat history
@@ -637,6 +703,12 @@ async function sendMessage() {
 
   const delay = 1400 + Math.random() * 1200;
   await new Promise(r => setTimeout(r, delay));
+
+  if (!isProfileComplete) {
+    showTyping(false);
+    addMessage("ai", `<div class="med-section warning"><p>⚠️ <strong>Consultation Blocked:</strong> Please fully complete your <strong>Patient Profile</strong> on the left side before we begin.</p><p>I need this information to ensure your safety and provide accurate advice.</p></div>`, true);
+    return;
+  }
 
   showTyping(false);
   const profile = getProfile();
