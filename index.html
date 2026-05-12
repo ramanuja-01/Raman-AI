@@ -164,6 +164,10 @@
             <option value="en">EN</option>
             <option value="or">ଓଡ଼ିଆ</option>
           </select>
+          <!-- Help / Tutorial Button -->
+          <button class="btn-session-mgr" id="btnHelp" onclick="openTutorial()" style="margin-right: 5px;">
+            <span>❓</span> HELP
+          </button>
           <!-- Session Manager Button -->
           <button class="btn-session-mgr" id="btnSessionMgr" onclick="toggleSessionPanel()">
             <span>🗂</span> SESSION
@@ -219,6 +223,46 @@
       <div class="sp-section">
         <div class="sp-section-label">RECENT SESSIONS</div>
         <div id="spSessionHistory" class="sp-history-list"></div>
+      </div>
+    </div>
+
+    <!-- ===== TUTORIAL MODAL ===== -->
+    <div class="session-panel-backdrop" id="tutorialBackdrop" onclick="closeTutorial()"></div>
+    <div class="tutorial-modal" id="tutorialModal">
+      <div class="tut-header">
+        <span>🤖 RAMAN AI: USER GUIDE</span>
+        <button class="sp-close" onclick="closeTutorial()">✕</button>
+      </div>
+      <div class="tut-body">
+        <div class="tut-step">
+          <div class="tut-icon">🌐</div>
+          <div class="tut-content">
+            <h4>Bilingual Chat (English & Odia)</h4>
+            <p>You can type in English or Odia (e.g. "munda bindhuchi"). Toggle the language dropdown in the header to switch the AI's responses between English and Odia!</p>
+          </div>
+        </div>
+        <div class="tut-step">
+          <div class="tut-icon">🩺</div>
+          <div class="tut-content">
+            <h4>Diagnostic Engine</h4>
+            <p>Describe your symptoms naturally. RAMAN AI will ask follow-up questions to understand the exact nature of your condition before giving an assessment.</p>
+          </div>
+        </div>
+        <div class="tut-step">
+          <div class="tut-icon">🗂</div>
+          <div class="tut-content">
+            <h4>Sessions & Health ID</h4>
+            <p>Your entire conversation and profile are saved locally. Click <b>End & Save Session</b> in the Session Manager to get a unique Health ID. You can enter this ID later to instantly restore your history!</p>
+          </div>
+        </div>
+        <div class="tut-step">
+          <div class="tut-icon">⚠️</div>
+          <div class="tut-content">
+            <h4>Disclaimer</h4>
+            <p>RAMAN AI is an experimental tool for informational purposes only. It is NOT a substitute for professional medical advice. Always consult a doctor.</p>
+          </div>
+        </div>
+        <button class="sp-btn sp-btn-new" style="margin-top: 15px; width: 100%;" onclick="closeTutorial()">Got it! Start Chatting</button>
       </div>
     </div>
 

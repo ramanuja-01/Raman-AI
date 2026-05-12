@@ -48,6 +48,16 @@ function closeSidebar() {
   backdrop.style.display = 'none';
 }
 
+// ── Tutorial Modal Toggle ──────────────────────────────────
+function openTutorial() {
+  document.getElementById('tutorialBackdrop').style.display = 'block';
+  document.getElementById('tutorialModal').classList.add('open');
+}
+function closeTutorial() {
+  document.getElementById('tutorialBackdrop').style.display = 'none';
+  document.getElementById('tutorialModal').classList.remove('open');
+}
+
 // ── Clock ───────────────────────────────────────────────
 function nowTime() {
   return new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });

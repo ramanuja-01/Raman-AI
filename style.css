@@ -185,7 +185,7 @@ html, body {
 @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
 .header-right { }
-.vital-chips { display: flex; align-items: center; gap: 10px; }
+.vital-chips { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .vital-chip {
   display: flex; align-items: center; gap: 6px;
   padding: 5px 12px; border-radius: 20px;
