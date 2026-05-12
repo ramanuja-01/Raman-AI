@@ -399,16 +399,25 @@ function buildResponse(text, profile) {
     const txt = text.toLowerCase();
     
     // Check for conversational / emotional keywords
-    const isLonely = /lonely|sad|depressed|alone|crying|hopeless|anxious|stressed|unhappy|down/.test(txt);
+    const isLonely = /lonely|sad|depress|alone|cry|hopeless|anxious|stress|unhappy|down|cheer|chear|bore|scare|fear|panic|worry/i.test(txt);
     const isHello = /^hi$|^hello$|^hey$|^greetings$|namaskar/i.test(txt);
-    const isThanks = /thank|appreciate|grateful/.test(txt);
-    const isWho = /who are you|what are you|your name/.test(txt);
+    const isThanks = /thank|appreciate|grateful/i.test(txt);
+    const isWho = /who are you|what are you|your name/i.test(txt);
+    const isChat = /how are you|talk to me|say something|can we talk|friend|help me/i.test(txt);
     
     if (isLonely) {
       activeDiagnostic = null; // reset diagnostic state
       const response = isOr 
         ? "ମୁଁ ବୁଝିପାରୁଛି ଯେ ଆପଣ ଏକୁଟିଆ କିମ୍ବା ଦୁଃଖିତ ଅନୁଭବ କରୁଛନ୍ତି। ଦୟାକରି ମନେରଖନ୍ତୁ ଯେ ଆପଣ ଏକୁଟିଆ ନୁହଁନ୍ତି। ମୁଁ ଏକ ମେଡିକାଲ୍ ସହକାରୀ ଏବଂ ଆପଣଙ୍କର ମାନସିକ ସ୍ୱାସ୍ଥ୍ୟ ମଧ୍ୟ ଅତ୍ୟନ୍ତ ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ। ଯଦି ଆପଣ କୌଣସି ଶାରୀରିକ ଅସୁବିଧା ଅନୁଭବ କରୁଛନ୍ତି, ତେବେ ମୋତେ ଜଣାନ୍ତୁ। କୌଣସି ଆବଶ୍ୟକତା ଥିଲେ ଆପଣଙ୍କ ପ୍ରିୟଜନ କିମ୍ବା ବିଶେଷଜ୍ଞଙ୍କ ସହ କଥା ହୁଅନ୍ତୁ।"
-        : "I'm really sorry to hear that you're feeling this way. Please remember that you are not alone, and it is completely okay to feel down or lonely sometimes. While I am a medical AI designed to analyze physical symptoms, your mental and emotional well-being is incredibly important. Please consider reaching out to a friend, family member, or a professional.<br><br>If you are experiencing any physical symptoms as well, feel free to share them with me.";
+        : "I hear you, and I'm really sorry you're feeling this way. Please remember that you are not alone, and it is completely okay to feel overwhelmed or down sometimes. To cheer yourself up, you might try listening to your favorite music, taking a short walk outside, or talking to someone you trust.<br><br>While I am an AI designed to analyze physical symptoms, your mental and emotional well-being is incredibly important. Please consider reaching out to a friend, family member, or a professional. If you are experiencing any physical symptoms as well, feel free to share them with me.";
+      return `<p>${profileInfo}${response}</p>`;
+    }
+
+    if (isChat) {
+      activeDiagnostic = null;
+      const response = isOr
+        ? "ମୁଁ ଏଠାରେ ଅଛି! ଯଦିଓ ମୁଁ ଏକ କମ୍ପ୍ୟୁଟର ପ୍ରୋଗ୍ରାମ ଏବଂ କେବଳ ସ୍ୱାସ୍ଥ୍ୟ ସମ୍ବନ୍ଧୀୟ ପ୍ରଶ୍ନର ଉତ୍ତର ଦେଇପାରେ, ମୁଁ ଆପଣଙ୍କ ସାହାଯ୍ୟ କରିବାକୁ ପ୍ରସ୍ତୁତ। ଆପଣଙ୍କୁ ଶାରୀରିକ ଭାବରେ କିପରି ଲାଗୁଛି?"
+        : "I'm here for you! Even though I'm an AI and my main job is to help with medical symptoms, I'm always happy to chat. How are you feeling physically today? Any aches or pains I can help you figure out?";
       return `<p>${profileInfo}${response}</p>`;
     }
     
