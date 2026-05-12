@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAMAN AI – Experiment No. 170 | Medical Intelligence System</title>
+  <meta name="description" content="RAMAN AI Experiment No. 170 – Advanced AI medical assistant with symptom analysis, image recognition, and voice input." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="session_mgr.css" />
+</head>
+<body>
+
+  <!-- Animated Background Particles -->
+  <div class="bg-particles" id="bgParticles"></div>
+
+  <!-- DNA Helix Side Decoration -->
+  <div class="dna-left"></div>
+  <div class="dna-right"></div>
+
+  <!-- Scan Line Effect -->
+  <div class="scan-line"></div>
+
+  <!-- ===== SPLASH SCREEN ===== -->
+  <div class="splash-screen" id="splashScreen">
+    <div class="splash-content">
+      <div class="splash-logo-ring">
+        <div class="ring ring-1"></div>
+        <div class="ring ring-2"></div>
+        <div class="ring ring-3"></div>
+        <div class="splash-cross">✚</div>
+      </div>
+      <div class="splash-title">RAMAN AI</div>
+      <div class="splash-subtitle">EXPERIMENT № 170</div>
+      <div class="splash-tagline">Medical Intelligence System · Vision · Voice · Analysis</div>
+      <div class="splash-bar-wrap">
+        <div class="splash-bar" id="splashBar"></div>
+      </div>
+      <div class="splash-status" id="splashStatus">Initializing neural pathways...</div>
+      <div class="splash-capabilities">
+        <span class="splash-cap">🎙 Voice Input</span>
+        <span class="splash-cap">📷 Image Analysis</span>
+        <span class="splash-cap">🎥 Video Capture</span>
+        <span class="splash-cap">🧠 AI Diagnosis</span>
+      </div>
+      <!-- Health ID Restore -->
+      <div class="splash-hid-section">
+        <div class="splash-hid-divider"><span>RETURNING PATIENT?</span></div>
+        <div class="splash-hid-row">
+          <input type="text" id="splashHidInput" placeholder="Enter Health ID  e.g. RMN-A3F9K2"
+            maxlength="12" autocomplete="off" spellcheck="false" />
+          <button id="splashHidBtn">↩ RESTORE</button>
+        </div>
+        <div class="splash-hid-error" id="splashHidError"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MEDIA PREVIEW MODAL ===== -->
+  <div class="media-modal" id="mediaModal" style="display:none;">
+    <div class="media-modal-backdrop" id="mediaModalBackdrop"></div>
+    <div class="media-modal-content">
+      <button class="modal-close" id="modalClose">✕</button>
+      <div class="modal-media-wrap" id="modalMediaWrap"></div>
+      <div class="modal-analysis" id="modalAnalysis"></div>
+      <div class="doc-type-row">
+        <label for="docTypeSelect">Document Type</label>
+        <select id="docTypeSelect">
+          <option value="auto">🔍 Auto-detect</option>
+          <option value="lab">🧪 Lab Report / Blood Test</option>
+          <option value="prescription">💊 Prescription / Rx</option>
+          <option value="xray">🫁 X-Ray</option>
+          <option value="mri">🧠 MRI / CT Scan</option>
+          <option value="ecg">❤️ ECG / Cardiology</option>
+          <option value="discharge">📋 Discharge Summary</option>
+          <option value="photo">📷 Symptom Photo</option>
+        </select>
+      </div>
+      <button class="btn-analyze" id="btnAnalyze">
+        <span>🔬</span> ANALYZE WITH RAMAN AI
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== CAMERA MODAL ===== -->
+  <div class="camera-modal" id="cameraModal" style="display:none;">
+    <div class="media-modal-backdrop" id="cameraBackdrop"></div>
+    <div class="camera-modal-content">
+      <button class="modal-close" id="cameraClose">✕</button>
+      <h3 class="camera-title">📷 MEDICAL VISION CAPTURE</h3>
+      <div class="camera-wrap">
+        <video id="cameraStream" autoplay playsinline muted></video>
+        <div class="camera-overlay-frame"></div>
+        <div class="camera-scan-line" id="cameraScanLine"></div>
+      </div>
+      <div class="camera-controls">
+        <button class="btn-capture" id="btnCapture">📸 Capture</button>
+        <button class="btn-record" id="btnRecord">🔴 Record Video</button>
+        <button class="btn-switch-cam" id="btnSwitchCam">🔄 Switch</button>
+      </div>
+      <canvas id="captureCanvas" style="display:none;"></canvas>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP ===== -->
+  <div class="app-container" id="appContainer" style="display:none;">
+
+    <!-- ===== HEADER ===== -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="header-logo-wrap">
+          <div class="header-cross">✚</div>
+          <div class="header-pulse"></div>
+        </div>
+        <div class="header-title-group">
+          <h1 class="header-title">RAMAN AI</h1>
+          <span class="header-badge">EXPERIMENT № 170</span>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span>SYSTEM ONLINE</span>
+        </div>
+        <div class="header-vitals">
+          <div class="vital-mini" title="AI Processing Power">
+            <span class="vital-mini-label">CPU</span>
+            <div class="vital-mini-bar"><div class="vital-mini-fill" id="cpuFill"></div></div>
+          </div>
+          <div class="vital-mini" title="Neural Network Activity">
+            <span class="vital-mini-label">NEURAL</span>
+            <div class="vital-mini-bar"><div class="vital-mini-fill neural" id="neuralFill"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="vital-chips">
+          <div class="vital-chip" id="chipTime">
+            <span class="chip-icon">🕐</span>
+            <span id="clockDisplay">--:--</span>
+          </div>
+          <div class="vital-chip session-chip">
+            <span class="chip-icon">💬</span>
+            <span id="sessionCount">0</span> msgs
+          </div>
+          <!-- Health ID chip - clickable opens session panel -->
+          <div class="vital-chip hid-chip" id="hidChip" style="display:none;"
+               title="Click to manage session" onclick="toggleSessionPanel()">
+            <span class="chip-icon">🩺</span>
+            <span id="hidDisplay">---</span>
+            <span class="hid-chip-arrow">▾</span>
+          </div>
+          <div class="vital-chip">
+            <span class="chip-icon">🧬</span>
+            <span>BIO-MODE</span>
+          </div>
+          <!-- Language Toggle -->
+          <select id="langSelect" class="lang-select" onchange="window.currentLang = this.value">
+            <option value="en">EN</option>
+            <option value="or">ଓଡ଼ିଆ</option>
+          </select>
+          <!-- Session Manager Button -->
+          <button class="btn-session-mgr" id="btnSessionMgr" onclick="toggleSessionPanel()">
+            <span>🗂</span> SESSION
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== SESSION MANAGER PANEL ===== -->
+    <div class="session-panel-backdrop" id="sessionPanelBackdrop" onclick="closeSessionPanel()"></div>
+    <div class="session-panel" id="sessionPanel">
+      <div class="sp-header">
+        <span>🗂️ SESSION MANAGER</span>
+        <button class="sp-close" onclick="closeSessionPanel()">✕</button>
+      </div>
+
+      <!-- Current Session Info -->
+      <div class="sp-section" id="spCurrentSection">
+        <div class="sp-section-label">ACTIVE SESSION</div>
+        <div class="sp-hid-display" id="spHidDisplay">
+          <div class="sp-hid-code" id="spHidCode">No active session</div>
+          <div class="sp-hid-meta" id="spHidMeta">Start a consultation to get your Health ID</div>
+        </div>
+        <div class="sp-hid-actions" id="spHidActions" style="display:none">
+          <button class="sp-btn sp-btn-copy" id="spCopyBtn" onclick="copyHid()">📋 Copy ID</button>
+          <button class="sp-btn sp-btn-share" onclick="shareCurrentHid()">📤 Share</button>
+        </div>
+      </div>
+
+      <!-- Restore Session -->
+      <div class="sp-section">
+        <div class="sp-section-label">RESTORE PREVIOUS SESSION</div>
+        <div class="sp-restore-row">
+          <input type="text" id="spHidInput" placeholder="Enter Health ID (e.g. RMN-A3F9K2)"
+            maxlength="12" autocomplete="off" spellcheck="false"
+            onkeydown="if(event.key==='Enter') restoreFromPanel()" />
+          <button class="sp-btn sp-btn-restore" onclick="restoreFromPanel()">↩ RESTORE</button>
+        </div>
+        <div class="sp-restore-error" id="spRestoreError"></div>
+      </div>
+
+      <!-- Session Actions -->
+      <div class="sp-section sp-actions-section">
+        <button class="sp-action-btn sp-btn-end" id="spEndBtn" onclick="endCurrentSession()">
+          🔒 End &amp; Save Session
+        </button>
+        <button class="sp-action-btn sp-btn-new" onclick="startFreshSession()">
+          ➕ Start New Session
+        </button>
+      </div>
+
+      <!-- Session History -->
+      <div class="sp-section">
+        <div class="sp-section-label">RECENT SESSIONS</div>
+        <div id="spSessionHistory" class="sp-history-list"></div>
+      </div>
+    </div>
+
+    <!-- ===== MAIN LAYOUT ===== -->
+    <div class="main-layout">
+
+      <!-- ===== SIDEBAR ===== -->
+      <aside class="sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-heading">PATIENT PROFILE</div>
+          <div class="profile-card">
+            <div class="profile-avatar" id="profileAvatar">
+              <span id="avatarEmoji">👤</span>
+            </div>
+            <div class="profile-completeness">
+              <div class="completeness-bar"><div class="completeness-fill" id="completenessFill"></div></div>
+              <span class="completeness-text" id="completenessText">0% Complete</span>
+            </div>
+            <div class="profile-fields">
+              <div class="field-group">
+                <label for="patientName">Patient Name</label>
+                <input type="text" id="patientName" placeholder="Enter full name" />
+              </div>
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="patientAge">Age</label>
+                  <input type="number" id="patientAge" placeholder="--" min="0" max="120" />
+                </div>
+                <div class="field-group">
+                  <label for="patientGender">Gender</label>
+                  <select id="patientGender">
+                    <option value="">Select</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-group">
+                <label for="patientBlood">Blood Group</label>
+                <select id="patientBlood">
+                  <option value="">Unknown</option>
+                  <option>A+</option><option>A-</option>
+                  <option>B+</option><option>B-</option>
+                  <option>O+</option><option>O-</option>
+                  <option>AB+</option><option>AB-</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="patientAllergies">Known Allergies</label>
+                <input type="text" id="patientAllergies" placeholder="e.g. Penicillin, Aspirin" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pain Level -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading">PAIN LEVEL METER</div>
+          <div class="pain-meter">
+            <div class="pain-display">
+              <span class="pain-emoji" id="painEmoji">😐</span>
+              <span class="pain-value" id="painValue">5</span><span class="pain-scale">/10</span>
+            </div>
+            <input type="range" id="painSlider" class="pain-slider" min="1" max="10" value="5" />
+            <div class="pain-labels">
+              <span>Mild</span><span>Moderate</span><span>Severe</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-heading">QUICK SYMPTOMS</div>
+          <div class="quick-symptoms">
+            <button class="symptom-tag" data-symptom="I have a severe headache and fever of 101°F">🤕 Headache + Fever</button>
+            <button class="symptom-tag" data-symptom="I am experiencing chest pain and shortness of breath">💔 Chest Pain</button>
+            <button class="symptom-tag" data-symptom="I have a persistent cough with mucus">🫁 Cough</button>
+            <button class="symptom-tag" data-symptom="I have stomach pain and nausea">🤢 Stomach Pain</button>
+            <button class="symptom-tag" data-symptom="I have joint pain and swelling in my knees">🦵 Joint Pain</button>
+            <button class="symptom-tag" data-symptom="I have a skin rash and itching all over my body">🩹 Skin Rash</button>
+            <button class="symptom-tag" data-symptom="I have high blood pressure and dizziness">💊 Hypertension</button>
+            <button class="symptom-tag" data-symptom="I have diabetes and my blood sugar is high">🩸 Diabetes</button>
+            <button class="symptom-tag" data-symptom="I have eye pain and blurred vision">👁️ Eye Problems</button>
+            <button class="symptom-tag" data-symptom="I have back pain and difficulty moving">🔩 Back Pain</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section">
+          <div class="sidebar-heading">AI CAPABILITIES</div>
+          <ul class="capabilities-list">
+            <li><span class="cap-dot"></span>Symptom Analysis</li>
+            <li><span class="cap-dot"></span>Medication Suggestions</li>
+            <li><span class="cap-dot"></span>Dosage Guidance</li>
+            <li><span class="cap-dot"></span>Precaution Alerts</li>
+            <li><span class="cap-dot"></span>Diet Recommendations</li>
+            <li><span class="cap-dot teal"></span>🖼 Photo/Video Recognition</li>
+            <li><span class="cap-dot teal"></span>🎙 Voice Input</li>
+            <li><span class="cap-dot teal"></span>🧠 Profile Memory</li>
+            <li><span class="cap-dot teal"></span>📁 Medical Vault</li>
+            <li><span class="cap-dot"></span>Specialist Referrals</li>
+          </ul>
+        </div>
+
+        <!-- ===== MEDICAL VAULT ===== -->
+        <div class="sidebar-section" id="vaultSection">
+          <div class="sidebar-heading" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>📁 MEDICAL VAULT</span>
+            <span class="vault-count" id="vaultCount">0 docs</span>
+          </div>
+          <div id="vaultList"></div>
+          <div id="vaultEmpty" class="vault-empty">No documents yet.<br>Upload prescriptions, lab reports,<br>X-rays or MRI scans to get started.</div>
+        </div>
+
+        <div class="disclaimer-box">
+          <div class="disclaimer-icon">⚠️</div>
+          <p>RAMAN AI provides informational suggestions only. Always consult a licensed physician for medical decisions.</p>
+        </div>
+      </aside>
+
+      <!-- ===== CHAT AREA ===== -->
+      <main class="chat-area">
+        <div class="chat-messages" id="chatMessages">
+          <!-- Welcome Message -->
+          <div class="message ai-message" id="welcomeMsg">
+            <div class="message-avatar ai-avatar">
+              <span>🤖</span>
+            </div>
+            <div class="message-content">
+              <div class="message-header">
+                <span class="sender-name">RAMAN AI</span>
+                <span class="message-badge">Experiment № 170</span>
+                <span class="message-time" id="welcomeTime"></span>
+              </div>
+              <div class="message-bubble ai-bubble">
+                <div class="typing-intro">
+                  <p>Hello! I am <strong>RAMAN AI – Experiment No. 170</strong>, your dedicated medical intelligence assistant. 🏥</p>
+                  <p>I am designed to:</p>
+                  <ul>
+                    <li>📋 <strong>Understand</strong> your symptoms in detail</li>
+                    <li>🔬 <strong>Analyze</strong> possible conditions</li>
+                    <li>💊 <strong>Suggest</strong> appropriate medications</li>
+                    <li>📷 <strong>Recognize</strong> medical images & photos</li>
+                    <li>🎥 <strong>Analyze</strong> symptom videos in real-time</li>
+                    <li>🎙 <strong>Listen</strong> to your voice description</li>
+                  </ul>
+                  <p>Please fill in your <strong>Patient Profile</strong> on the left, then describe your symptoms below. You can also 📎 upload a photo or 🎙 use voice input! 🩺</p>
+                </div>
+              </div>
+              <div class="msg-reactions" data-msgid="welcome">
+                <button class="reaction-btn" data-emoji="👍" title="Helpful">👍</button>
+                <button class="reaction-btn" data-emoji="❤️" title="Love it">❤️</button>
+                <button class="reaction-btn" data-emoji="🙌" title="Great">🙌</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typingIndicator" style="display:none;">
+          <div class="message-avatar ai-avatar"><span>🤖</span></div>
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="typing-label">RAMAN AI is analyzing...</div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-area">
+          <!-- Media Toolbar -->
+          <div class="media-toolbar">
+            <button class="media-btn" id="btnCamera" title="Open Camera">
+              <span>📷</span>
+              <span class="media-btn-label">Camera</span>
+            </button>
+            <button class="media-btn" id="btnUpload" title="Upload Photo/Video">
+              <span>📎</span>
+              <span class="media-btn-label">Upload</span>
+            </button>
+            <button class="media-btn voice-btn" id="btnVoice" title="Voice Input">
+              <span id="voiceIcon">🎙</span>
+              <span class="media-btn-label" id="voiceLabel">Voice</span>
+            </button>
+            <div class="media-separator"></div>
+            <div class="voice-waveform" id="voiceWaveform" style="display:none;">
+              <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+              <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+            </div>
+            <span class="voice-status" id="voiceStatus"></span>
+          </div>
+
+          <!-- Hidden file input -->
+          <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;" />
+
+          <div class="input-bar">
+            <div class="input-icon">🩺</div>
+            <textarea
+              id="userInput"
+              placeholder="Describe your symptoms, upload a photo/video, or use voice input..."
+              rows="1"
+              maxlength="1000"
+            ></textarea>
+            <div class="input-actions">
+              <span class="char-count" id="charCount">0/1000</span>
+              <button class="btn-send" id="btnSend" title="Send">
+                <span class="send-icon">➤</span>
+              </button>
+            </div>
+          </div>
+          <div class="input-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line · 📷 Upload medical images for AI visual analysis</div>
+        </div>
+      </main>
+
+    </div><!-- end main-layout -->
+  </div><!-- end app-container -->
+
+  <script src="app.js"></script>
+</body>
+</html>

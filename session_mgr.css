@@ -1,0 +1,135 @@
+/* ===== SESSION MANAGER BUTTON (header) ===== */
+.btn-session-mgr {
+  padding: 7px 16px; border-radius: 8px;
+  background: linear-gradient(135deg, rgba(0,229,255,0.12), rgba(26,111,255,0.12));
+  border: 1px solid var(--cyan-dim); color: var(--cyan);
+  font-family: var(--font-ui); font-size: 0.72rem;
+  letter-spacing: 1.5px; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.btn-session-mgr:hover {
+  background: linear-gradient(135deg, rgba(0,229,255,0.22), rgba(26,111,255,0.22));
+  box-shadow: 0 0 14px rgba(0,229,255,0.25); transform: translateY(-1px);
+}
+.hid-chip { cursor: pointer !important; }
+.hid-chip-arrow { font-size: 0.7rem; opacity: 0.6; }
+
+/* ===== SESSION PANEL BACKDROP ===== */
+.session-panel-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+  z-index: 900; display: none;
+}
+.session-panel-backdrop.open { display: block; }
+
+/* ===== SESSION PANEL ===== */
+.session-panel {
+  position: fixed; top: 60px; right: 16px;
+  width: 360px; max-height: calc(100vh - 80px);
+  background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: 16px; overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 30px rgba(0,229,255,0.08);
+  z-index: 901;
+  transform: translateY(-12px) scale(0.97); opacity: 0;
+  pointer-events: none;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.session-panel.open { transform: translateY(0) scale(1); opacity: 1; pointer-events: all; }
+
+.sp-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  font-family: var(--font-ui); font-size: 0.7rem;
+  letter-spacing: 2px; color: var(--cyan);
+  background: linear-gradient(90deg, rgba(0,229,255,0.08), transparent);
+  position: sticky; top: 0; z-index: 1; backdrop-filter: blur(10px);
+}
+.sp-close {
+  background: none; border: none; color: var(--text-muted);
+  font-size: 1rem; cursor: pointer; transition: color 0.2s; line-height: 1;
+}
+.sp-close:hover { color: var(--text-main); }
+
+.sp-section { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+.sp-section:last-child { border-bottom: none; }
+.sp-section-label {
+  font-family: var(--font-ui); font-size: 0.58rem;
+  letter-spacing: 2.5px; color: var(--text-muted); margin-bottom: 10px;
+}
+
+/* Active session card */
+.sp-hid-display {
+  text-align: center; padding: 14px 12px;
+  background: rgba(0,229,255,0.04); border: 1px solid var(--border);
+  border-radius: 10px; margin-bottom: 10px;
+}
+.sp-hid-code {
+  font-family: var(--font-head); font-size: 1.6rem;
+  font-weight: 900; letter-spacing: 6px; color: var(--cyan);
+  text-shadow: 0 0 18px rgba(0,229,255,0.5);
+}
+.sp-hid-code.no-session {
+  font-size: 0.82rem; letter-spacing: 0.5px; color: var(--text-muted);
+  font-family: var(--font-body); font-weight: 400;
+}
+.sp-hid-meta { font-size: 0.68rem; color: var(--text-muted); margin-top: 5px; line-height: 1.5; }
+.sp-hid-actions { display: flex; gap: 8px; }
+
+.sp-btn {
+  flex: 1; padding: 8px 10px; border-radius: 7px;
+  font-family: var(--font-ui); font-size: 0.68rem;
+  letter-spacing: 0.5px; cursor: pointer; transition: all 0.18s; border: 1px solid;
+}
+.sp-btn-copy { border-color: var(--cyan-dim); color: var(--cyan); background: rgba(0,229,255,0.08); }
+.sp-btn-copy:hover { background: rgba(0,229,255,0.2); }
+.sp-btn-share { border-color: var(--teal); color: var(--teal); background: rgba(0,255,179,0.06); }
+.sp-btn-share:hover { background: rgba(0,255,179,0.16); }
+.sp-btn-restore {
+  white-space: nowrap; border-color: var(--blue); color: #7bb3ff;
+  background: rgba(26,111,255,0.1); flex: 0 0 auto; padding: 8px 14px;
+}
+.sp-btn-restore:hover { background: rgba(26,111,255,0.22); }
+
+/* Restore row */
+.sp-restore-row { display: flex; gap: 8px; }
+.sp-restore-row input {
+  flex: 1; padding: 9px 12px; background: rgba(0,229,255,0.05);
+  border: 1px solid var(--border); border-radius: 7px; color: var(--text-main);
+  font-family: var(--font-ui); font-size: 0.78rem; letter-spacing: 1.5px;
+  text-transform: uppercase; outline: none; transition: border-color 0.2s;
+}
+.sp-restore-row input::placeholder { text-transform: none; letter-spacing: 0; font-size: 0.72rem; }
+.sp-restore-row input:focus { border-color: var(--cyan-dim); box-shadow: 0 0 8px rgba(0,229,255,0.12); }
+.sp-restore-error { font-size: 0.7rem; color: #ff4d6d; margin-top: 6px; min-height: 16px; }
+
+/* Session action buttons */
+.sp-actions-section { display: flex; flex-direction: column; gap: 8px; }
+.sp-action-btn {
+  width: 100%; padding: 11px 16px; border-radius: 9px;
+  font-family: var(--font-ui); font-size: 0.75rem;
+  letter-spacing: 1px; cursor: pointer; transition: all 0.2s;
+  text-align: left; border: 1px solid;
+}
+.sp-btn-end { border-color: rgba(255,180,0,0.3); color: #ffb400; background: rgba(255,180,0,0.06); }
+.sp-btn-end:hover { background: rgba(255,180,0,0.14); border-color: rgba(255,180,0,0.5); }
+.sp-btn-new { border-color: rgba(0,255,179,0.25); color: var(--teal); background: rgba(0,255,179,0.05); }
+.sp-btn-new:hover { background: rgba(0,255,179,0.12); border-color: var(--teal); }
+
+/* Session history */
+.sp-history-list { display: flex; flex-direction: column; gap: 6px; }
+.sp-history-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border);
+  background: rgba(0,229,255,0.02); cursor: pointer; transition: all 0.18s;
+}
+.sp-history-item:hover { border-color: var(--cyan-dim); background: rgba(0,229,255,0.06); }
+.sp-history-hid { font-family: var(--font-ui); font-size: 0.82rem; color: var(--cyan); letter-spacing: 2px; flex: 1; }
+.sp-history-meta { font-size: 0.62rem; color: var(--text-muted); line-height: 1.4; }
+.sp-history-restore {
+  font-size: 0.68rem; color: var(--text-muted); background: none;
+  border: 1px solid var(--border); border-radius: 5px;
+  padding: 3px 8px; cursor: pointer; transition: all 0.15s;
+}
+.sp-history-restore:hover { color: var(--cyan); border-color: var(--cyan-dim); }
+.sp-history-empty { font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 8px 0; opacity: 0.6; }
+.sp-session-ended .sp-history-hid { color: #ffb400; }
