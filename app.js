@@ -395,6 +395,47 @@ function buildResponse(text, profile) {
   const profileInfo = buildProfileContext(profile);
 
   if (!condition) {
+    const isOr = window.currentLang === 'or';
+    const txt = text.toLowerCase();
+    
+    // Check for conversational / emotional keywords
+    const isLonely = /lonely|sad|depressed|alone|crying|hopeless|anxious|stressed|unhappy|down/.test(txt);
+    const isHello = /^hi$|^hello$|^hey$|^greetings$|namaskar/i.test(txt);
+    const isThanks = /thank|appreciate|grateful/.test(txt);
+    const isWho = /who are you|what are you|your name/.test(txt);
+    
+    if (isLonely) {
+      activeDiagnostic = null; // reset diagnostic state
+      const response = isOr 
+        ? "ମୁଁ ବୁଝିପାରୁଛି ଯେ ଆପଣ ଏକୁଟିଆ କିମ୍ବା ଦୁଃଖିତ ଅନୁଭବ କରୁଛନ୍ତି। ଦୟାକରି ମନେରଖନ୍ତୁ ଯେ ଆପଣ ଏକୁଟିଆ ନୁହଁନ୍ତି। ମୁଁ ଏକ ମେଡିକାଲ୍ ସହକାରୀ ଏବଂ ଆପଣଙ୍କର ମାନସିକ ସ୍ୱାସ୍ଥ୍ୟ ମଧ୍ୟ ଅତ୍ୟନ୍ତ ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ। ଯଦି ଆପଣ କୌଣସି ଶାରୀରିକ ଅସୁବିଧା ଅନୁଭବ କରୁଛନ୍ତି, ତେବେ ମୋତେ ଜଣାନ୍ତୁ। କୌଣସି ଆବଶ୍ୟକତା ଥିଲେ ଆପଣଙ୍କ ପ୍ରିୟଜନ କିମ୍ବା ବିଶେଷଜ୍ଞଙ୍କ ସହ କଥା ହୁଅନ୍ତୁ।"
+        : "I'm really sorry to hear that you're feeling this way. Please remember that you are not alone, and it is completely okay to feel down or lonely sometimes. While I am a medical AI designed to analyze physical symptoms, your mental and emotional well-being is incredibly important. Please consider reaching out to a friend, family member, or a professional.<br><br>If you are experiencing any physical symptoms as well, feel free to share them with me.";
+      return `<p>${profileInfo}${response}</p>`;
+    }
+    
+    if (isHello) {
+      activeDiagnostic = null;
+      const response = isOr 
+        ? `ନମସ୍କାର${profile && profile.name ? ' ' + profile.name.split(' ')[0] : ''}! ମୁଁ ରାମନ୍ ଏଆଇ (ପରୀକ୍ଷାମୂଳକ ସଂସ୍କରଣ ୧୭୦)। ଆଜି ମୁଁ ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟରେ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?`
+        : `Hello${profile && profile.name ? ' ' + profile.name.split(' ')[0] : ''}! I am RAMAN AI (Experiment No. 170). How can I help you with your health today?`;
+      return `<p>${profileInfo}${response}</p>`;
+    }
+
+    if (isThanks) {
+      activeDiagnostic = null;
+      const response = isOr
+        ? `ଆପଣଙ୍କୁ ସ୍ୱାଗତ! ଆପଣଙ୍କ ସାହାଯ୍ୟ କରିବା ମୋର କର୍ତ୍ତବ୍ୟ। ଅନ୍ୟ କୌଣସି ସ୍ୱାସ୍ଥ୍ୟଗତ ସମସ୍ୟା ଥିଲେ ଜଣାନ୍ତୁ।`
+        : `You're very welcome! I'm here to help. If you have any other symptoms or medical questions, just let me know.`;
+      return `<p>${profileInfo}${response}</p>`;
+    }
+
+    if (isWho) {
+      activeDiagnostic = null;
+      const response = isOr
+        ? `ମୁଁ ରାମନ୍ ଏଆଇ, ଏକ ଉନ୍ନତ କୃତ୍ରିମ ବୁଦ୍ଧିମତା (AI) ଯାହା ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ଏବଂ ଲକ୍ଷଣ ବିଷୟରେ ପରାମର୍ଶ ଦେବା ପାଇଁ ଡିଜାଇନ୍ କରାଯାଇଛି। ଆପଣଙ୍କର କୌଣସି ଲକ୍ଷଣ ଅଛି କି?`
+        : `I am RAMAN AI (Experiment No. 170), an advanced medical intelligence assistant designed to help analyze your symptoms and provide preliminary health guidance. How are you feeling today?`;
+      return `<p>${profileInfo}${response}</p>`;
+    }
+
     return buildGenericResponse(text, profile, profileInfo);
   }
 
