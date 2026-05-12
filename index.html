@@ -110,6 +110,9 @@
     <!-- ===== HEADER ===== -->
     <header class="app-header">
       <div class="header-left">
+        <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()" style="display:none;">
+          <span style="font-size: 1.2rem;">☰</span>
+        </button>
         <div class="header-logo-wrap">
           <div class="header-cross">✚</div>
           <div class="header-pulse"></div>
@@ -223,7 +226,8 @@
     <div class="main-layout">
 
       <!-- ===== SIDEBAR ===== -->
-      <aside class="sidebar">
+      <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+      <aside class="sidebar" id="sidebar">
         <div class="sidebar-section">
           <div class="sidebar-heading">PATIENT PROFILE</div>
           <div class="profile-card">

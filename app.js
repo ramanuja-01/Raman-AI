@@ -33,6 +33,21 @@ window._splashTimer = setTimeout(() => {
   // If Health ID module hasn't run yet (first load) this fires normally.
 }, 4800); // visual splash plays via CSS; JS app init now handled at bottom of file
 
+// ── Mobile Sidebar Toggle ──────────────────────────────────
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  sidebar.classList.toggle('open');
+  backdrop.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
+}
+
+function closeSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  sidebar.classList.remove('open');
+  backdrop.style.display = 'none';
+}
+
 // ── Clock ───────────────────────────────────────────────
 function nowTime() {
   return new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });

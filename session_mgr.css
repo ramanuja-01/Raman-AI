@@ -27,7 +27,7 @@
 /* ===== SESSION PANEL ===== */
 .session-panel {
   position: fixed; top: 60px; right: 16px;
-  width: 360px; max-height: calc(100vh - 80px);
+  width: 90%; max-width: 380px; max-height: calc(100vh - 80px);
   background: var(--bg-card); border: 1px solid var(--border);
   border-radius: 16px; overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 30px rgba(0,229,255,0.08);
