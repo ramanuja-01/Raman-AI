@@ -1,15 +1,17 @@
 /* ===== SESSION MANAGER BUTTON (header) ===== */
 .btn-session-mgr {
-  padding: 7px 16px; border-radius: 8px;
-  background: linear-gradient(135deg, rgba(0,229,255,0.12), rgba(26,111,255,0.12));
-  border: 1px solid var(--cyan-dim); color: var(--cyan);
+  padding: 5px 12px; border-radius: 20px;
+  background: var(--gradient);
+  border: 1px solid var(--border); color: var(--text-muted);
   font-family: var(--font-ui); font-size: 0.72rem;
-  letter-spacing: 1.5px; cursor: pointer; transition: all 0.2s;
+  letter-spacing: 1px; cursor: pointer; transition: all 0.2s;
   display: flex; align-items: center; gap: 6px;
+  height: 28px; box-sizing: border-box;
 }
 .btn-session-mgr:hover {
-  background: linear-gradient(135deg, rgba(0,229,255,0.22), rgba(26,111,255,0.22));
-  box-shadow: 0 0 14px rgba(0,229,255,0.25); transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(0,229,255,0.12), rgba(26,111,255,0.12));
+  border-color: var(--cyan-dim); color: var(--cyan);
+  box-shadow: 0 0 14px rgba(0,229,255,0.25);
 }
 .hid-chip { cursor: pointer !important; }
 .hid-chip-arrow { font-size: 0.7rem; opacity: 0.6; }

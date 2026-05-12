@@ -197,16 +197,18 @@ html, body {
 .chip-icon { font-size: 0.9rem; }
 
 .lang-select {
-  background: rgba(0,229,255,0.06);
-  border: 1px solid var(--cyan-dim);
-  color: var(--cyan);
-  padding: 5px 10px;
-  border-radius: 6px;
+  background: var(--gradient);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 0 12px;
+  border-radius: 20px;
   font-family: var(--font-ui);
   font-size: 0.72rem;
   outline: none;
   cursor: pointer;
   letter-spacing: 1px;
+  height: 28px;
+  box-sizing: border-box;
 }
 .lang-select option {
   background: var(--bg-card);
