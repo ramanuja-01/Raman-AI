@@ -1724,33 +1724,8 @@ function updateSessionPanelUI() {
     endBtn.style.display = 'none';
   }
   
-  // Render History
-  const historyEl = document.getElementById('spSessionHistory');
-  const allKeys = Object.keys(localStorage).filter(k => k.startsWith('ramanai_hid_'));
-  
-  if (allKeys.length === 0) {
-    historyEl.innerHTML = '<div class="sp-history-empty">No previous sessions found on this device.</div>';
-    return;
-  }
-  
-  const sessions = allKeys.map(k => {
-    try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; }
-  }).filter(s => s && s.id).sort((a,b) => new Date(b.lastSeen) - new Date(a.lastSeen));
-  
-  historyEl.innerHTML = sessions.map(s => {
-    const isCurrent = s.id === currentHealthId;
-    const dateStr = new Date(s.lastSeen).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' });
-    const msgs = s.messages ? s.messages.length : 0;
-    return `
-      <div class="sp-history-item ${isCurrent ? 'sp-session-ended' : ''}" onclick="document.getElementById('spHidInput').value='${s.id}'">
-        <div style="flex:1">
-          <div class="sp-history-hid">${s.id} ${isCurrent ? '<span style="font-size:0.6rem;color:#ffb400">(ACTIVE)</span>' : ''}</div>
-          <div class="sp-history-meta">${dateStr} &bull; ${msgs} msgs &bull; ${s.profile?.name || 'Unknown Patient'}</div>
-        </div>
-        ${!isCurrent ? `<button class="sp-history-restore" onclick="event.stopPropagation(); restoreFromPanel('${s.id}')">Restore</button>` : ''}
-      </div>
-    `;
-  }).join('');
+  // Session History rendering has been removed to enforce medical privacy.
+  // Users must manually enter their Health ID to restore a session.
 }
 
 function copyHid() {
