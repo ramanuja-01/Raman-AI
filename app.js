@@ -1767,8 +1767,10 @@ function shareCurrentHid() {
 }
 
 function endCurrentSession() {
-  if (!currentHealthId) return;
-  saveHealthSession(); // Ensure latest state is saved
+  // Save only if there's actual data to save
+  if (currentHealthId || chatHistory.length > 0 || getProfile().name) {
+    saveHealthSession(); 
+  }
   
   // Clear runtime vars without deleting the saved data
   currentHealthId = null;
