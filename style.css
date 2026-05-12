@@ -209,6 +209,7 @@ html, body {
   letter-spacing: 1px;
   height: 28px;
   box-sizing: border-box;
+  width: auto;
 }
 .lang-select option {
   background: var(--bg-card);
