@@ -445,6 +445,15 @@ function buildResponse(text, profile) {
       return `<p>${profileInfo}${response}</p>`;
     }
 
+    const isQuestion = /\?|^(what|how|why|when|can you|could you|please tell|explain|describe|tell me)\b/i.test(txt);
+    if (isQuestion) {
+      activeDiagnostic = null;
+      const response = isOr
+        ? "ମୁଁ ଏକ ବିଶେଷଜ୍ଞ ଏଆଇ ଯାହା କେବଳ ଲକ୍ଷଣ ଏବଂ ଶାରୀରିକ ଅସୁବିଧା ବିଷୟରେ ପରାମର୍ଶ ଦେବା ପାଇଁ ଡିଜାଇନ୍ କରାଯାଇଛି। ମୁଁ ସାଧାରଣ ପ୍ରଶ୍ନ କିମ୍ବା ଔଷଧ ବିଷୟରେ ସୂଚନା ଦେଇପାରିବି ନାହିଁ। <br><br>ଯଦି ଆପଣ କୌଣସି ରୋଗର ଲକ୍ଷଣ ଅନୁଭବ କରୁଛନ୍ତି (ଉଦାହରଣ ସ୍ୱରୂପ: 'ମୋର ମୁଣ୍ଡ ବିନ୍ଧୁଛି'), ଦୟାକରି ମୋତେ ଜଣାନ୍ତୁ।"
+        : "I am a specialized medical AI designed specifically to analyze physical symptoms and provide preliminary triage advice. Because I operate entirely offline for your privacy, I don't have the ability to answer general medical questions, look up specific medications, or explain health rules.<br><br>If you are experiencing any physical symptoms (e.g., 'I have a headache' or 'My stomach hurts'), please describe them to me so I can assist you!";
+      return `<p>${profileInfo}${response}</p>`;
+    }
+
     return buildGenericResponse(text, profile, profileInfo);
   }
 
