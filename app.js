@@ -1946,10 +1946,25 @@ RULES:
 Here is the current patient profile:
 ${profileCtx}`;
 
-  const history = chatHistory.map(msg => ({
-    role: msg.role === 'user' ? 'user' : 'model',
-    parts: [{ text: msg.text }]
-  }));
+  const history = [];
+
+  // Inject System Instruction as the first message to guarantee compatibility with gemini-pro
+  history.push({
+    role: 'user',
+    parts: [{ text: systemInstruction }]
+  });
+  history.push({
+    role: 'model',
+    parts: [{ text: "Understood. I am RAMAN AI - Experiment No. 170. I will strictly follow the Medical Knowledge Base and respond in HTML format." }]
+  });
+
+  // Append actual chat history
+  chatHistory.forEach(msg => {
+    history.push({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }]
+    });
+  });
 
   // Append current message
   history.push({
@@ -1958,13 +1973,12 @@ ${profileCtx}`;
   });
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        systemInstruction: { parts: [{ text: systemInstruction }] },
         contents: history,
         generationConfig: {
           temperature: 0.2,
