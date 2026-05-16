@@ -1975,17 +1975,17 @@ ${profileCtx}`;
     if (!response.ok) {
       const errorData = await response.json();
       console.error("Gemini API Error:", errorData);
-      return \`<div class="med-section warning"><p>⚠️ API Error: Unable to connect to Gemini. Please check your API key in Settings.</p></div>\`;
+      return `<div class="med-section warning"><p>⚠️ API Error: Unable to connect to Gemini. Please check your API key in Settings.</p></div>`;
     }
 
     const data = await response.json();
     if (data.candidates && data.candidates[0].content.parts[0].text) {
       return data.candidates[0].content.parts[0].text;
     } else {
-      return \`<p>An unexpected response format was returned from the API.</p>\`;
+      return `<p>An unexpected response format was returned from the API.</p>`;
     }
   } catch (error) {
     console.error("Fetch error:", error);
-    return \`<div class="med-section warning"><p>⚠️ Network error. Could not reach Gemini API.</p></div>\`;
+    return `<div class="med-section warning"><p>⚠️ Network error. Could not reach Gemini API.</p></div>`;
   }
 }
