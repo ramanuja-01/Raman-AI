@@ -7,6 +7,8 @@ let chatHistory         = [];
 let hidShownThisSession = false;
 let vaultData           = JSON.parse(localStorage.getItem('ramanai_vault') || '[]');
 let detectedConditions  = new Set(JSON.parse(localStorage.getItem('ramanai_conditions') || '[]'));
+let lastCondition       = null;
+let lastConditionTime   = 0;
 
 // ── Splash Screen ──────────────────────────────────────
 const splashMsgs = [
@@ -260,6 +262,12 @@ const ODIA_DICT = {
   inc5: "ଆପଣ ବର୍ତ୍ତମାନ ଖାଉଥିବା କୌଣସି ଔଷଧ",
   inc6: "କୌଣସି ଜଣାଶୁଣା ଆଲର୍ଜି କିମ୍ବା ପୂର୍ବ ରୋଗ",
   docQuestion: "ଡାକ୍ତରଙ୍କ ପ୍ରଶ୍ନ:",
+  diet: "🥗 ଖାଦ୍ୟ ପରାମର୍ଶ",
+  dose: "ମାତ୍ରା:",
+  note: "ବିଶେଷ ଦ୍ରଷ୍ଟବ୍ୟ:",
+  suggestedMed: "💊 ପ୍ରସ୍ତାବିତ ଔଷଧ",
+  precautions: "⚠️ ସତର୍କତା",
+  specialist: "ସୁପାରିଶ କରାଯାଇଥିବା ବିଶେଷଜ୍ଞ:",
   assessmentIntro: "ସବିଶେଷ ତଥ୍ୟ ପାଇଁ ଧନ୍ୟବାଦ। ଆପଣଙ୍କ ଲକ୍ଷଣ ଉପରେ ଆଧାର କରି, ଏଠାରେ ମୋର ପ୍ରାରମ୍ଭିକ ଆକଳନ ଅଛି:",
   possibleCond: "🔬 ସମ୍ଭାବ୍ୟ ରୋଗ",
   suggestedMed: "💊 ପ୍ରସ୍ତାବିତ ଔଷଧ",
@@ -391,6 +399,7 @@ function buildResponse(text, profile) {
   } else if (condition) {
     activeDiagnostic = { condition: condition, step: 0 };
   }
+  updateContextIndicator();
 
   const profileInfo = buildProfileContext(profile);
 
@@ -446,6 +455,34 @@ function buildResponse(text, profile) {
     }
 
     const isQuestion = /\?|^(what|how|why|when|can you|could you|please tell|explain|describe|tell me)\b/i.test(txt);
+    
+    // Check 5-minute contextual memory
+    if (lastCondition && (Date.now() - lastConditionTime < 5 * 60 * 1000)) {
+      const isDietReq = /diet|food|eat|drink|nutrition/i.test(txt);
+      const isMedReq = /medicine|rx|pill|tablet|drug|dose|dosage/i.test(txt);
+      const isPrecautionReq = /precaution|warning|safe|danger|avoid|care/i.test(txt);
+      const isSpecialistReq = /doctor|specialist|hospital|who to see/i.test(txt);
+
+      const kb = MEDICAL_KB[lastCondition];
+      if (kb) {
+        if (isDietReq) return `<p>${profileInfo}</p><div class="med-section info"><div class="med-section-title">${isOr ? ODIA_DICT.diet : "🥗 DIETARY RECOMMENDATIONS FOR " + lastCondition.toUpperCase()}</div><ul>${kb.diet.map(d => `<li>${d}</li>`).join("")}</ul></div>`;
+        if (isMedReq) {
+          let medsHtml = kb.medications.map(m => `<p><strong>${m.name}</strong><br><small>📋 ${isOr ? ODIA_DICT.dose : "Dose:"} ${m.dose}</small><br><small>ℹ️ ${isOr ? ODIA_DICT.note : "Note:"} ${m.note}</small></p>`).join("");
+          return `<p>${profileInfo}</p><div class="med-section"><div class="med-section-title">${isOr ? ODIA_DICT.suggestedMed : "💊 SUGGESTED MEDICATIONS FOR " + lastCondition.toUpperCase()}</div>${medsHtml}</div>`;
+        }
+        if (isPrecautionReq) return `<p>${profileInfo}</p><div class="med-section warning"><div class="med-section-title">${isOr ? ODIA_DICT.precautions : "⚠️ PRECAUTIONS FOR " + lastCondition.toUpperCase()}</div><ul>${kb.precautions.map(p => `<li>${p}</li>`).join("")}</ul></div>`;
+        if (isSpecialistReq) return `<p>${profileInfo}</p><div class="med-section info"><p>🏥 <strong>${isOr ? ODIA_DICT.specialist : "Recommended Specialist:"}</strong> ${kb.specialist}</p></div>`;
+        
+        // If it's a general question but in context, give a friendly contextual prompt
+        if (isQuestion) {
+          const resp = isOr 
+            ? `ମୁଁ ବର୍ତ୍ତମାନ ଆପଣଙ୍କର '${lastCondition}' ବିଷୟରେ ମନେ ରଖିଛି। ଆପଣ ଖାଦ୍ୟ, ଔଷଧ କିମ୍ବା ସତର୍କତା ବିଷୟରେ ପଚାରି ପାରିବେ।`
+            : `I am still keeping your '${lastCondition}' in mind. You can ask me specific questions about diet, medications, or precautions related to it.`;
+          return `<p>${profileInfo}${resp}</p>`;
+        }
+      }
+    }
+
     if (isQuestion) {
       activeDiagnostic = null;
       const response = isOr
@@ -493,6 +530,9 @@ function buildResponse(text, profile) {
 
   // Finished asking questions, provide final assessment
   activeDiagnostic = null; // Reset state
+  lastCondition = condition;
+  lastConditionTime = Date.now();
+  updateContextIndicator();
   
   const kb = MEDICAL_KB[condition];
   const isEmergency = condition === "chest pain";
@@ -605,6 +645,29 @@ function buildGenericResponse(text, profile, profileCtx) {
   </div>
   <p>${footerHint}</p>`;
 }
+
+function updateContextIndicator() {
+  const ind = document.getElementById('contextIndicator');
+  const val = document.getElementById('ctxValue');
+  const lbl = document.getElementById('ctxLabel');
+  if (!ind || !val || !lbl) return;
+
+  const isOr = window.currentLang === 'or';
+  lbl.textContent = isOr ? "ବିଷୟ:" : "Discussing:";
+
+  if (activeDiagnostic) {
+    ind.style.display = 'flex';
+    val.textContent = activeDiagnostic.condition.toUpperCase();
+  } else if (lastCondition && (Date.now() - lastConditionTime < 5 * 60 * 1000)) {
+    ind.style.display = 'flex';
+    val.textContent = lastCondition.toUpperCase();
+  } else {
+    ind.style.display = 'none';
+  }
+}
+
+// Set up interval to check context expiry
+setInterval(updateContextIndicator, 30000);
 
 // ── Profile Automation & Inactivity Timer ────────────────
 let profileGreeted = false;
@@ -1652,25 +1715,31 @@ document.getElementById('splashHidInput').addEventListener('keydown', e => {
 });
 
 function handleHidRestore() {
+  const btn = document.getElementById('splashHidBtn');
   const input = document.getElementById('splashHidInput').value.trim();
   const errEl = document.getElementById('splashHidError');
   if (!input) { errEl.textContent = 'Please enter your Health ID.'; return; }
-  // Stop the auto-dismiss timer and show app immediately
-  clearTimeout(window._splashTimer);
-  document.getElementById('splashScreen').style.display = 'none';
-  document.getElementById('appContainer').style.display = 'flex';
-  document.getElementById('welcomeTime').textContent = nowTime();
-  initParticles();
-  renderVault();
-
-  const ok = loadHealthSession(input);
-  if (!ok) {
-    // Re-show splash with error
-    document.getElementById('splashScreen').style.display = 'flex';
-    document.getElementById('appContainer').style.display = 'none';
-    errEl.textContent = '❌ Health ID not found. Please check and try again.';
-    errEl.style.color = '#ff4d6d';
-  }
+  
+  btn.textContent = 'RESTORING...';
+  errEl.textContent = '';
+  
+  setTimeout(() => {
+    // Stop the auto-dismiss timer
+    clearTimeout(window._splashTimer);
+    
+    const ok = loadHealthSession(input);
+    if (!ok) {
+      btn.textContent = '↩ RESTORE';
+      errEl.textContent = '❌ Health ID not found. Please check and try again.';
+      errEl.style.color = '#ff4d6d';
+    } else {
+      document.getElementById('splashScreen').style.display = 'none';
+      document.getElementById('appContainer').style.display = 'flex';
+      document.getElementById('welcomeTime').textContent = nowTime();
+      initParticles();
+      renderVault();
+    }
+  }, 800);
 }
 
 // ── Store the splash timer so it can be cancelled ─────
@@ -1764,6 +1833,9 @@ function endCurrentSession() {
   vaultData = [];
   detectedConditions.clear();
   sessionMsgs = 0;
+  lastCondition = null;
+  lastConditionTime = 0;
+  updateContextIndicator();
   
   // Clear local storage pointers
   localStorage.removeItem('ramanai_current_hid');
@@ -1811,11 +1883,16 @@ function restoreFromPanel(forceId = null) {
   vaultData = [];
   detectedConditions.clear();
   
-  const ok = loadHealthSession(input);
-  if (ok) {
-    closeSessionPanel();
-    document.getElementById('spHidInput').value = '';
-  } else {
-    errEl.textContent = '❌ Health ID not found. Please check and try again.';
-  }
+  closeSessionPanel();
+  document.getElementById('spHidInput').value = '';
+  showTyping(true);
+  
+  setTimeout(() => {
+    const ok = loadHealthSession(input);
+    showTyping(false);
+    if (!ok) {
+      errEl.textContent = '❌ Health ID not found. Please check and try again.';
+      toggleSessionPanel();
+    }
+  }, 1200);
 }
