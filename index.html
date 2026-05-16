@@ -164,6 +164,10 @@
             <option value="en">EN</option>
             <option value="or">ଓଡ଼ିଆ</option>
           </select>
+          <!-- API Settings Button -->
+          <button class="btn-session-mgr" id="btnApiSettings" onclick="openApiSettings()" style="margin-right: 5px;">
+            <span>⚙️</span> API SETTINGS
+          </button>
           <!-- Help / Tutorial Button -->
           <button class="btn-session-mgr" id="btnHelp" onclick="openTutorial()" style="margin-right: 5px;">
             <span>❓</span> HELP
@@ -268,6 +272,24 @@
           </div>
         </div>
         <button class="sp-btn sp-btn-new" style="margin-top: 15px; width: 100%;" onclick="closeTutorial()">Got it! Start Chatting</button>
+      </div>
+    </div>
+
+    <!-- ===== API SETTINGS MODAL ===== -->
+    <div class="session-panel-backdrop" id="apiSettingsBackdrop" onclick="closeApiSettings()" style="display:none;"></div>
+    <div class="tutorial-modal" id="apiSettingsModal" style="display:none;">
+      <div class="tut-header">
+        <span>⚙️ LLM API CONFIGURATION</span>
+        <button class="sp-close" onclick="closeApiSettings()">✕</button>
+      </div>
+      <div class="tut-body">
+        <p>RAMAN AI requires a Google Gemini API Key to process natural language and provide accurate, context-aware responses.</p>
+        <div style="margin: 15px 0;">
+          <label for="geminiApiKey" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">Google Gemini API Key</label>
+          <input type="password" id="geminiApiKey" placeholder="Enter API Key (e.g. AIzaSy...)" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px;" autocomplete="off" />
+          <small style="color: var(--text-muted); display: block; margin-top: 5px;">Your key is stored securely in your browser's local storage and is never sent to any server other than Google's API.</small>
+        </div>
+        <button class="sp-btn sp-btn-new" style="margin-top: 15px; width: 100%;" onclick="saveApiKey()">Save & Connect</button>
       </div>
     </div>
 

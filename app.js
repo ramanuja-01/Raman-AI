@@ -834,7 +834,13 @@ async function sendMessage() {
 
   showTyping(false);
   const profile = getProfile();
-  const response = buildResponse(text, profile);
+  let response;
+  const apiKey = localStorage.getItem('ramanai_gemini_api_key');
+  if (apiKey) {
+    response = await generateGeminiResponse(text, profile, apiKey);
+  } else {
+    response = buildResponse(text, profile);
+  }
   addMessage("ai", response, true);
 
   // Capture AI response
@@ -1895,4 +1901,97 @@ function restoreFromPanel(forceId = null) {
       toggleSessionPanel();
     }
   }, 1200);
+}
+
+// ═══════════════════════════════════════════════════════
+// ── GEMINI API INTEGRATION ─────────────────────────────
+// ═══════════════════════════════════════════════════════
+
+function openApiSettings() {
+  document.getElementById("apiSettingsBackdrop").style.display = "block";
+  document.getElementById("apiSettingsModal").style.display = "block";
+  const savedKey = localStorage.getItem('ramanai_gemini_api_key');
+  if (savedKey) document.getElementById("geminiApiKey").value = savedKey;
+}
+
+function closeApiSettings() {
+  document.getElementById("apiSettingsBackdrop").style.display = "none";
+  document.getElementById("apiSettingsModal").style.display = "none";
+}
+
+function saveApiKey() {
+  const key = document.getElementById("geminiApiKey").value.trim();
+  if (key) {
+    localStorage.setItem('ramanai_gemini_api_key', key);
+    alert("API Key saved successfully! RAMAN AI is now powered by Gemini.");
+  } else {
+    localStorage.removeItem('ramanai_gemini_api_key');
+    alert("API Key removed. Reverting to basic logic.");
+  }
+  closeApiSettings();
+}
+
+async function generateGeminiResponse(text, profile, apiKey) {
+  const profileCtx = `Patient Profile: Name: ${profile.name || 'Unknown'}, Age: ${profile.age || 'Unknown'}, Gender: ${profile.gender || 'Unknown'}, Blood Group: ${profile.blood || 'Unknown'}, Allergies: ${profile.allergies || 'None'}.`;
+  const isOr = window.currentLang === 'or';
+  
+  const systemInstruction = `You are RAMAN AI - Experiment No. 170, an empathetic and highly advanced medical intelligence assistant.
+Your goal is to triage symptoms, suggest possible conditions, and recommend general medications or dietary adjustments based strictly on the following Medical Knowledge Base.
+
+MEDICAL KNOWLEDGE BASE:
+${JSON.stringify(MEDICAL_KB)}
+
+RULES:
+1. Be empathetic and professional.
+2. If the user's symptoms match something in the MEDICAL KNOWLEDGE BASE, use that information to structure your response. Include possible conditions, medications (with dosage), precautions, and dietary recommendations.
+3. If the user mentions chest pain radiating to the arm/jaw, or any emergency symptom, immediately recommend calling emergency services.
+4. Always include a disclaimer that you are an AI and they should consult a real doctor.
+5. You MUST respond in HTML format (using <p>, <ul>, <li>, <strong>, etc.) so it renders nicely in the chat UI. Do not use markdown backticks for HTML. Use div classes like <div class="med-section info"><div class="med-section-title">Title</div>...</div>.
+6. The user is speaking ${isOr ? 'Odia' : 'English'}. You MUST reply entirely in ${isOr ? 'Odia' : 'English'}.
+
+Here is the current patient profile:
+${profileCtx}`;
+
+  const history = chatHistory.map(msg => ({
+    role: msg.role === 'user' ? 'user' : 'model',
+    parts: [{ text: msg.text }]
+  }));
+
+  // Append current message
+  history.push({
+    role: 'user',
+    parts: [{ text: text }]
+  });
+
+  try {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: systemInstruction }] },
+        contents: history,
+        generationConfig: {
+          temperature: 0.2,
+        }
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Gemini API Error:", errorData);
+      return \`<div class="med-section warning"><p>⚠️ API Error: Unable to connect to Gemini. Please check your API key in Settings.</p></div>\`;
+    }
+
+    const data = await response.json();
+    if (data.candidates && data.candidates[0].content.parts[0].text) {
+      return data.candidates[0].content.parts[0].text;
+    } else {
+      return \`<p>An unexpected response format was returned from the API.</p>\`;
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+    return \`<div class="med-section warning"><p>⚠️ Network error. Could not reach Gemini API.</p></div>\`;
+  }
 }
