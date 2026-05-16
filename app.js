@@ -1958,13 +1958,13 @@ ${profileCtx}`;
   });
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        system_instruction: { parts: [{ text: systemInstruction }] },
+        systemInstruction: { parts: [{ text: systemInstruction }] },
         contents: history,
         generationConfig: {
           temperature: 0.2,
@@ -1975,7 +1975,8 @@ ${profileCtx}`;
     if (!response.ok) {
       const errorData = await response.json();
       console.error("Gemini API Error:", errorData);
-      return `<div class="med-section warning"><p>⚠️ API Error: Unable to connect to Gemini. Please check your API key in Settings.</p></div>`;
+      const errMsg = errorData.error ? errorData.error.message : 'Unable to connect to Gemini';
+      return `<div class="med-section warning"><p>⚠️ API Error: ${errMsg}</p><p><small>Please check your API key in Settings.</small></p></div>`;
     }
 
     const data = await response.json();
