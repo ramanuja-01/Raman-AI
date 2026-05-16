@@ -603,6 +603,7 @@ function buildProfileContext(profile) {
 
 function buildGenericResponse(text, profile, profileCtx) {
   const isOr = window.currentLang === 'or';
+  const txtLower = text.toLowerCase();
   
   let base = "";
   if (isOr) {
@@ -610,40 +611,33 @@ function buildGenericResponse(text, profile, profileCtx) {
     if (profile && profile.name) base = `${ODIA_DICT.thanks}, ${profile.name.split(' ')[0]}। ${base}`;
   } else {
     const greetings = [
+      "I'm sorry to hear you're not feeling well.",
       "I want to make sure I understand correctly.",
-      "To give you the safest advice,",
-      "I'd like to get a clearer picture of your health.",
-      "Let's figure this out together."
+      "Let's figure this out together.",
+      "I'm here to help you get to the bottom of this."
     ];
     base = greetings[Math.floor(Math.random() * greetings.length)];
-    if (profile && profile.name) {
+    if (profile && profile.name && !base.includes("sorry")) {
       base = `Thanks for reaching out, ${profile.name.split(' ')[0]}. ${base}`;
+    } else if (profile && profile.name) {
+      base = `I'm sorry to hear you're not feeling well, ${profile.name.split(' ')[0]}.`;
     }
   }
 
-  const describeMsg = isOr ? ODIA_DICT.describeMore : "Could you please describe your symptoms in a bit more detail?";
-  const includeTitle = isOr ? ODIA_DICT.whatToInclude : "💡 WHAT TO INCLUDE";
-  const li1 = isOr ? ODIA_DICT.inc1 : "Nature of pain or discomfort (sharp, dull, burning, throbbing)";
-  const li2 = isOr ? ODIA_DICT.inc2 : "Location on your body";
-  const li3 = isOr ? ODIA_DICT.inc3 : "Duration and frequency of symptoms";
-  const li4 = isOr ? ODIA_DICT.inc4 : "Any fever, vomiting, or other associated symptoms";
-  const li5 = isOr ? ODIA_DICT.inc5 : "Any medications you are currently taking";
-  const li6 = isOr ? ODIA_DICT.inc6 : "Any known allergies or pre-existing conditions";
+  // Generate a conversational, immersive follow-up instead of a robotic list
+  let followUp = "";
+  if (txtLower.includes("sick") || txtLower.includes("unwell") || txtLower.includes("bad")) {
+      followUp = isOr ? "ଆପଣଙ୍କୁ ଠିକ୍ କ'ଣ ଅସୁବିଧା ହେଉଛି? ଦୟାକରି ଟିକେ ସବିଶେଷ ଜଣାନ୍ତୁ (ଯେପରିକି ଜ୍ୱର, କାଶ, ବା କୌଣସି ଯନ୍ତ୍ରଣା)।" : "Could you tell me a little more about what you're experiencing? For example, do you have any pain, a fever, or just feeling generally weak?";
+  } else if (txtLower.includes("pain") || txtLower.includes("hurt") || txtLower.includes("ache")) {
+      followUp = isOr ? "କେଉଁଠାରେ କଷ୍ଟ ହେଉଛି ଏବଂ ଏହା କିପରି ଲାଗୁଛି (ତୀକ୍ଷ୍ଣ ବା ଧୀମା) ମୋତେ କହିପାରିବେ କି?" : "Where exactly is the pain located, and could you describe what it feels like (e.g., sharp, dull, throbbing)?";
+  } else {
+      followUp = isOr ? ODIA_DICT.describeMore : "Could you please describe your symptoms in a bit more detail? It helps if you mention where it hurts, how long it's been happening, and if you have any other symptoms like a fever.";
+  }
+
   const footerHint = isOr ? ODIA_DICT.footerHint : "You can also use the <strong>Quick Symptoms</strong> buttons on the left panel for common conditions. I'm here to assist you! 🩺";
 
-  return `<p>${profileCtx}${base} ${describeMsg}</p>
-  <div class="med-section info">
-    <div class="med-section-title">${includeTitle}</div>
-    <ul>
-      <li>${li1}</li>
-      <li>${li2}</li>
-      <li>${li3}</li>
-      <li>${li4}</li>
-      <li>${li5}</li>
-      <li>${li6}</li>
-    </ul>
-  </div>
-  <p>${footerHint}</p>`;
+  return `<p>${profileCtx}${base} ${followUp}</p>
+  <p><small style="color: var(--text-muted);">${footerHint}</small></p>`;
 }
 
 function updateContextIndicator() {
@@ -835,7 +829,7 @@ async function sendMessage() {
   showTyping(false);
   const profile = getProfile();
   let response;
-  const apiKey = localStorage.getItem('ramanai_gemini_api_key');
+  const apiKey = localStorage.getItem('ramanai_gemini_api_key') || 'AIzaSyBUULQOhEi8X-qBB_1_kL43Slak821IBec';
   if (apiKey) {
     response = await generateGeminiResponse(text, profile, apiKey);
   } else {
