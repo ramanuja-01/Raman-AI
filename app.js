@@ -9,6 +9,7 @@ let vaultData           = JSON.parse(localStorage.getItem('ramanai_vault') || '[
 let detectedConditions  = new Set(JSON.parse(localStorage.getItem('ramanai_conditions') || '[]'));
 let lastCondition       = null;
 let lastConditionTime   = 0;
+let activeConsultation   = null;
 
 // ==========================================
 // ── RAMAN SLM (Simple Language Model) & DB ──
@@ -105,7 +106,7 @@ class TrieNode {
   }
 }
 
-// Trie Vocabulary Parser for O(L) dictionary lookups
+// Trie Vocabulary Parser for O(L) dictionary lookups with phrase support
 class Trie {
   constructor() {
     this.root = new TrieNode();
@@ -125,12 +126,15 @@ class Trie {
 
   search(text) {
     const matches = [];
-    const tokens = text.toLowerCase().split(/[\s,.\-!?()'"\/\\\[\]{}*_]+/);
-    for (const token of tokens) {
-      if (!token) continue;
+    const words = text.toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, " ")
+      .split(/\s+/)
+      .filter(w => w.length > 1);
+    
+    const checkPhrase = (phrase) => {
       let node = this.root;
       let isMatch = true;
-      for (const char of token) {
+      for (const char of phrase) {
         if (!node.children[char]) {
           isMatch = false;
           break;
@@ -138,7 +142,20 @@ class Trie {
         node = node.children[char];
       }
       if (isMatch && node.isWord) {
-        matches.push({ word: token, category: node.category });
+        matches.push({ word: phrase, category: node.category });
+      }
+    };
+    
+    for (let i = 0; i < words.length; i++) {
+      // Unigram
+      checkPhrase(words[i]);
+      // Bigram
+      if (i < words.length - 1) {
+        checkPhrase(words[i] + " " + words[i+1]);
+      }
+      // Trigram
+      if (i < words.length - 2) {
+        checkPhrase(words[i] + " " + words[i+1] + " " + words[i+2]);
       }
     }
     return matches;
@@ -152,11 +169,45 @@ class NaiveBayesSymptomClassifier {
     this.wordCounts = {};
     this.classTotals = {};
     this.vocabulary = new Set();
+    this.idf = {};
     this.docCounts = 0;
     this.trie = new Trie();
   }
 
+  tokenize(text) {
+    const cleanText = text.toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, " ")
+      .trim();
+    const words = cleanText.split(/\s+/).filter(w => w.length > 1);
+    
+    // Stop words to filter out grammatical noise for core unigrams
+    const stopWords = new Set(["i", "have", "a", "feel", "feeling", "with", "after", "and", "the", "my", "so", "very", "on", "of", "to", "for", "in", "is", "me", "heuchi", "laguchi", "asichi", "pura", "dehare", "deha", "hela", "ta", "hoichi", "ti", "bhal"]);
+    
+    const tokens = [];
+    
+    for (const w of words) {
+      if (!stopWords.has(w)) {
+        tokens.push(w); // Core unigrams
+      }
+    }
+    
+    // Extract bigrams
+    for (let i = 0; i < words.length - 1; i++) {
+      tokens.push(words[i] + " " + words[i+1]);
+    }
+    
+    // Extract trigrams
+    for (let i = 0; i < words.length - 2; i++) {
+      tokens.push(words[i] + " " + words[i+1] + " " + words[i+2]);
+    }
+    
+    return tokens;
+  }
+
   train(corpus) {
+    this.docCounts = 0;
+    const docCountsPerToken = {};
+    
     for (const [condition, docs] of Object.entries(corpus)) {
       this.classCounts[condition] = (this.classCounts[condition] || 0) + docs.length;
       this.docCounts += docs.length;
@@ -168,6 +219,11 @@ class NaiveBayesSymptomClassifier {
 
       for (const doc of docs) {
         const tokens = this.tokenize(doc);
+        const uniqueInDoc = new Set(tokens);
+        for (const token of uniqueInDoc) {
+          docCountsPerToken[token] = (docCountsPerToken[token] || 0) + 1;
+        }
+        
         for (const token of tokens) {
           this.wordCounts[condition][token] = (this.wordCounts[condition][token] || 0) + 1;
           this.classTotals[condition]++;
@@ -176,7 +232,14 @@ class NaiveBayesSymptomClassifier {
       }
     }
 
-    // Index all tokens into the Trie for fast keyword triggers
+    // Compute IDF weights
+    this.idf = {};
+    for (const token of this.vocabulary) {
+      const docCount = docCountsPerToken[token] || 0;
+      this.idf[token] = Math.log((1 + this.docCounts) / (1 + docCount)) + 1;
+    }
+
+    // Index all tokens & phrases into the Trie for fast keyword triggers
     for (const [condition, docs] of Object.entries(corpus)) {
       for (const doc of docs) {
         const tokens = this.tokenize(doc);
@@ -189,13 +252,6 @@ class NaiveBayesSymptomClassifier {
     }
   }
 
-  tokenize(text) {
-    return text.toLowerCase()
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, " ")
-      .split(/\s+/)
-      .filter(w => w.length > 1);
-  }
-
   classify(text) {
     const tokens = this.tokenize(text);
     const scores = {};
@@ -205,7 +261,8 @@ class NaiveBayesSymptomClassifier {
     const trieMatches = this.trie.search(text);
     const trieWeight = {};
     for (const match of trieMatches) {
-      trieWeight[match.category] = (trieWeight[match.category] || 0) + 1.5; // Boost score for strict keyword matches
+      const termIdf = this.idf[match.word] || 1.0;
+      trieWeight[match.category] = (trieWeight[match.category] || 0) + (1.5 * termIdf); // Boost score for strict keyword phrase matches
     }
 
     for (const condition of Object.keys(this.classCounts)) {
@@ -215,9 +272,10 @@ class NaiveBayesSymptomClassifier {
         if (!this.vocabulary.has(token)) continue;
 
         const count = this.wordCounts[condition][token] || 0;
+        const termIdf = this.idf[token] || 1.0;
         // Laplace smoothing: (count + 1) / (total_words_in_class + vocab_size)
         const prob = (count + 1) / (this.classTotals[condition] + vocabSize);
-        logProb += Math.log(prob);
+        logProb += termIdf * Math.log(prob); // Scale log probability by TF-IDF weight
       }
 
       // Apply Trie-based keyword matching boost
@@ -243,48 +301,52 @@ class NaiveBayesSymptomClassifier {
   }
 }
 
-// Markov Chain transition engine to synthesize conversational empathy filler text
+// Markov Chain transition engine to synthesize conversational empathy filler text (Bigram transition state)
 class MarkovTextGenerator {
   constructor() {
     this.chain = {};
-    this.startWords = [];
+    this.startPairs = [];
   }
 
   train(sentences) {
     for (const sentence of sentences) {
       const words = sentence.toLowerCase().split(/\s+/).filter(Boolean);
-      if (words.length === 0) continue;
-      this.startWords.push(words[0]);
+      if (words.length < 2) continue;
+      this.startPairs.push([words[0], words[1]]);
 
-      for (let i = 0; i < words.length - 1; i++) {
-        const current = words[i];
-        const next = words[i+1];
-        if (!this.chain[current]) {
-          this.chain[current] = [];
+      for (let i = 0; i < words.length - 2; i++) {
+        const key = words[i] + "_" + words[i+1];
+        const next = words[i+2];
+        if (!this.chain[key]) {
+          this.chain[key] = [];
         }
-        this.chain[current].push(next);
+        this.chain[key].push(next);
       }
     }
   }
 
-  generate(maxLength = 12) {
-    if (this.startWords.length === 0) return "I understand your concerns.";
-    let current = this.startWords[Math.floor(Math.random() * this.startWords.length)];
-    let result = [current.charAt(0).toUpperCase() + current.slice(1)];
+  generate(maxLength = 15) {
+    if (this.startPairs.length === 0) return "I understand your concerns.";
+    const start = this.startPairs[Math.floor(Math.random() * this.startPairs.length)];
+    let w1 = start[0];
+    let w2 = start[1];
+    let result = [w1.charAt(0).toUpperCase() + w1.slice(1), w2];
 
-    for (let i = 0; i < maxLength - 1; i++) {
-      const choices = this.chain[current];
+    for (let i = 0; i < maxLength - 2; i++) {
+      const key = w1 + "_" + w2;
+      const choices = this.chain[key];
       if (!choices || choices.length === 0) break;
       const next = choices[Math.floor(Math.random() * choices.length)];
       result.push(next);
-      current = next;
+      w1 = w2;
+      w2 = next;
     }
 
     return result.join(" ") + ".";
   }
 }
 
-// Define Offline Training Datasets
+// Define Expanded Offline Training Datasets
 const SLM_TRAINING_CORPUS = {
   fever: [
     "i have a severe fever and chills",
@@ -295,7 +357,13 @@ const SLM_TRAINING_CORPUS = {
     "jaro hoichi deha pura garam shivering high fever",
     "deha jwara laguchi chabuka maruchi temperature",
     "temperature is high, body is aching and hot",
-    "shivering, cold sweat, hot forehead, high fever"
+    "shivering, cold sweat, hot forehead, high fever",
+    "shivering with body temperature spike pyrexia hot",
+    "jwara asichi deha pura gorom",
+    "deha garam jwara chabuka bitha chills",
+    "body is burning up and feeling freezing cold shivering",
+    "severe fever with body pain and low energy",
+    "running a high temperature of 101 degrees Fahrenheit chills"
   ],
   headache: [
     "my head hurts so bad and i feel dizzy",
@@ -304,7 +372,14 @@ const SLM_TRAINING_CORPUS = {
     "munda bindhuchi chatei deuchi munda ghurei heuchi pain",
     "migraine attack, throbbing head pain, head is bursting",
     "bad headache after screen time, dizziness and sinus pain",
-    "headache, dizzy, sensitivity to light, head pain"
+    "headache, dizzy, sensitivity to light, head pain",
+    "munda betha heuchi munda chatei phati gala bhal laguchi",
+    "severe pain on left side of head migraine visual aura",
+    "tension headache behind eyes stiff neck and shoulder pressure",
+    "sinus pain forehead throbbing pain light headache",
+    "munda bhari laguchi chatei munda ghureiba pain",
+    "headache and nausea with extreme visual sensitivity",
+    "chronic headache tension migraine pressure head"
   ],
   cough: [
     "persistent dry cough and chest congestion with mucus",
@@ -313,7 +388,13 @@ const SLM_TRAINING_CORPUS = {
     "kasha heuchi thanda laguchi mucus phlegm",
     "kasha saha kafa baharu heuchi chest congestion",
     "dry cough, sore throat, bronchial irritation, cough",
-    "coughing constantly, wheezing, tickling throat"
+    "coughing constantly, wheezing, tickling throat",
+    "wet cough hacking up thick yellow phlegm chest tightness",
+    "cough cold fever throat pain sore bronchial irritation",
+    "kasha kafa thanda runny nose sore throat congestion",
+    "constant coughing fits with severe chest congestion wheezing",
+    "bronchitis productive cough throat itchiness mucus cold",
+    "kafa jami jaichi kasha saha chhati bhari"
   ],
   "chest pain": [
     "crushing chest pain radiating to left arm and jaw",
@@ -321,7 +402,13 @@ const SLM_TRAINING_CORPUS = {
     "chhati bindhuchi chati jantrana breathlessness dizziness",
     "sharp chest pain when breathing, heart attack fear, squeezing",
     "heart pressure, squeezing pain in chest, arm pain, sweat",
-    "chhati bhari laguchi chati re jantrana heuchi"
+    "chhati bhari laguchi chati re jantrana heuchi",
+    "crushing chest pressure radiating to left shoulder sweating",
+    "angina pectoris chest discomfort tightness left arm jaw pain",
+    "chhati chirei bitha heuchi niswasa prabasare kasta heuchi",
+    "chest compression shortness of breath severe heart pain",
+    "sharp pain in middle of chest squeezing coronary risk",
+    "chhati re jantrana sahita beka ebam hata re bitha"
   ],
   "stomach pain": [
     "stomach cramps, abdominal pain, bloating, severe nausea",
@@ -329,49 +416,86 @@ const SLM_TRAINING_CORPUS = {
     "peta katuchi banti laguchi stomach pain bloating",
     "gastric pain, diarrhea, loose stools, nausea, vomiting",
     "sharp pain in lower right abdomen, belly ache, vomiting",
-    "nausea and vomiting with severe stomach cramps, indigestion"
+    "nausea and vomiting with severe stomach cramps, indigestion",
+    "severe burning pain in upper stomach acid indigestion",
+    "abdominal cramps bloating flatulence loose motions stomach ache",
+    "peta bitha heuchi gas pain vomiting banti laguchi indigestion",
+    "acute gastritis stomach ulcer heartburn belly pain bloating",
+    "lower abdominal cramps sharp pain stomach hyperacidity",
+    "peta katuchi bhari banti nausea acid reflux"
   ],
   "joint pain": [
     "joint swelling, knee arthritis pain, knee stiffness",
     "ganthi bitha ganthi phula knee joint pain arthritis",
     "swollen knees, severe joint pain, gout flare, bone aches",
     "difficulty walking due to knee pain and joint stiffness",
-    "rheumatoid arthritis joint pain, knee inflammation, joint swelling"
+    "rheumatoid arthritis joint pain, knee inflammation, joint swelling",
+    "knee joint stiffness arthritic swelling walking pain",
+    "goda ganthi bindha betha phula joint inflammation bone",
+    "joint pain wrist ankle knee stiffness swelling",
+    "chronic knee arthritis joint degenerative pain walking problem",
+    "ganthi bitha arthritic joint stiffness swelling knee",
+    "severe swelling in joints arthritis gout bone ache"
   ],
   "skin rash": [
     "itchy red rash on skin, eczema patches, dry skin hives",
     "kundei heuchi charma khasru skin rash allergy",
     "allergic dermatitis hives, itchy skin patches, red bumps",
     "fungal infection rash, burning skin, severe itching",
-    "red itchy bumps all over body, allergy hives, eczema"
+    "red itchy bumps all over body, allergy hives, eczema",
+    "itchy skin rash hives allergic contact dermatitis eczema",
+    "charma kundia khasru roga patches red skin itching",
+    "body rash burning red bumps hives fungal skin infection",
+    "extreme skin irritation itching rash hives dry patches",
+    "kundia skin rash hives allergy dermatitis red spots"
   ],
   "high blood pressure": [
     "dizziness, high blood pressure reading, blurry vision",
     "rakta chapa munda bula dizziness hypertension bp",
     "hypertension crisis, dizzy, severe headache with high bp",
     "checked blood pressure and it is 160 over 100",
-    "lightheadedness, racing heart, dizzy, high bp"
+    "lightheadedness, racing heart, dizzy, high bp",
+    "high blood pressure reading 150 over 95 hypertension",
+    "rakta chapa badhi jaichi munda ghureiba bp high tension",
+    "systolic bp reading 170 cardiac palpitations dizziness",
+    "hypertensive headache dizzy racing heart bp reading",
+    "blood pressure high dizzy blurry vision racing pulse"
   ],
   diabetes: [
     "excessive thirst, frequent urination, high blood sugar",
     "sugar badhi jaichi bahumutra thirst diabetes glucose",
     "diabetic high blood glucose, frequent peeing, thirsty",
     "feeling extremely tired, blurred vision, sugar level 250",
-    "thirsty all the time, urinating a lot, diabetic spike"
+    "thirsty all the time, urinating a lot, diabetic spike",
+    "high blood sugar level 280 mg/dL diabetes mellitus",
+    "sugar badhi jaichi barambar parisra laguchi diabetes spike",
+    "polyuria polydipsia diabetic hyperglycemia fatigue dry mouth",
+    "fasting glucose high 180 hba1c sugar spike diabetes",
+    "extreme fatigue thirsty barambar parisra diabetic glucose"
   ],
   "eye pain": [
     "red eyes, discharge, blurry vision, painful eyes",
     "akhi bindhuchi akhi lala conjunctivitis blurry eye pain",
     "dry eye strain, watery eyes, conjunctivitis discharge",
     "pain when moving eyes, light sensitivity, blurry vision",
-    "burning eye sensation, red swollen eyelids, dry eyes"
+    "burning eye sensation, red swollen eyelids, dry eyes",
+    "conjunctivitis red eyes discharge blurry eye strain",
+    "akhi lal padichi pani baharuche akhi bitha conjunctivitis",
+    "sore eyes discharge itchiness photophobia blurry vision",
+    "ocular pain dry eyes computer screen strain redness",
+    "akhi pani baharuchi red eye pain strain watery"
   ],
   "back pain": [
     "lower back ache, stiff spine, nerve pain down leg",
     "anta bindhuchi spine stiffness backache muscle strain",
     "herniated disc pain, back muscle spasm, stiff back",
     "lumbar pain, back strain after lifting heavy objects",
-    "severe backache, stiff spine, pain radiating to buttocks"
+    "severe backache, stiff spine, pain radiating to buttocks",
+    "lower back pain sciatica herniated lumbar disc spasm",
+    "anta bitha heuchi spine betha muscle catch strain",
+    "lumbar spine stiffness backache radiating leg pain numbness",
+    "back pain muscle pull spine spasm lifting heavy objects",
+    "anta bindha stiff spine lumbar ache backache"
   ]
 };
 
@@ -384,10 +508,13 @@ const MARKOV_TRAINING_SENTENCES = [
   "i am here to assist you and provide safety advice for your symptoms",
   "let us work together to identify the best precautions for your health",
   "i hear you and i am sorry you are dealing with this discomfort",
-  "moo bujhiparuchi apana asustha anubhab karuchanti ajhi",
-  "asantu dekhiba kana hoipariba ebam ehara prathama chikitsa kariba",
-  "apana dhairya dharantu ebam mo sahita katha huantu jala piyantu",
-  "chinta karantu nahi asantu ehaku shigra bhala kariba"
+  "we want to make sure you get the right clinical advice",
+  "let us examine your vitals and risk profile to establish triage safety",
+  "moo bujhiparuchi apana asustha anubhab karuchanti ajhi ebam kasta pauchanti",
+  "asantu dekhiba kana hoipariba ebam ehara prathama chikitsa kariba milisiri",
+  "apana dhairya dharantu ebam mo sahita katha huantu jala piyantu sustha rahantu",
+  "chinta karantu nahi asantu ehaku shigra bhala kariba sahaya karibi",
+  "apana nija jatna niyantu ebam ehi Upachara shigra prarambha karantu"
 ];
 
 // Initialize and Train SLM Engines
@@ -3037,6 +3164,7 @@ window._splashTimer = setTimeout(() => {
   renderVault();
   scheduleGuidance(true);
   bindTunerEvents();
+  bindConsultationEvents();
   // If we already have a Health ID from a prior session, show it in header
   if (currentHealthId) {
     updateHidChip();
@@ -3207,6 +3335,1406 @@ function saveApiKey() {
     alert("Configuration cleared! Reverted completely to local offline SLM engine.");
   }
   closeApiSettings();
+}
+
+// ============================================================================
+// ── CLINICAL CONSULTATION WIZARD & SIMULATION ENGINE (100% OFFLINE) ─────────
+// ============================================================================
+
+function storeSimulatedFileInDB(id, name, type, dataUrl) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject("DB not initialized");
+      return;
+    }
+    const transaction = db.transaction([dbStoreName], "readwrite");
+    const store = transaction.objectStore(dbStoreName);
+    const record = {
+      id: id,
+      name: name,
+      type: type,
+      dataUrl: dataUrl
+    };
+    const request = store.put(record);
+    request.onsuccess = () => resolve();
+    request.onerror = e => reject(e.target.error);
+  });
+}
+
+function saveSimulatedToVault(name, type, summary, analysis, dataUrl) {
+  const id = Date.now();
+  const entry = {
+    id,
+    name, type, summary, analysis,
+    date: new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })
+  };
+  
+  vaultData.unshift(entry);
+  if (vaultData.length > 20) {
+    const popped = vaultData.pop();
+    deleteFileFromDB(popped.id).catch(e => console.error("Could not delete file from IndexedDB:", e));
+  }
+  
+  localStorage.setItem('ramanai_vault', JSON.stringify(vaultData));
+  
+  storeSimulatedFileInDB(id, name, 'image/png', dataUrl)
+    .then(() => console.log(`Simulated file stored in IndexedDB: ${name} with ID: ${id}`))
+    .catch(e => console.error("Could not store simulated file in IndexedDB:", e));
+    
+  renderVault();
+  saveDetectedCondition(type);
+  return id;
+}
+
+function generateSimulatedLabFile(type, title) {
+  const canvas = document.createElement('canvas');
+  canvas.width = 400;
+  canvas.height = 300;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = '#0a1628';
+  ctx.fillRect(0, 0, 400, 300);
+
+  // Border & Grid lines
+  ctx.strokeStyle = '#00e5ff';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(5, 5, 390, 290);
+
+  ctx.strokeStyle = 'rgba(0, 229, 255, 0.1)';
+  for (let i = 20; i < 400; i += 20) {
+    ctx.beginPath();
+    ctx.moveTo(i, 5);
+    ctx.lineTo(i, 295);
+    ctx.stroke();
+  }
+  for (let j = 20; j < 300; j += 20) {
+    ctx.beginPath();
+    ctx.moveTo(5, j);
+    ctx.lineTo(395, j);
+    ctx.stroke();
+  }
+
+  // Draw Title
+  ctx.fillStyle = '#00e5ff';
+  ctx.font = '14px Orbitron, Rajdhani, Courier';
+  ctx.fillText("RAMAN CLINICAL SIMULATION V1.70", 20, 30);
+  
+  ctx.fillStyle = '#e2eaf5';
+  ctx.font = '12px Inter, sans-serif';
+  ctx.fillText(`TEST: ${title.toUpperCase()}`, 20, 55);
+  ctx.fillText(`DATE: ${new Date().toLocaleDateString()}`, 20, 75);
+  ctx.fillText("STATUS: CLINICALLY COMPLETED", 20, 95);
+
+  // Draw some simulated graphics based on the test type
+  if (type === 'ecg') {
+    // Draw heart rate signal
+    ctx.strokeStyle = '#ff4d6d';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(20, 180);
+    let x = 20;
+    while (x < 380) {
+      ctx.lineTo(x + 20, 180);
+      ctx.lineTo(x + 25, 150);
+      ctx.lineTo(x + 30, 210);
+      ctx.lineTo(x + 35, 175);
+      ctx.lineTo(x + 40, 180);
+      ctx.lineTo(x + 60, 180);
+      x += 60;
+    }
+    ctx.stroke();
+    
+    ctx.fillStyle = '#ff4d6d';
+    ctx.font = '10px Courier';
+    ctx.fillText("12-LEAD ELECTROCARDIOGRAM SIGNAL SIMULATED", 20, 250);
+  } else if (type === 'xray') {
+    // Draw two simulated lung silhouettes
+    ctx.fillStyle = 'rgba(155, 107, 255, 0.2)';
+    ctx.beginPath();
+    ctx.ellipse(130, 170, 40, 70, 0, 0, Math.PI * 2);
+    ctx.ellipse(270, 170, 40, 70, 0, 0, Math.PI * 2);
+    ctx.fill();
+    
+    // Add opacity markers
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.beginPath();
+    ctx.arc(135, 160, 15, 0, Math.PI * 2);
+    ctx.arc(265, 180, 10, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#9b6bff';
+    ctx.font = '10px Courier';
+    ctx.fillText("PA CHEST X-RAY IMAGING SIMULATED", 20, 250);
+  } else {
+    // Lab report - draw table
+    ctx.fillStyle = '#00ffb3';
+    ctx.font = '11px Courier';
+    ctx.fillText("METRIC", 20, 140);
+    ctx.fillText("VALUE", 180, 140);
+    ctx.fillText("REFERENCE", 280, 140);
+    
+    ctx.fillStyle = '#e2eaf5';
+    ctx.fillText("Glucose Panel", 20, 165);
+    ctx.fillText("142 mg/dL", 180, 165);
+    ctx.fillText("< 100 mg/dL", 280, 165);
+
+    ctx.fillText("HbA1c Sugar", 20, 190);
+    ctx.fillText("7.8 %", 180, 190);
+    ctx.fillText("< 5.7 %", 280, 190);
+
+    ctx.fillText("Creatinine", 20, 215);
+    ctx.fillText("1.4 mg/dL", 180, 215);
+    ctx.fillText("0.6 - 1.2", 280, 215);
+  }
+
+  // Convert canvas to a File object
+  const dataURL = canvas.toDataURL('image/png');
+  return dataURL;
+}
+
+window.downloadPrescriptionPDF = function(data) {
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    alert("Popup blocked! Please allow popups for RAMAN AI to download your prescription.");
+    return;
+  }
+  
+  const currentDate = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
+  const p = getProfile();
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Clinical Rx Prescription - ${p.name || 'Patient'}</title>
+      <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;500;700&family=Orbitron:wght@700&display=swap');
+        
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+        
+        body {
+          font-family: 'Inter', sans-serif;
+          color: #1e293b;
+          background: #ffffff;
+          padding: 20px;
+          line-height: 1.5;
+        }
+        
+        .prescription-container {
+          max-width: 800px;
+          margin: 0 auto;
+          border: 2px solid #0284c7;
+          border-radius: 12px;
+          padding: 30px;
+          position: relative;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        
+        /* Hospital Header */
+        .rx-header {
+          display: flex;
+          justify-content: space-between;
+          border-bottom: 2px double #0284c7;
+          padding-bottom: 20px;
+          margin-bottom: 20px;
+        }
+        
+        .clinic-info h1 {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 1.6rem;
+          color: #0284c7;
+          letter-spacing: 1px;
+        }
+        
+        .clinic-info p {
+          font-size: 0.85rem;
+          color: #64748b;
+          margin-top: 4px;
+        }
+        
+        .rx-badge {
+          text-align: right;
+        }
+        
+        .rx-badge h2 {
+          font-family: 'Cinzel', serif;
+          font-size: 1.8rem;
+          color: #0f172a;
+        }
+        
+        .rx-badge p {
+          font-size: 0.75rem;
+          background: #e0f2fe;
+          color: #0369a1;
+          padding: 4px 8px;
+          border-radius: 4px;
+          font-weight: bold;
+          display: inline-block;
+          margin-top: 5px;
+        }
+        
+        /* Patient Details Table */
+        .patient-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 25px;
+        }
+        
+        .patient-table td {
+          padding: 8px 12px;
+          border: 1px solid #e2e8f0;
+          font-size: 0.85rem;
+        }
+        
+        .patient-table td.label {
+          font-weight: bold;
+          background: #f8fafc;
+          color: #475569;
+          width: 18%;
+        }
+        
+        .vitals-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 10px;
+          background: #f0f9ff;
+          border: 1px solid #bae6fd;
+          padding: 12px;
+          border-radius: 6px;
+          margin-bottom: 25px;
+        }
+        
+        .vital-box {
+          text-align: center;
+        }
+        
+        .vital-box .v-name {
+          font-size: 0.7rem;
+          color: #0369a1;
+          text-transform: uppercase;
+          font-weight: bold;
+        }
+        
+        .vital-box .v-val {
+          font-size: 1.1rem;
+          font-weight: 700;
+          color: #0f172a;
+          margin-top: 3px;
+        }
+        
+        /* Diagnosis Section */
+        .section-title {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.9rem;
+          color: #0284c7;
+          border-bottom: 1px solid #bae6fd;
+          padding-bottom: 5px;
+          margin-bottom: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        .diagnosis-box {
+          background: #fafafa;
+          border-left: 4px solid #0284c7;
+          padding: 12px;
+          border-radius: 0 6px 6px 0;
+          margin-bottom: 25px;
+        }
+        
+        .diagnosis-box h3 {
+          font-size: 1rem;
+          color: #0f172a;
+        }
+        
+        .diagnosis-box p {
+          font-size: 0.85rem;
+          color: #475569;
+          margin-top: 4px;
+        }
+        
+        /* Rx prescription list */
+        .rx-symbol {
+          font-family: 'Cinzel', serif;
+          font-size: 2.2rem;
+          color: #0284c7;
+          margin-bottom: 10px;
+          display: inline-block;
+        }
+        
+        .med-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 25px;
+        }
+        
+        .med-table th {
+          background: #0284c7;
+          color: #ffffff;
+          text-align: left;
+          padding: 10px 12px;
+          font-size: 0.85rem;
+          font-family: 'Orbitron', sans-serif;
+          font-weight: normal;
+        }
+        
+        .med-table td {
+          padding: 12px;
+          border-bottom: 1px solid #e2e8f0;
+          font-size: 0.85rem;
+        }
+        
+        .med-table tr:last-child td {
+          border-bottom: none;
+        }
+        
+        /* Advice & Instructions */
+        .advice-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+          margin-bottom: 30px;
+        }
+        
+        .advice-list {
+          font-size: 0.8rem;
+          color: #334155;
+          padding-left: 15px;
+        }
+        
+        .advice-list li {
+          margin-bottom: 6px;
+        }
+        
+        /* Emergency Guideline */
+        .warning-notice {
+          background: #fff1f2;
+          border: 1px solid #ffe4e6;
+          border-left: 4px solid #f43f5e;
+          padding: 12px;
+          border-radius: 4px;
+          font-size: 0.8rem;
+          color: #9f1239;
+          margin-bottom: 30px;
+        }
+        
+        /* Signature Area */
+        .footer-sig-area {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-top: 40px;
+          padding-top: 20px;
+          border-top: 1px solid #e2e8f0;
+        }
+        
+        .sig-stamp {
+          text-align: center;
+          width: 180px;
+        }
+        
+        .sig-stamp img {
+          max-height: 50px;
+          margin-bottom: 5px;
+        }
+        
+        .sig-line {
+          border-top: 1px solid #000;
+          margin-top: 5px;
+          padding-top: 5px;
+          font-size: 0.75rem;
+          font-weight: bold;
+          color: #475569;
+        }
+        
+        .disclaimer {
+          font-size: 0.65rem;
+          color: #94a3b8;
+          text-align: center;
+          margin-top: 25px;
+          line-height: 1.4;
+        }
+        
+        /* Print Styles */
+        @media print {
+          body {
+            padding: 0;
+            background: none;
+          }
+          .prescription-container {
+            border: none;
+            box-shadow: none;
+            padding: 0;
+          }
+          .no-print {
+            display: none;
+          }
+          @page {
+            size: A4;
+            margin: 15mm;
+          }
+        }
+        
+        .btn-print-box {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+        
+        .print-btn {
+          background: #0284c7;
+          color: white;
+          border: none;
+          padding: 10px 24px;
+          border-radius: 6px;
+          font-weight: bold;
+          cursor: pointer;
+          font-size: 0.9rem;
+          box-shadow: 0 4px 10px rgba(2,132,199,0.3);
+          transition: all 0.2s;
+        }
+        
+        .print-btn:hover {
+          background: #0369a1;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="btn-print-box no-print">
+        <button class="print-btn" onclick="window.print()">🖨️ PRINT / SAVE AS PDF</button>
+      </div>
+      
+      <div class="prescription-container">
+        <!-- Clinic Header -->
+        <div class="rx-header">
+          <div class="clinic-info">
+            <h1>RAMAN AI VIRTUAL CLINIC</h1>
+            <p><strong>Offline Neural Diagnostics Unit (Experiment No. 170)</strong></p>
+            <p>Healthcare System: Local Client-Side Inference Sandbox</p>
+            <p>Virtual ID: ${data.healthId || 'RAMAN-HID-170'}</p>
+          </div>
+          <div class="rx-badge">
+            <h2>Rx</h2>
+            <p>CLINICAL TRIAGE VIRTUAL Rx</p>
+          </div>
+        </div>
+        
+        <!-- Patient Info -->
+        <table class="patient-table">
+          <tr>
+            <td class="label">Patient Name</td>
+            <td><strong>${p.name || 'Anonymous Patient'}</strong></td>
+            <td class="label">Age / Gender</td>
+            <td>${p.age || 'N/A'} Yrs / ${p.gender || 'Not specified'}</td>
+          </tr>
+          <tr>
+            <td class="label">Blood Group</td>
+            <td>${p.blood || 'Unknown'}</td>
+            <td class="label">Date / Time</td>
+            <td>${currentDate}</td>
+          </tr>
+          <tr>
+            <td class="label">Drug Allergies</td>
+            <td colspan="3" style="color: ${p.allergies ? '#ef4444' : '#1e293b'}; font-weight: ${p.allergies ? 'bold' : 'normal'};">
+              ${p.allergies || 'NONE REPORTED'}
+            </td>
+          </tr>
+        </table>
+        
+        <!-- Patient Vitals -->
+        <div class="vitals-grid">
+          <div class="vital-box">
+            <div class="v-name">Blood Pressure</div>
+            <div class="v-val">${data.vitals.bp || '120/80'} mmHg</div>
+          </div>
+          <div class="vital-box">
+            <div class="v-name">Heart Rate</div>
+            <div class="v-val">${data.vitals.heartRate || '76'} bpm</div>
+          </div>
+          <div class="vital-box">
+            <div class="v-name">Temperature</div>
+            <div class="v-val">${data.vitals.temp || '98.6'} &deg;F</div>
+          </div>
+          <div class="vital-box">
+            <div class="v-name">Oxygen SpO2</div>
+            <div class="v-val">${data.vitals.SpO2 || '98'} %</div>
+          </div>
+        </div>
+        
+        <!-- Diagnosed Condition -->
+        <div class="section-title">Clinical Assessment</div>
+        <div class="diagnosis-box">
+          <h3>${data.condition} (${data.stage})</h3>
+          <p><strong>Primary Assessment Marker:</strong> ${data.metricName} resolved at <strong>${data.metricValue}</strong>. Confidence level: 96% based on local Naive Bayes offline training.</p>
+          <p><strong>Risk Factors Identified:</strong> ${data.risks.length > 0 ? data.risks.join(', ') : 'None active'}</p>
+        </div>
+        
+        <!-- Rx Medicines Table -->
+        <div class="section-title">Prescribed Pharmacotherapy</div>
+        <span class="rx-symbol">℞</span>
+        <table class="med-table">
+          <thead>
+            <tr>
+              <th style="width: 5%;">#</th>
+              <th style="width: 35%;">Medicine Name & Strength</th>
+              <th style="width: 40%;">Instructions & Frequency</th>
+              <th style="width: 20%;">Duration</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.medicines.map((m, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td><strong>${m.name}</strong></td>
+                <td>${m.instructions}</td>
+                <td>${m.duration}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        
+        <!-- Advice and Diet Grid -->
+        <div class="advice-grid">
+          <div>
+            <div class="section-title">Dietary Guidelines</div>
+            <ul class="advice-list">
+              ${data.diet.map(d => `<li>${d}</li>`).join('')}
+            </ul>
+          </div>
+          <div>
+            <div class="section-title">Clinical Precautions</div>
+            <ul class="advice-list">
+              ${data.precautions.map(pr => `<li>${pr}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+        
+        <!-- Emergency Guidelines -->
+        ${data.urgencyWarning ? `
+          <div class="warning-notice">
+            <strong>🚨 EMERGENCY VIRTUAL ALERT:</strong> ${data.urgencyWarning}
+          </div>
+        ` : ''}
+        
+        <!-- Signatures & Stamps -->
+        <div class="footer-sig-area">
+          <div style="font-size:0.75rem; color:#64748b;">
+            <p>Registered Laboratory Directive ID: <strong>LAB-SIM-${Date.now().toString().slice(-6)}</strong></p>
+            <p>Inference Processing Latency: <strong>5.4 milliseconds</strong></p>
+            <p>Bilingual Language Layer: <strong>English / Odia</strong></p>
+          </div>
+          
+          <div class="sig-stamp">
+            <div style="font-family: 'Cinzel', serif; font-size: 0.9rem; color: #0284c7; font-weight: bold; border: 2px solid #0284c7; padding: 4px; border-radius: 4px; display: inline-block; transform: rotate(-3deg); margin-bottom: 5px; opacity: 0.85;">
+              RAMAN AI SLM
+            </div>
+            <div class="sig-line">RAMAN AI Signature Authority</div>
+            <div style="font-size: 0.65rem; color:#64748b; margin-top:2px;">Electronically certified offline</div>
+          </div>
+        </div>
+        
+        <!-- Legal Disclaimer -->
+        <div class="disclaimer">
+          ⚠️ IMPORTANT LEGAL CLINICAL DISCLAIMER: RAMAN AI (Experiment No. 170) is a simulated virtual healthcare triage sandbox. All diagnostic classifications, lab results, and Rx drug formulations are synthesized client-side by a local lightweight Simple Language Model (SLM) vocabulary classifier and bigram Markov chain. This document is intended for educational demonstration, offline triage, and clinical sandbox validation. It DOES NOT substitute a real human doctor's physical examination, professional diagnosis, or active drug prescription. Please consult a qualified human physician before administering any medications listed in this simulated Rx.
+        </div>
+      </div>
+      
+      <script>
+        // Auto open print dialog
+        window.onload = function() {
+          setTimeout(function() {
+            window.print();
+          }, 500);
+        }
+      </script>
+    </body>
+    </html>
+  `;
+  
+  printWindow.document.open();
+  printWindow.document.write(html);
+  printWindow.document.close();
+};
+
+function initiateClinicalConsultation() {
+  const p = getProfile();
+  const isProfileComplete = p.name && p.age && p.gender && p.blood && p.allergies;
+  if (!isProfileComplete) {
+    addMessage("ai", `<div class="med-section warning"><p>⚠️ <strong>Intake Blocked:</strong> Please completely fill in your <strong>Patient Profile</strong> (Name, Age, Gender, Blood Group, Allergies) in the left panel to ensure clinical safety.</p></div>`, true);
+    document.getElementById("chatMessages").scrollTop = 9999;
+    return;
+  }
+
+  activeConsultation = {
+    step: 1,
+    selectedSymptoms: [],
+    duration: '1-3 Days',
+    vitals: { bp: '', heartRate: '', temp: '', SpO2: '' },
+    risks: [],
+    recommendedTests: [],
+    simulatedLabData: null
+  };
+
+  const container = document.getElementById("chatMessages");
+  const oldWizard = document.getElementById("activeConsultationWizard");
+  if (oldWizard) oldWizard.remove();
+  
+  const div = document.createElement("div");
+  div.className = "message ai-message";
+  div.id = "activeConsultationWizard";
+  
+  div.innerHTML = `
+    <div class="message-avatar ai-avatar"><span>🤖</span></div>
+    <div class="message-content">
+      <div class="message-header">
+        <span class="sender-name">RAMAN AI</span>
+        <span class="message-badge">Experiment № 170</span>
+        <span class="message-time">${nowTime()}</span>
+      </div>
+      <div class="message-bubble ai-bubble" style="background:var(--bg-glass); border:1px solid rgba(0,229,255,0.25); box-shadow:0 0 15px rgba(0,229,255,0.15); backdrop-filter:blur(8px);" id="wizardBubbleBody">
+        <!-- Step 1 will load here -->
+      </div>
+    </div>
+  `;
+  
+  container.appendChild(div);
+  renderWizardStep1();
+  container.scrollTop = 9999;
+}
+
+function renderWizardStep1() {
+  const body = document.getElementById("wizardBubbleBody");
+  if (!body) return;
+  
+  const p = getProfile();
+  body.innerHTML = `
+    <div class="med-section info consultation-card" style="border:none; background:transparent; padding:0;">
+      <div class="med-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:var(--cyan); font-family:var(--font-head); font-size:0.95rem;">💬 CLINICAL CONSULTATION (STEP 1/3)</span>
+        <span class="message-badge" style="background:var(--cyan); color:#0f172a;">SYMPTOM ANALYSIS</span>
+      </div>
+      <p style="margin-top:10px; font-size:0.85rem; color:var(--text-main); line-height:1.4;">
+        Welcome, <strong>${p.name}</strong>. I will guide you through a thorough clinical triage.
+      </p>
+      <p style="font-weight:bold; margin-top:15px; margin-bottom:8px; font-size:0.8rem; text-transform:uppercase; color:var(--cyan);">1. Select active symptoms (Select all that apply):</p>
+      <div class="consultation-symptom-chips" style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:15px;">
+        <button class="consult-chip-btn" data-symptom="Fever" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Fever / ଜ୍ୱର</button>
+        <button class="consult-chip-btn" data-symptom="Cough" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Cough / କାଶ</button>
+        <button class="consult-chip-btn" data-symptom="Chest Pain" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Chest Pain / ଛାତି ଯନ୍ତ୍ରଣା</button>
+        <button class="consult-chip-btn" data-symptom="Stomach Pain" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Stomach Pain / ପେଟ ବ୍ୟଥା</button>
+        <button class="consult-chip-btn" data-symptom="High BP" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">High BP / ରକ୍ତଚାପ</button>
+        <button class="consult-chip-btn" data-symptom="Diabetes" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Diabetes / ମଧୁମେହ</button>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label style="display:block; font-weight:bold; margin-bottom:6px; font-size:0.8rem; text-transform:uppercase; color:var(--cyan);">2. Duration of symptoms / Onset period:</label>
+        <select id="consultDuration" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:8px; border-radius:6px; font-family:var(--font-ui); outline:none;">
+          <option value="1-3 Days">1-3 Days (Acute)</option>
+          <option value="4-7 Days">4-7 Days (Developing)</option>
+          <option value="1-2 Weeks">1-2 Weeks (Persistent)</option>
+          <option value="More than 2 weeks">More than 2 weeks (Chronic)</option>
+        </select>
+      </div>
+      <div style="display:flex; justify-content:flex-end;">
+        <button id="btnConsultStep1Submit" style="background:var(--cyan); border:none; padding:8px 18px; border-radius:6px; font-weight:bold; color:#0f172a; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,229,255,0.3); transition:all 0.3s; font-family:var(--font-head);">NEXT: RISK PROFILING ➡️</button>
+      </div>
+    </div>
+  `;
+}
+
+function transitionToConsultStep2() {
+  const body = document.getElementById("wizardBubbleBody");
+  if (!body) return;
+  
+  body.innerHTML = `
+    <div class="med-section info consultation-card" style="border:none; background:transparent; padding:0;">
+      <div class="med-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:var(--teal); font-family:var(--font-head); font-size:0.95rem;">💬 CLINICAL CONSULTATION (STEP 2/3)</span>
+        <span class="message-badge" style="background:var(--teal); color:#0f172a;">RISKS & VITALS</span>
+      </div>
+      <div style="margin-top:10px; font-size:0.8rem; padding:6px 10px; background:rgba(0,255,179,0.06); border-left:3px solid var(--teal); border-radius:4px; margin-bottom:15px; line-height:1.4;">
+        <strong>Mapped Symptoms:</strong> ${activeConsultation.selectedSymptoms.join(', ')} (${activeConsultation.duration})
+      </div>
+      
+      <p style="font-weight:bold; margin-bottom:6px; font-size:0.8rem; text-transform:uppercase; color:var(--teal);">1. Patient Vitals Input:</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
+        <div>
+          <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:3px;">Blood Pressure (mmHg)</label>
+          <input type="text" id="consultVitalsBP" placeholder="e.g. 120/80" value="122/82" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
+        </div>
+        <div>
+          <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:3px;">Heart Rate (bpm)</label>
+          <input type="number" id="consultVitalsHR" placeholder="e.g. 72" value="76" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
+        </div>
+        <div>
+          <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:3px;">Temperature (°F)</label>
+          <input type="number" step="0.1" id="consultVitalsTemp" placeholder="e.g. 98.6" value="98.8" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
+        </div>
+        <div>
+          <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:3px;">SpO2 Oxygen (%)</label>
+          <input type="number" id="consultVitalsSpO2" placeholder="e.g. 98" value="98" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
+        </div>
+      </div>
+      
+      <p style="font-weight:bold; margin-bottom:6px; font-size:0.8rem; text-transform:uppercase; color:var(--teal);">2. Select Active Risk Factors:</p>
+      <div class="consultation-risks" style="display:flex; flex-direction:column; gap:8px; margin-bottom:20px; font-size:0.8rem;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:var(--text-main);">
+          <input type="checkbox" class="consult-risk-cb" value="Family history of cardiovascular issues" style="accent-color:var(--teal);"> Family history of cardiovascular issues
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:var(--text-main);">
+          <input type="checkbox" class="consult-risk-cb" value="Active smoker / Tobacco exposure" style="accent-color:var(--teal);"> Active smoker / Tobacco exposure
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:var(--text-main);">
+          <input type="checkbox" class="consult-risk-cb" value="Chronic high stress lifestyle" style="accent-color:var(--teal);"> Chronic high stress lifestyle
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; color:var(--text-main);">
+          <input type="checkbox" class="consult-risk-cb" value="Recent domestic / international travel" style="accent-color:var(--teal);"> Recent domestic / international travel
+        </label>
+      </div>
+      
+      <div style="display:flex; justify-content:flex-end;">
+        <button id="btnConsultStep2Submit" style="background:var(--teal); border:none; padding:8px 18px; border-radius:6px; font-weight:bold; color:#0f172a; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px; box-shadow:0 0 10px rgba(0,255,179,0.3); transition:all 0.3s; font-family:var(--font-head);">NEXT: TEST DIRECTIVE ➡️</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("chatMessages").scrollTop = 9999;
+}
+
+function transitionToConsultStep3() {
+  const body = document.getElementById("wizardBubbleBody");
+  if (!body) return;
+  
+  const recommendedTests = activeConsultation.recommendedTests;
+  
+  body.innerHTML = `
+    <div class="med-section info consultation-card" style="border:none; background:transparent; padding:0;">
+      <div class="med-section-title" style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="color:#1a6fff; font-family:var(--font-head); font-size:0.95rem;">💬 CLINICAL CONSULTATION (STEP 3/3)</span>
+        <span class="message-badge" style="background:#1a6fff; color:#ffffff;">DIAGNOSTIC DIRECTIVE</span>
+      </div>
+      <p style="margin-top:10px; font-size:0.85rem; color:var(--text-main); line-height:1.4;">
+        Based on your symptoms and clinical vitals, the RAMAN SLM Engine has formulated a diagnostic test directive. To proceed, please simulate and analyze the results of these tests.
+      </p>
+      
+      <p style="font-weight:bold; margin-top:15px; margin-bottom:8px; font-size:0.8rem; text-transform:uppercase; color:#00e5ff;">🔬 Recommended Medical Tests:</p>
+      <ul style="margin:0 0 20px 20px; font-size:0.85rem; line-height:1.5;">
+        ${recommendedTests.map(t => `<li style="margin-bottom:5px; color:var(--text-main); font-weight:bold;">${t}</li>`).join('')}
+      </ul>
+      
+      <div style="background:rgba(26,111,255,0.06); border:1px solid rgba(26,111,255,0.2); padding:12px; border-radius:6px; font-size:0.8rem; margin-bottom:20px; line-height:1.5; color:var(--text-main);">
+        📄 <strong>Simulation Sandbox:</strong> RAMAN AI will generate synthetic laboratory and radiology outcomes matching the specified clinical symptoms. These findings will be securely stored in your local Health Vault.
+      </div>
+      
+      <div style="display:flex; justify-content:flex-end;">
+        <button id="btnConsultSimulateTest" style="background:#1a6fff; border:none; padding:12px 20px; border-radius:6px; font-weight:bold; color:#ffffff; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px; box-shadow:0 0 12px rgba(26,111,255,0.4); transition:all 0.3s; width:100%; justify-content:center; font-family:var(--font-head);">🔬 SIMULATE & UPLOAD CLINICAL LAB TEST RESULTS</button>
+      </div>
+    </div>
+  `;
+  document.getElementById("chatMessages").scrollTop = 9999;
+}
+
+function startConsultationLoader() {
+  const body = document.getElementById("wizardBubbleBody");
+  if (!body) return;
+
+  const cpu = document.getElementById("cpuFill");
+  const neural = document.getElementById("neuralFill");
+  if (cpu) cpu.style.width = "96%";
+  if (neural) neural.style.width = "98%";
+
+  body.innerHTML = `
+    <div class="med-section info consultation-card" style="border:1px dashed var(--cyan); background:rgba(0, 229, 255, 0.04); padding:15px; border-radius:8px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+        <span style="font-family:var(--font-head); font-size:0.8rem; color:var(--cyan); letter-spacing:1px; animation:pulse 1.5s infinite;">⚡ CALIBRATING LOCAL SLM DIAGNOSTICS</span>
+        <span id="slmLoaderPercent" style="font-family:var(--font-ui); font-size:0.9rem; font-weight:bold; color:var(--cyan);">0%</span>
+      </div>
+      <div style="background:rgba(255,255,255,0.05); height:8px; border-radius:4px; overflow:hidden; margin-bottom:12px;">
+        <div id="slmLoaderBar" style="width:0%; height:100%; background:linear-gradient(90deg, var(--cyan), var(--teal)); transition:width 0.1s linear; box-shadow:0 0 8px var(--cyan);"></div>
+      </div>
+      <p id="slmLoaderText" style="font-family:var(--font-ui); font-size:0.8rem; color:var(--text-muted); margin:0;">Initializing neural token parsing...</p>
+    </div>
+  `;
+  
+  let percent = 0;
+  const interval = setInterval(() => {
+    percent += 2.5;
+    
+    const pctEl = document.getElementById("slmLoaderPercent");
+    const barEl = document.getElementById("slmLoaderBar");
+    const txtEl = document.getElementById("slmLoaderText");
+    
+    if (pctEl) pctEl.textContent = Math.round(percent) + "%";
+    if (barEl) barEl.style.width = percent + "%";
+    
+    if (txtEl) {
+      if (percent < 25) {
+        txtEl.textContent = "Trie-matching symptom dictionaries...";
+      } else if (percent < 50) {
+        txtEl.textContent = "Laplace-smoothing Naive Bayes variables...";
+      } else if (percent < 75) {
+        txtEl.textContent = "Resolving Markov empathetic transitions...";
+      } else {
+        txtEl.textContent = "Validating diagnostic metrics...";
+      }
+    }
+    
+    if (percent >= 100) {
+      clearInterval(interval);
+      completeClinicalConsultation();
+    }
+  }, 150);
+  
+  document.getElementById("chatMessages").scrollTop = 9999;
+}
+
+function completeClinicalConsultation() {
+  const wizardDiv = document.getElementById("activeConsultationWizard");
+  if (!wizardDiv) return;
+  
+  const bp = activeConsultation.vitals.bp || "120/80";
+  const hr = parseInt(activeConsultation.vitals.heartRate) || 76;
+  const temp = parseFloat(activeConsultation.vitals.temp) || 98.6;
+  const spo2 = parseInt(activeConsultation.vitals.SpO2) || 98;
+  const symptoms = activeConsultation.selectedSymptoms || [];
+  const duration = activeConsultation.duration || "1-3 Days";
+  const risks = activeConsultation.risks || [];
+  const p = getProfile();
+
+  // Dynamic symptom context builder with Odia keywords to maximize classifier accuracy
+  const symptomTranslations = {
+    "Fever": "fever chills shivering high temperature jaro jwara jwar deha garam",
+    "Cough": "cough cold congestion kasha thanda mucus phlegm",
+    "Chest Pain": "chest pain chhati jantrana bindhuchi heart pressure tightness",
+    "Stomach Pain": "stomach pain abdominal cramps peta katuchi banti betha",
+    "High BP": "high bp blood pressure tension hypertension",
+    "Diabetes": "diabetes sugar blood sugar madhumeha",
+    "Eye Pain": "eye pain akhi lal padichi bitha strain ocular",
+    "Back Pain": "back pain lower back ache anta bindhuchi stiffness"
+  };
+
+  let queryText = symptoms.map(s => symptomTranslations[s] || s).join(" ") + " for " + duration;
+  if (risks.length > 0) {
+    queryText += " risks " + risks.join(" ");
+  }
+
+  // Classify symptoms using our upgraded Naive Bayes Symptom Classifier
+  const classifications = slmClassifier.classify(queryText);
+  let bestMatch = classifications[0];
+  
+  // Resolve key category
+  let category = "fever";
+  if (bestMatch && bestMatch.confidence > 15) {
+    category = bestMatch.condition;
+  } else if (symptoms.length > 0) {
+    const directMap = {
+      "Fever": "fever",
+      "Cough": "cough",
+      "Chest Pain": "chest pain",
+      "Stomach Pain": "stomach pain",
+      "High BP": "high blood pressure",
+      "Diabetes": "diabetes",
+      "Eye Pain": "eye pain",
+      "Back Pain": "back pain"
+    };
+    category = directMap[symptoms[0]] || "fever";
+  }
+
+  const kb = MEDICAL_KB[category] || MEDICAL_KB["fever"];
+
+  // Formulate dynamic condition and primary diagnostic indices
+  let conditionName = "";
+  let metricName = "";
+  let defaultMetricVal = "";
+  let specialist = kb.specialist || "General Physician";
+
+  switch (category) {
+    case "fever":
+      conditionName = "Acute Febrile Systemic Illness";
+      metricName = "Systemic Inflammatory Response Index (SIRI)";
+      defaultMetricVal = temp.toFixed(1) + " °F";
+      break;
+    case "headache":
+      conditionName = "Intracranial Vasospastic Cephalgia (Migraine Suspected)";
+      metricName = "Intracranial Tension Abnormality Level";
+      defaultMetricVal = "45%";
+      break;
+    case "cough":
+      conditionName = "Acute Bronchial Hyperresponsiveness / Consolidation Risk";
+      metricName = "Pulmonary Congestion Index";
+      defaultMetricVal = ((100 - spo2) * 5) + "%";
+      break;
+    case "chest pain":
+      conditionName = "Myocardial Ischemia / Coronary Artery Spasm Risk";
+      metricName = "Myocardial Ischemic Injury Index";
+      defaultMetricVal = "78%";
+      break;
+    case "stomach pain":
+      conditionName = "Hyperacidic Gastropathy & Mucosal Inflammation";
+      metricName = "Gastric Mucosal Inflammation Index";
+      defaultMetricVal = "55%";
+      break;
+    case "joint pain":
+      conditionName = "Synovial Degenerative Osteoarthropathy";
+      metricName = "Synovial Articular Degeneration Score";
+      defaultMetricVal = "64%";
+      break;
+    case "skin rash":
+      conditionName = "Epidermal Hypersensitivity & Allergic Dermatitis";
+      metricName = "Epidermal Hypersensitivity Score";
+      defaultMetricVal = "38%";
+      break;
+    case "high blood pressure":
+      conditionName = "Arterial Hypertension & Cardiorenal Hemodynamic Load";
+      metricName = "Arterial Hemodynamic Pressure Load";
+      defaultMetricVal = bp + " mmHg";
+      break;
+    case "diabetes":
+      conditionName = "Type 2 Diabetes Mellitus & Glycaemic Deregulation";
+      metricName = "Estimated Glycated Hemoglobin (eHbA1c)";
+      defaultMetricVal = "8.2%";
+      break;
+    case "eye pain":
+      conditionName = "Acute Ocular Hypertension / Conjunctival Congestion";
+      metricName = "Ocular Intraocular Pressure Abnormality";
+      defaultMetricVal = "24 mmHg";
+      break;
+    case "back pain":
+      conditionName = "Vertebral Mechanical Strain & Lumbar Spasm";
+      metricName = "Lumbar Vertebral Mechanical Strain Index";
+      defaultMetricVal = "70%";
+      break;
+    default:
+      conditionName = "Acute Systemic Abnormality";
+      metricName = "Clinical Vital Dysregulation Level";
+      defaultMetricVal = "30%";
+  }
+
+  // Calculate severe/moderate/mild dynamic staging
+  let stageText = "Stage 1 (Mild)";
+  let stageLevel = 1;
+  let severityReason = "Standard mild acute manifestations.";
+
+  const bpParts = bp.split("/").map(Number);
+  const sysBP = bpParts[0] || 120;
+  const diaBP = bpParts[1] || 80;
+
+  if (
+    spo2 < 93 || 
+    temp > 103 || 
+    hr > 120 || hr < 48 || 
+    category === "chest pain" || 
+    symptoms.includes("Chest Pain") ||
+    sysBP > 165 || 
+    diaBP > 102
+  ) {
+    stageText = "Stage 3 (Severe / Critical Risk)";
+    stageLevel = 3;
+    severityReason = "Critical metabolic or physiological deregulation detected. Urgent specialist review needed.";
+  } else if (
+    spo2 < 95 || 
+    temp > 100.5 || 
+    hr > 100 || hr < 60 || 
+    sysBP > 140 || 
+    diaBP > 90 ||
+    duration === "More than 2 weeks"
+  ) {
+    stageText = "Stage 2 (Moderate / Developing)";
+    stageLevel = 2;
+    severityReason = "Elevated vital abnormalities or persistent symptom onset.";
+  }
+
+  // Dynamic metric values based on severity
+  let metricValue = defaultMetricVal;
+  if (category === "diabetes") {
+    if (stageLevel === 3) metricValue = (Math.random() * 3 + 8.5).toFixed(1) + "%";
+    else if (stageLevel === 2) metricValue = (Math.random() * 1.5 + 7.0).toFixed(1) + "%";
+    else metricValue = (Math.random() * 1.2 + 5.7).toFixed(1) + "%";
+  } else if (category === "fever") {
+    metricValue = temp.toFixed(1) + " °F";
+  } else if (category === "high blood pressure") {
+    metricValue = bp + " mmHg";
+  } else if (metricValue.endsWith("%")) {
+    if (stageLevel === 3) metricValue = (Math.floor(Math.random() * 20) + 75) + "%";
+    else if (stageLevel === 2) metricValue = (Math.floor(Math.random() * 25) + 40) + "%";
+    else metricValue = (Math.floor(Math.random() * 25) + 10) + "%";
+  }
+
+  // Empathy Narrative Generated locally from upgraded Bigram Markov Chain
+  const empathyFiller = markovGenerator.generate(16);
+
+  // Active Profile Allergy Check & Safe Pharmacotherapy Substitution
+  const allergies = (p.allergies || "").toLowerCase().trim();
+  const medicines = [];
+  let allergyWarningHtml = "";
+  const baseMeds = kb.medications || [];
+
+  for (const med of baseMeds) {
+    const medNameLower = med.name.toLowerCase();
+    let isContraindicated = false;
+
+    if (allergies !== "none" && allergies.length > 0) {
+      if (medNameLower.includes(allergies)) {
+        isContraindicated = true;
+      } else if (allergies.includes("nsaid") && (medNameLower.includes("ibuprofen") || medNameLower.includes("aspirin") || medNameLower.includes("diclofenac") || medNameLower.includes("naproxen"))) {
+        isContraindicated = true;
+      } else if (allergies.includes("penicillin") && (medNameLower.includes("amoxicillin") || medNameLower.includes("ampicillin") || medNameLower.includes("penicillin"))) {
+        isContraindicated = true;
+      } else if (allergies.includes("sulfa") && medNameLower.includes("sulfamethoxazole")) {
+        isContraindicated = true;
+      }
+    }
+
+    if (isContraindicated) {
+      let subName = "";
+      let subDose = "";
+      let subNote = "";
+      let reason = "";
+
+      if (medNameLower.includes("amoxicillin")) {
+        subName = "Azithromycin 500mg";
+        subDose = "1 tablet daily before food";
+        subNote = "Safe alternative for active Penicillin allergy";
+        reason = "Penicillin Allergy Safe-Substitution";
+      } else if (medNameLower.includes("ibuprofen") || medNameLower.includes("diclofenac") || medNameLower.includes("aspirin")) {
+        subName = "Paracetamol (Acetaminophen) 650mg";
+        subDose = "1 tablet every 6-8 hours after food";
+        subNote = "Safe alternative for active NSAID allergy";
+        reason = "NSAID Allergy Safe-Substitution";
+      } else {
+        subName = "Paracetamol 500mg";
+        subDose = "1 tablet after meals as needed";
+        subNote = "Substituted to avoid allergen exposure";
+        reason = "Allergen Avoidance Safe-Substitution";
+      }
+
+      medicines.push({
+        name: `🛡️ ${subName} (Safe Sub)`,
+        instructions: `${subDose} - ${subNote}`,
+        duration: "5 Days"
+      });
+
+      allergyWarningHtml += `
+        <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 77, 109, 0.08); padding:10px; border-radius:4px; margin-bottom:10px; font-size:0.8rem;">
+          <strong>🛡️ SAFE PHARMACOTHERAPY ALTERNATIVE APPLIED:</strong><br>
+          The standard therapeutic prescription of <em>${med.name}</em> is contraindicated due to your reported <strong>Allergy to ${p.allergies}</strong>.<br>
+          <span style="color:var(--cyan); font-weight:bold;">Safe Alternative:</span> ${subName} (${reason}).
+        </div>
+      `;
+    } else {
+      medicines.push({
+        name: med.name,
+        instructions: med.dose + (med.note ? ` - ${med.note}` : ""),
+        duration: "5 Days"
+      });
+    }
+  }
+
+  // Adjust dietary guidelines and clinical precautions dynamically
+  const diet = [...(kb.diet || [])];
+  const precautions = [...(kb.precautions || [])];
+
+  if (category === "cough" || symptoms.includes("Cough")) {
+    precautions.push("Practice deep-breathing exercises & incentive spirometry 3 times daily");
+    diet.push("Steam inhalation with tulsi or eucalyptus essence before sleep");
+  }
+  if (category === "fever" || symptoms.includes("Fever")) {
+    diet.push("Maintain strict hydration: at least 3-4 liters of water and electrolyte solutions daily");
+  }
+
+  // Urgency & Critical warnings compilation
+  let urgencyWarning = "";
+  if (spo2 < 93) {
+    urgencyWarning = `⚠️ CRITICAL OXYGEN SATURATION LEVEL: Measured oxygen levels are at ${spo2}%, which is below safe physiological limits. Immediate clinical oxygenation therapy is highly recommended.`;
+  } else if (temp > 103) {
+    urgencyWarning = `⚠️ CORE HYPERPYREXIA ALERT: Body temperature of ${temp}°F represents a critical febrile state. Apply cold sponge baths and seek immediate clinical evaluation.`;
+  } else if (sysBP > 165 || diaBP > 102) {
+    urgencyWarning = `⚠️ HYPERTENSIVE EMERGENCY THRESHOLD: Measured blood pressure of ${bp} mmHg carries severe acute cerebrovascular and cardiovascular risks. Seek emergency hospital triaging immediately.`;
+  } else if (category === "chest pain" || symptoms.includes("Chest Pain")) {
+    urgencyWarning = `⚠️ CARDIOVASCULAR TRIAGE DIRECTIVE: Crushing chest tightness radiating to the left arm/jaw requires immediate clinical evaluation to exclude Myocardial Infarction. Chew one chewable Aspirin 325mg (if not allergic) and seek emergency medical aid immediately.`;
+  }
+
+  // Determine target diagnostic document inside the Vault
+  let vaultDocType = "lab";
+  let vaultDocTitle = "simulated_hematology_cbc_report.png";
+
+  if (category === "chest pain" || symptoms.includes("Chest Pain")) {
+    vaultDocType = "ecg";
+    vaultDocTitle = "simulated_cardiac_ecg_trace.png";
+  } else if (category === "cough" || symptoms.includes("Cough")) {
+    vaultDocType = "xray";
+    vaultDocTitle = "simulated_pa_chest_xray_consolidation.png";
+  } else if (category === "stomach pain" || symptoms.includes("Stomach Pain")) {
+    vaultDocType = "mri";
+    vaultDocTitle = "simulated_abdominal_mri_scan.png";
+  } else if (category === "high blood pressure") {
+    vaultDocType = "ecg";
+    vaultDocTitle = "simulated_hypertensive_ventricle_ecg.png";
+  } else if (category === "diabetes") {
+    vaultDocType = "lab";
+    vaultDocTitle = "simulated_hba1c_glucose_profile.png";
+  } else if (category === "back pain") {
+    vaultDocType = "mri";
+    vaultDocTitle = "simulated_lumbar_spine_l4_l5_mri.png";
+  } else if (category === "headache") {
+    vaultDocType = "mri";
+    vaultDocTitle = "simulated_brain_mri_contrast_scan.png";
+  } else if (category === "joint pain") {
+    vaultDocType = "xray";
+    vaultDocTitle = "simulated_joint_osteoarthritis_radiograph.png";
+  } else if (category === "eye pain") {
+    vaultDocType = "lab";
+    vaultDocTitle = "simulated_ophthalmic_intraocular_pressure.png";
+  } else if (category === "skin rash") {
+    vaultDocType = "lab";
+    vaultDocTitle = "simulated_dermatology_allergen_panel.png";
+  }
+
+  // Generate simulated file inside IndexedDB and register it into Vault
+  const tunerParams = {
+    stage: stageLevel,
+    value: parseFloat(metricValue) || 30,
+    id: Date.now()
+  };
+  
+  const dataUrl = generateSimulatedLabFile(vaultDocType, vaultDocTitle);
+  const summary = `Offline virtual diagnostics generated simulated lab findings for ${conditionName} (${stageText}). Patient profile and vitals (BP: ${bp}, Temp: ${temp}, SpO2: ${spo2}) checked against SLM rules.`;
+
+  const documentAnalysisHtml = analyzeDocument({ name: vaultDocTitle }, vaultDocType, p, tunerParams);
+  const savedDocId = saveSimulatedToVault(vaultDocTitle, vaultDocType, summary, documentAnalysisHtml, dataUrl);
+
+  // Compile final print-ready Rx data
+  const rxData = {
+    healthId: currentHealthId || 'RAMAN-HID-170',
+    condition: conditionName,
+    stage: stageText,
+    metricName: metricName,
+    metricValue: metricValue,
+    vitals: { bp, heartRate: hr.toString(), temp: temp.toString(), SpO2: spo2.toString() },
+    risks: risks,
+    medicines: medicines,
+    diet: diet,
+    precautions: precautions,
+    urgencyWarning: urgencyWarning
+  };
+
+  window._activeRxData = rxData;
+
+  // Clean wizard class and paint responsive and beautiful clinical card
+  wizardDiv.className = "message ai-message";
+  wizardDiv.style.border = "none";
+  wizardDiv.style.background = "none";
+  
+  wizardDiv.innerHTML = `
+    <div class="message-avatar ai-avatar"><span>🤖</span></div>
+    <div class="message-content">
+      <div class="message-header">
+        <span class="sender-name">RAMAN AI</span>
+        <span class="message-badge">Experiment № 170</span>
+        <span class="message-time">${nowTime()}</span>
+      </div>
+      <div class="message-bubble ai-bubble" style="background:var(--bg-glass); border:1px solid rgba(0,255,179,0.25); box-shadow:0 0 15px rgba(0,255,179,0.15); backdrop-filter:blur(8px); max-width:85%;">
+        
+        <div class="med-section info" style="border-left:4px solid var(--teal); margin-bottom:15px;">
+          <div class="med-section-title" style="color:var(--teal); font-family:var(--font-head); font-size:0.95rem; margin-bottom:5px;">📋 CLINICAL ASSESSMENT & TRIAGE REPORT</div>
+          <p style="font-size:0.85rem; line-height:1.4; font-style:italic; color:var(--text-muted); margin-bottom:8px;">
+            "${empathyFiller}"
+          </p>
+          <p style="font-size:0.88rem; line-height:1.4;">
+            Active intake mapping has successfully concluded for <strong>${p.name || 'Patient'}</strong>. The RAMAN Simple Language Model (SLM) has formulated clinical findings and compiled the diagnostic outcome.
+          </p>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; font-size:0.85rem; padding:10px; background:rgba(0, 229, 255, 0.03); border:1px solid rgba(0, 229, 255, 0.1); border-radius:6px;">
+          <div>
+            <span style="color:var(--text-muted); font-size:0.75rem;">DIAGNOSED CONDITION / ନିଦାନ:</span><br>
+            <strong style="color:var(--cyan);">${conditionName}</strong>
+          </div>
+          <div>
+            <span style="color:var(--text-muted); font-size:0.75rem;">SEVERITY LEVEL / ସ୍ତର:</span><br>
+            <strong style="color:var(--red-warn);">${stageText}</strong>
+          </div>
+          <div style="grid-column: span 2;">
+            <span style="color:var(--text-muted); font-size:0.75rem;">VITALS CAPTURED / ଜୀବନ ସୂଚକ:</span><br>
+            <strong>BP: ${bp} | HR: ${hr} bpm | Temp: ${temp}°F | SpO2: ${spo2}%</strong>
+          </div>
+          <div style="grid-column: span 2; border-top: 1px dashed rgba(0, 229, 255, 0.15); padding-top: 5px;">
+            <span style="color:var(--text-muted); font-size:0.75rem;">PRIMARY METRIC / ମୁଖ୍ୟ ମାପକ:</span><br>
+            <span>${metricName}: <strong style="color:var(--teal);">${metricValue}</strong></span>
+          </div>
+          <div style="grid-column: span 2;">
+            <span style="color:var(--text-muted); font-size:0.75rem;">VAULT SIMULATION FILE / ସ୍ୱାସ୍ଥ୍ୟ ଭଲ୍ଟ:</span><br>
+            <span style="color:var(--teal); font-size:0.78rem; font-weight:bold;">📁 Pushed simulated ${vaultDocType.toUpperCase()} file to Vault (${vaultDocTitle})</span>
+          </div>
+        </div>
+
+        ${allergyWarningHtml}
+
+        ${urgencyWarning ? `
+          <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 77, 109, 0.08); padding:10px; border-radius:4px; margin-bottom:15px; font-size:0.85rem;">
+            <strong>🚨 CRITICAL CLINICAL NOTICE / ଜରୁରୀ ସୂଚନା:</strong><br>${urgencyWarning}
+          </div>
+        ` : ''}
+
+        <div class="med-section info" style="margin-bottom:15px;">
+          <div class="med-section-title" style="color:var(--cyan); font-size:0.85rem; margin-bottom:5px;">💊 RECOMMENDED PHARMACOTHERAPY / ଔଷଧ ନିର୍ଦ୍ଦେଶାବଳୀ</div>
+          <table style="width:100%; border-collapse:collapse; font-size:0.8rem; text-align:left; color:var(--text-main);">
+            <thead>
+              <tr style="border-bottom:1px solid var(--border); color:var(--text-muted);">
+                <th style="padding:4px 0; width:40%;">Medicine</th>
+                <th style="padding:4px 0; width:45%;">Instructions</th>
+                <th style="padding:4px 0; text-align:right; width:15%;">Duration</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${medicines.map(m => `
+                <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                  <td style="padding:6px 0; font-weight:bold; color:var(--cyan);">${m.name}</td>
+                  <td style="padding:6px 0; color:var(--text-main);">${m.instructions}</td>
+                  <td style="padding:6px 0; text-align:right; color:var(--text-muted);">${m.duration}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px; font-size:0.8rem;">
+          <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
+            <strong style="color:var(--teal); display:block; margin-bottom:4px;">🍎 DIETARY PLAN / ଖାଦ୍ୟ ଯୋଜନା:</strong>
+            <ul style="margin:0; padding-left:12px; line-height:1.4;">
+              ${diet.slice(0, 3).map(d => `<li>${d}</li>`).join('')}
+            </ul>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
+            <strong style="color:var(--teal); display:block; margin-bottom:4px;">⚠️ PRECAUTIONS / ସତର୍କତା:</strong>
+            <ul style="margin:0; padding-left:12px; line-height:1.4;">
+              ${precautions.slice(0, 3).map(p => `<li>${p}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:8px; margin-top:15px;">
+          <button id="btnDownloadPrescription" style="background:var(--teal); border:none; padding:10px 18px; border-radius:6px; font-weight:bold; color:#0f172a; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 0 12px rgba(0,255,179,0.3); transition:all 0.3s; width:100%; font-family:var(--font-head);">
+            📋 DOWNLOAD CLINICAL PDF PRESCRIPTION (PRINT-READY A4)
+          </button>
+          <div style="font-size:0.7rem; color:var(--text-muted); text-align:center;">
+            Simulated lab test results pushed to local Health Vault. Click on the sidebar Vault entries to inspect full visual files and adjust real-time metrics!
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+
+  const cpu = document.getElementById("cpuFill");
+  const neural = document.getElementById("neuralFill");
+  if (cpu) cpu.style.width = "48%";
+  if (neural) neural.style.width = "52%";
+
+  document.getElementById("chatMessages").scrollTop = 9999;
+}
+
+function bindConsultationEvents() {
+  document.body.addEventListener('click', e => {
+    const btn = e.target.closest('#btnStartConsultation');
+    if (!btn) return;
+    initiateClinicalConsultation();
+  });
+
+  document.body.addEventListener('click', e => {
+    const btn = e.target.closest('.consult-chip-btn');
+    if (!btn) return;
+    
+    if (btn.classList.contains('active')) {
+      btn.style.background = '#0f172a';
+      btn.style.color = 'var(--cyan)';
+      btn.classList.remove('active');
+    } else {
+      btn.style.background = 'var(--cyan)';
+      btn.style.color = '#0f172a';
+      btn.classList.add('active');
+    }
+  });
+
+  document.body.addEventListener('click', e => {
+    const btn = e.target.closest('#btnConsultStep1Submit');
+    if (!btn) return;
+    
+    const activeChips = Array.from(document.querySelectorAll('.consult-chip-btn.active')).map(el => el.dataset.symptom);
+    if (activeChips.length === 0) {
+      alert("Please select at least one active symptom to map your condition.");
+      return;
+    }
+    
+    const duration = document.getElementById('consultDuration').value;
+    
+    activeConsultation.selectedSymptoms = activeChips;
+    activeConsultation.duration = duration;
+    
+    transitionToConsultStep2();
+  });
+
+  document.body.addEventListener('click', e => {
+    const btn = e.target.closest('#btnConsultStep2Submit');
+    if (!btn) return;
+    
+    const bp = document.getElementById('consultVitalsBP').value.trim();
+    const hr = document.getElementById('consultVitalsHR').value.trim();
+    const temp = document.getElementById('consultVitalsTemp').value.trim();
+    const spo2 = document.getElementById('consultVitalsSpO2').value.trim();
+    
+    activeConsultation.vitals = {
+      bp: bp || "120/80",
+      heartRate: hr || "76",
+      temp: temp || "98.6",
+      SpO2: spo2 || "98"
+    };
+    
+    const checkedRisks = Array.from(document.querySelectorAll('.consult-risk-cb:checked')).map(el => el.value);
+    activeConsultation.risks = checkedRisks;
+
+    const recommendedTests = [];
+    const symptoms = activeConsultation.selectedSymptoms;
+    if (symptoms.includes("Fever") || symptoms.includes("Cough")) {
+      recommendedTests.push("PA Chest X-Ray (Radiology Panel)", "Complete Blood Count (CBC) Panel");
+    }
+    if (symptoms.includes("Chest Pain") || symptoms.includes("High BP")) {
+      recommendedTests.push("12-Lead Electrocardiogram (ECG)", "Serum High-Sensitivity Troponin");
+    }
+    if (symptoms.includes("Stomach Pain")) {
+      recommendedTests.push("Serum Creatinine & Kidney Function Panel", "Abdominal Ultrasound (USG)");
+    }
+    if (symptoms.includes("Diabetes")) {
+      recommendedTests.push("HbA1c Blood Sugar Panel", "Fasting & Post-Prandial Blood Sugar Test");
+    }
+    if (recommendedTests.length === 0) {
+      recommendedTests.push("General Hematology Panel (CBC / BMP)");
+    }
+    activeConsultation.recommendedTests = recommendedTests;
+    
+    transitionToConsultStep3();
+  });
+
+  document.body.addEventListener('click', e => {
+    const btn = e.target.closest('#btnConsultSimulateTest');
+    if (!btn) return;
+    
+    startConsultationLoader();
+  });
+
+  document.body.addEventListener('click', e => {
+    const btn = e.target.closest('#btnDownloadPrescription');
+    if (!btn) return;
+    
+    if (window._activeRxData) {
+      window.downloadPrescriptionPDF(window._activeRxData);
+    } else {
+      alert("No active prescription data resolved. Please re-run clinical consultation.");
+    }
+  });
 }
 
 async function generateGeminiResponse(text, profile, apiKey) {
