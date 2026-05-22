@@ -3314,15 +3314,25 @@ function restoreFromPanel(forceId = null) {
 // ═══════════════════════════════════════════════════════
 
 function openApiSettings() {
-  document.getElementById("apiSettingsBackdrop").style.display = "block";
-  document.getElementById("apiSettingsModal").style.display = "block";
+  const backdrop = document.getElementById("apiSettingsBackdrop");
+  const modal = document.getElementById("apiSettingsModal");
+  if (backdrop) backdrop.style.display = "block";
+  if (modal) {
+    modal.style.display = "block";
+    modal.classList.add("open");
+  }
   const savedKey = localStorage.getItem('ramanai_gemini_api_key');
   if (savedKey) document.getElementById("geminiApiKey").value = savedKey;
 }
 
 function closeApiSettings() {
-  document.getElementById("apiSettingsBackdrop").style.display = "none";
-  document.getElementById("apiSettingsModal").style.display = "none";
+  const backdrop = document.getElementById("apiSettingsBackdrop");
+  const modal = document.getElementById("apiSettingsModal");
+  if (backdrop) backdrop.style.display = "none";
+  if (modal) {
+    modal.style.display = "none";
+    modal.classList.remove("open");
+  }
 }
 
 function saveApiKey() {
