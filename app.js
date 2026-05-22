@@ -602,6 +602,73 @@ async function generateSlmResponse(text, profile) {
     const isWho = /who are you|what are you|your name/i.test(text.trim());
     const isChat = /how are you|talk to me|say something|can we talk|friend|help me/i.test(text.trim());
 
+    // Robust out-of-context check
+    const healthKeywords = new Set([
+      "pain", "fever", "cough", "ache", "hurt", "rash", "blood", "pressure", "sugar", "diabetes", 
+      "stomach", "chest", "head", "joint", "skin", "eye", "back", "throat", "cold", "sick", "ill", 
+      "doctor", "medicine", "pill", "prescription", "health", "treatment", "symptom", "vomit", 
+      "nausea", "dizzy", "fatigue", "weak", "breathe", "breathing", "breath", "oxygen", "temp", 
+      "temperature", "bp", "pulse", "allergy", "allergic", "swelling", "swollen", "bleed", 
+      "bleeding", "wound", "injury", "broken", "sprain", "burn", "infection", "infect", 
+      "jara", "betha", "munda", "chhati", "kasha", "pheta", "ganthi", "charma", "rakta", "chapa", 
+      "aakhi", "anta", "kashta", "deha", "garam", "asthma", "heart", "lung", "liver", "kidney", 
+      "brain", "muscle", "bone", "stiffness", "elbow", "arm", "leg", "knee", "shoulder", "finger", 
+      "toe", "foot", "neck", "ear", "nose", "mouth", "tongue", "tooth", "teeth", "gum", 
+      "stomachache", "headache", "chestache", "backache", "earache", "toothache", "itchy", "itch", 
+      "scratch", "redness", "spots", "pimples", "shivering", "shiver", "chill", "chills", "sweat", 
+      "sweating"
+    ]);
+
+    const outOfContextKeywords = new Set([
+      "breakfast", "lunch", "dinner", "eat", "food", "recipe", "cook", "restaurant", "hotel", 
+      "weather", "sports", "cricket", "football", "movie", "song", "music", "capital", "president", 
+      "prime minister", "price", "buy", "car", "phone", "laptop", "game", "play", "joke", "riddle", 
+      "flight", "ticket", "news", "politics", "crypto", "bitcoin", "stock", "invest", "finance",
+      "code", "program", "developer", "engineering", "history", "geography", "math", "science"
+    ]);
+
+    const cleanWords = text.toLowerCase().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, " ").trim().split(/\s+/);
+    
+    let hasMedicalWord = false;
+    for (const w of cleanWords) {
+      if (slmClassifier.vocabulary.has(w) || healthKeywords.has(w)) {
+        hasMedicalWord = true;
+        break;
+      }
+    }
+
+    let hasOutOfContextWord = false;
+    for (const w of cleanWords) {
+      if (outOfContextKeywords.has(w)) {
+        hasOutOfContextWord = true;
+        break;
+      }
+    }
+
+    const isOutOfContext = (hasOutOfContextWord && !hasMedicalWord) || (cleanWords.length > 2 && !hasMedicalWord && !isHello && !isThanks && !isWho && !isChat);
+
+    if (isOutOfContext) {
+      activeDiagnostic = null;
+      updateContextIndicator();
+      const outOfContextReply = isOr
+        ? `<div class="med-section warning" style="border: 2px solid var(--accent); margin-bottom: 15px;">
+             <div class="med-section-title" style="color:var(--accent); font-weight:bold;">⚠️ ଅପ୍ରାସଙ୍ଗିକ ଅନୁସନ୍ଧାନ (Out of Context Inquiry)</div>
+             <p><strong>ସୂଚନା:</strong> ରାମନ୍ ଏଆଇ (RAMAN AI) ହେଉଛି ଏକ ଉତ୍ସର୍ଗୀକୃତ ଚିକିତ୍ସା ସୂଚନା ପ୍ରଣାଳୀ ଯାହା ରୋଗର ଲକ୍ଷଣ ବିଶ୍ଳେଷଣ, ଜରୁରୀକାଳୀନ ସ୍ଥିତି ଏବଂ ଔଷଧ ନିରାପତ୍ତା ଯାଞ୍ଚ କରିବା ପାଇଁ ଡିଜାଇନ୍ କରାଯାଇଛି।</p>
+             <p>ଦୟାକରି ଆପଣଙ୍କର ସ୍ୱାସ୍ଥ୍ୟଗତ ସମସ୍ୟା କିମ୍ବା ଲକ୍ଷଣ (ଉଦାହରଣ ସ୍ୱרୂପ: ଜ୍ୱର, ମୁଣ୍ଡବିନ୍ଧା, ଛାତିରେ ଯନ୍ତ୍ରଣା) ବିଷୟରେ ପଚାରନ୍ତୁ।</p>
+           </div>`
+        : `<div class="med-section warning" style="border: 2px solid var(--accent); margin-bottom: 15px;">
+             <div class="med-section-title" style="color:var(--accent); font-weight:bold;">⚠️ OUT OF CONTEXT INQUIRY</div>
+             <p><strong>Notice:</strong> RAMAN AI is a dedicated medical intelligence system specializing in symptom analysis, clinical triage, and pathopharmacological safety checks.</p>
+             <p>Please provide symptom-related observations or health-related queries (e.g. fever, headache, chest pain) so that I can assist you safely.</p>
+           </div>`;
+      
+      const footerHint = isOr ? ODIA_DICT.footerHint : "You can also use the <strong>Quick Symptoms</strong> buttons on the left panel for common conditions. 🩺";
+      
+      return `<p>${profileInfo}</p>
+        <p>${outOfContextReply}</p>
+        <p><small style="color: var(--text-muted);">${footerHint}</small></p>`;
+    }
+
     let conversationalReply = "";
     if (isHello) {
       conversationalReply = isOr 

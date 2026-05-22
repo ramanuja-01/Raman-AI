@@ -136,11 +136,11 @@ function assert(condition, message) {
 
 let passes = 0;
 let fails = 0;
-function runTest(name, fn) {
+async function runTest(name, fn) {
   console.log(`\n🏃 Test Suite: ${name}`);
   console.log("-".repeat(name.length + 15));
   try {
-    const success = fn();
+    const success = await fn();
     if (success !== false) {
       passes++;
     } else {
@@ -152,149 +152,178 @@ function runTest(name, fn) {
   }
 }
 
-// ----------------------------------------------------
-// Test 1: N-Gram Tokenizer & Stop Word Filtering
-// ----------------------------------------------------
-runTest("Tokenizer & Stop-Word Verification", () => {
-  const sampleText = "I have a severe chest pain radiating to left arm and jaw";
-  const tokens = slmClassifier.tokenize(sampleText);
-  
-  // Verify stop words like "i", "have", "a", "and" are filtered from raw unigrams
-  const hasI = tokens.includes("i");
-  const hasHave = tokens.includes("have");
-  const hasChestPainBigram = tokens.includes("chest pain");
-  const hasLeftArmJawTrigram = tokens.includes("left arm radiating") || tokens.includes("chest pain radiating");
-  
-  let ok = true;
-  ok = assert(!hasI, "Stop-word 'i' successfully filtered out of tokens.") && ok;
-  ok = assert(!hasHave, "Stop-word 'have' successfully filtered out of tokens.") && ok;
-  ok = assert(hasChestPainBigram, "Tokenizer successfully extracted bigram 'chest pain'.") && ok;
-  ok = assert(tokens.length > 5, `Successfully parsed N-grams. Total extracted: ${tokens.length} tokens.`);
-  return ok;
-});
+// Main execution wrapper to handle async flows
+(async () => {
+  // ----------------------------------------------------
+  // Test 1: N-Gram Tokenizer & Stop Word Filtering
+  // ----------------------------------------------------
+  await runTest("Tokenizer & Stop-Word Verification", () => {
+    const sampleText = "I have a severe chest pain radiating to left arm and jaw";
+    const tokens = slmClassifier.tokenize(sampleText);
+    
+    // Verify stop words like "i", "have", "a", "and" are filtered from raw unigrams
+    const hasI = tokens.includes("i");
+    const hasHave = tokens.includes("have");
+    const hasChestPainBigram = tokens.includes("chest pain");
+    const hasLeftArmJawTrigram = tokens.includes("left arm radiating") || tokens.includes("chest pain radiating");
+    
+    let ok = true;
+    ok = assert(!hasI, "Stop-word 'i' successfully filtered out of tokens.") && ok;
+    ok = assert(!hasHave, "Stop-word 'have' successfully filtered out of tokens.") && ok;
+    ok = assert(hasChestPainBigram, "Tokenizer successfully extracted bigram 'chest pain'.") && ok;
+    ok = assert(tokens.length > 5, `Successfully parsed N-grams. Total extracted: ${tokens.length} tokens.`);
+    return ok;
+  });
 
-// ----------------------------------------------------
-// Test 2: Trie Keyword Phrase Indexing & Match Speed
-// ----------------------------------------------------
-runTest("Trie Substring Sliding phrase Matcher", () => {
-  const samplePhrase = "severe chest pain radiating";
-  const trieMatches = slmClassifier.trie.search(samplePhrase);
-  
-  let hasChestPainMatch = false;
-  for (const m of trieMatches) {
-    if (m.word === "chest pain" && m.category === "chest pain") {
-      hasChestPainMatch = true;
+  // ----------------------------------------------------
+  // Test 2: Trie Keyword Phrase Indexing & Match Speed
+  // ----------------------------------------------------
+  await runTest("Trie Substring Sliding phrase Matcher", () => {
+    const samplePhrase = "severe chest pain radiating";
+    const trieMatches = slmClassifier.trie.search(samplePhrase);
+    
+    let hasChestPainMatch = false;
+    for (const m of trieMatches) {
+      if (m.word === "chest pain" && m.category === "chest pain") {
+        hasChestPainMatch = true;
+      }
     }
-  }
-  
-  let ok = true;
-  ok = assert(trieMatches.length > 0, `Trie found ${trieMatches.length} matching diagnostic categories.`) && ok;
-  ok = assert(hasChestPainMatch, "Trie successfully located category 'chest pain' using sliding bigram search.") && ok;
-  return ok;
-});
+    
+    let ok = true;
+    ok = assert(trieMatches.length > 0, `Trie found ${trieMatches.length} matching diagnostic categories.`) && ok;
+    ok = assert(hasChestPainMatch, "Trie successfully located category 'chest pain' using sliding bigram search.") && ok;
+    return ok;
+  });
 
-// ----------------------------------------------------
-// Test 3: Naive Bayes Classification with TF-IDF Weights
-// ----------------------------------------------------
-runTest("Naive Bayes Classifier & TF-IDF Vectorization", () => {
-  const englishInput = "jaro heuchi shivering body is burning hot and high fever temperature";
-  const classifications = slmClassifier.classify(englishInput);
-  
-  const bestMatch = classifications[0];
-  
-  let ok = true;
-  ok = assert(bestMatch.condition === "fever", `Correctly classified query as '${bestMatch.condition}'.`) && ok;
-  ok = assert(bestMatch.confidence > 50, `High confidence score of ${bestMatch.confidence}% achieved via TF-IDF scaling.`) && ok;
-  return ok;
-});
+  // ----------------------------------------------------
+  // Test 3: Naive Bayes Classification with TF-IDF Weights
+  // ----------------------------------------------------
+  await runTest("Naive Bayes Classifier & TF-IDF Vectorization", () => {
+    const englishInput = "jaro heuchi shivering body is burning hot and high fever temperature";
+    const classifications = slmClassifier.classify(englishInput);
+    
+    const bestMatch = classifications[0];
+    
+    let ok = true;
+    ok = assert(bestMatch.condition === "fever", `Correctly classified query as '${bestMatch.condition}'.`) && ok;
+    ok = assert(bestMatch.confidence > 50, `High confidence score of ${bestMatch.confidence}% achieved via TF-IDF scaling.`) && ok;
+    return ok;
+  });
 
-// ----------------------------------------------------
-// Test 4: Generative Bigram Markov Chain Empathy Coherence
-// ----------------------------------------------------
-runTest("Generative Bigram Markov Chain", () => {
-  const empathyString = markovGenerator.generate(15);
-  
-  let ok = true;
-  ok = assert(empathyString.length > 5, `Empathy text synthesized: "${empathyString}"`) && ok;
-  ok = assert(empathyString.endsWith('.'), "Synthesized text successfully terminates with punctuation.") && ok;
-  return ok;
-});
+  // ----------------------------------------------------
+  // Test 4: Generative Bigram Markov Chain Empathy Coherence
+  // ----------------------------------------------------
+  await runTest("Generative Bigram Markov Chain", () => {
+    const empathyString = markovGenerator.generate(15);
+    
+    let ok = true;
+    ok = assert(empathyString.length > 5, `Empathy text synthesized: "${empathyString}"`) && ok;
+    ok = assert(empathyString.endsWith('.'), "Synthesized text successfully terminates with punctuation.") && ok;
+    return ok;
+  });
 
-// ----------------------------------------------------
-// Test 5: Vitals-driven Staging Triage & Allergy safe substitutions
-// ----------------------------------------------------
-runTest("Clinical Consultation Synthesis, Staging & Safety Substitutions", () => {
-  // Mock a profile with penicillin and NSAID allergies
-  global.getProfile = function() {
-    return {
-      name: "Ramanuja Pathy",
-      age: 28,
-      gender: "Male",
-      blood: "O+",
-      allergies: "Penicillin, NSAID"
+  // ----------------------------------------------------
+  // Test 5: Vitals-driven Staging Triage & Allergy safe substitutions
+  // ----------------------------------------------------
+  await runTest("Clinical Consultation Synthesis, Staging & Safety Substitutions", () => {
+    // Mock a profile with penicillin and NSAID allergies
+    global.getProfile = function() {
+      return {
+        name: "Ramanuja Pathy",
+        age: 28,
+        gender: "Male",
+        blood: "O+",
+        allergies: "Penicillin, NSAID"
+      };
     };
-  };
 
-  // Mock active consultation variables
-  global.activeConsultation = {
-    vitals: {
-      bp: "175/105", // Severe hypertension -> Stage 3
-      heartRate: 110,
-      temp: 104.2, // Hyperpyrexia -> Stage 3
-      SpO2: 91 // Low Oxygen -> Stage 3
-    },
-    selectedSymptoms: ["Fever", "Cough"],
-    duration: "More than 2 weeks",
-    risks: ["Cardiovascular Load"]
-  };
+    // Mock active consultation variables
+    global.activeConsultation = {
+      vitals: {
+        bp: "175/105", // Severe hypertension -> Stage 3
+        heartRate: 110,
+        temp: 104.2, // Hyperpyrexia -> Stage 3
+        SpO2: 91 // Low Oxygen -> Stage 3
+      },
+      selectedSymptoms: ["Fever", "Cough"],
+      duration: "More than 2 weeks",
+      risks: ["Cardiovascular Load"]
+    };
 
-  global.currentHealthId = "RAMAN-HID-170";
-  global.nowTime = () => "01:05 AM";
+    global.currentHealthId = "RAMAN-HID-170";
+    global.nowTime = () => "01:05 AM";
 
-  // Mock IndexedDB vault functions
-  global.generateSimulatedLabFile = () => "data:image/png;base64,mock_data";
-  global.analyzeDocument = () => "<div>Mock Document Analysis</div>";
-  global.saveSimulatedToVault = () => "mock_saved_doc_id";
+    // Mock IndexedDB vault functions
+    global.generateSimulatedLabFile = () => "data:image/png;base64,mock_data";
+    global.analyzeDocument = () => "<div>Mock Document Analysis</div>";
+    global.saveSimulatedToVault = () => "mock_saved_doc_id";
 
-  // Temporarily inject Amoxicillin into fever medications to verify penicillin substitution
-  const originalFeverMeds = [...MEDICAL_KB.fever.medications];
-  MEDICAL_KB.fever.medications.push({ name: "Amoxicillin 500mg", dose: "1 tablet three times daily", note: "Antibiotic for bacterial fever" });
+    // Temporarily inject Amoxicillin into fever medications to verify penicillin substitution
+    const originalFeverMeds = [...MEDICAL_KB.fever.medications];
+    MEDICAL_KB.fever.medications.push({ name: "Amoxicillin 500mg", dose: "1 tablet three times daily", note: "Antibiotic for bacterial fever" });
 
-  // Execute clinical compilation
-  completeClinicalConsultation();
+    // Execute clinical compilation
+    completeClinicalConsultation();
 
-  const rx = window._activeRxData;
-  let ok = true;
-  
-  ok = assert(rx !== undefined, "Consultation successfully resolved print-ready Rx data.") && ok;
-  ok = assert(rx.stage.includes("Stage 3"), `Vitals threshold triaged patient into extreme '${rx.stage}'.`) && ok;
-  ok = assert(rx.urgencyWarning.length > 0, "Critical clinical oxygen/hypertensive emergency alerts compiled successfully.") && ok;
-  
-  // Verify safety substitution took place:
-  // Fever standard drug is Amoxicillin (Penicillin class).
-  // It should be substituted with Azithromycin.
-  const hasPenicillinMed = rx.medicines.some(m => m.name.toLowerCase().includes("amoxicillin"));
-  const hasAzithromycinSub = rx.medicines.some(m => m.name.toLowerCase().includes("azithromycin"));
-  
-  ok = assert(!hasPenicillinMed, "Contraindicated Amoxicillin blocked from prescription.") && ok;
-  ok = assert(hasAzithromycinSub, "🛡️ Safely substituted Penicillin allergen with Azithromycin.") && ok;
-  
-  // Restore original fever medications
-  MEDICAL_KB.fever.medications = originalFeverMeds;
-  
-  return ok;
-});
+    const rx = window._activeRxData;
+    let ok = true;
+    
+    ok = assert(rx !== undefined, "Consultation successfully resolved print-ready Rx data.") && ok;
+    ok = assert(rx.stage.includes("Stage 3"), `Vitals threshold triaged patient into extreme '${rx.stage}'.`) && ok;
+    ok = assert(rx.urgencyWarning.length > 0, "Critical clinical oxygen/hypertensive emergency alerts compiled successfully.") && ok;
+    
+    // Verify safety substitution took place:
+    // Fever standard drug is Amoxicillin (Penicillin class).
+    // It should be substituted with Azithromycin.
+    const hasPenicillinMed = rx.medicines.some(m => m.name.toLowerCase().includes("amoxicillin"));
+    const hasAzithromycinSub = rx.medicines.some(m => m.name.toLowerCase().includes("azithromycin"));
+    
+    ok = assert(!hasPenicillinMed, "Contraindicated Amoxicillin blocked from prescription.") && ok;
+    ok = assert(hasAzithromycinSub, "🛡️ Safely substituted Penicillin allergen with Azithromycin.") && ok;
+    
+    // Restore original fever medications
+    MEDICAL_KB.fever.medications = originalFeverMeds;
+    
+    return ok;
+  });
 
-// --- Diagnostic Summary ---
-console.log("\n==================================================================");
-console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");
-console.log("==================================================================");
-console.log(`Total Passed Suites: ${passes}`);
-console.log(`Total Failed Suites: ${fails}`);
-if (fails === 0) {
-  console.log("🌟 ALL LOCAL ALGORITHMS FUNCTIONING PERFECTLY AT SUB-MILLISECOND SPEEDS!");
-} else {
-  console.error("🚨 CORRECTION REQUIRED IN SLM inference pipeline.");
-  process.exit(1);
-}
-console.log("==================================================================\n");
+  // ----------------------------------------------------
+  // Test 6: Bilingual Out-of-Context Interception & Refusing Rules
+  // ----------------------------------------------------
+  await runTest("Bilingual Out-of-Context Interception", async () => {
+    let ok = true;
+    
+    // 1. English out-of-context test
+    window.currentLang = 'en';
+    const enQuery = "what can i eat in breakfast";
+    const enResponse = await generateSlmResponse(enQuery, { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" });
+    
+    const hasEnWarning = enResponse.includes("OUT OF CONTEXT INQUIRY") || enResponse.includes("RAMAN AI is a dedicated medical intelligence system");
+    ok = assert(hasEnWarning, "English breakfast query correctly intercepted with OUT OF CONTEXT warning block.") && ok;
+    
+    // 2. Odia out-of-context test
+    window.currentLang = 'or';
+    const orQuery = "ଆଜି କ୍ରିକେଟ ମ୍ୟାଚ କିଏ ଜିତିବ"; // "Who will win today's cricket match?"
+    const orResponse = await generateSlmResponse(orQuery, { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" });
+    
+    const hasOrWarning = orResponse.includes("ଅପ୍ରାସଙ୍ଗିକ ଅନୁସନ୍ଧାନ") || orResponse.includes("Out of Context Inquiry");
+    ok = assert(hasOrWarning, "Odia cricket query correctly intercepted with bilingual Out of Context warning block.") && ok;
+
+    return ok;
+  });
+
+  // --- Diagnostic Summary ---
+  console.log("\n==================================================================");
+  console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");
+  console.log("==================================================================");
+  console.log(`Total Passed Suites: ${passes}`);
+  console.log(`Total Failed Suites: ${fails}`);
+  if (fails === 0) {
+    console.log("🌟 ALL LOCAL ALGORITHMS FUNCTIONING PERFECTLY AT SUB-MILLISECOND SPEEDS!");
+    process.exit(0);
+  } else {
+    console.error("🚨 CORRECTION REQUIRED IN SLM inference pipeline.");
+    process.exit(1);
+  }
+  console.log("==================================================================\n");
+})();
