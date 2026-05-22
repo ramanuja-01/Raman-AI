@@ -169,6 +169,10 @@
           <button class="btn-session-mgr" id="btnApiSettings" onclick="openApiSettings()" style="margin-right: 5px;">
             <span>⚙️</span> API SETTINGS
           </button>
+          <!-- SLM Training Hub Button -->
+          <button class="btn-session-mgr" id="btnTrainingHub" onclick="openTrainingHub()" style="margin-right: 5px; border-color: var(--accent) !important; color: var(--accent) !important; box-shadow: 0 0 8px rgba(0, 255, 179, 0.2);">
+            <span>🧠</span> SLM TRAINING HUB
+          </button>
           <!-- Help / Tutorial Button -->
           <button class="btn-session-mgr" id="btnHelp" onclick="openTutorial()" style="margin-right: 5px;">
             <span>❓</span> HELP
@@ -311,6 +315,106 @@
         <div style="display:flex; gap:10px; justify-content:flex-end;">
           <button class="sp-btn sp-btn-end" id="vaultModalDeleteBtn" style="background:#ff4d6d; border-color:#ff4d6d; color:white; padding: 8px 16px;">✕ Delete Document</button>
           <button class="sp-btn sp-btn-new" onclick="closeVaultModal()" style="padding: 8px 16px;">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SLM TRAINING HUB MODAL ===== -->
+    <div class="session-panel-backdrop" id="trainingHubBackdrop" onclick="closeTrainingHub()" style="display:none;"></div>
+    <div class="tutorial-modal" id="trainingHubModal" style="display:none; max-width: 850px; width: 90%;">
+      <div class="tut-header">
+        <span>🧠 RAMAN LOCAL SLM TRAINING CENTER & SANDBOX</span>
+        <button class="sp-close" onclick="closeTrainingHub()">✕</button>
+      </div>
+      <div class="tut-body" style="display:flex; flex-direction:column; gap:15px; max-height: 80vh; overflow-y: auto;">
+        <!-- Stats Dashboard -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; background: rgba(0, 255, 179, 0.05); border: 1px solid rgba(0, 255, 179, 0.15); border-radius: 8px; padding: 12px; text-align: center;">
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">CLASSES</div>
+            <strong id="hubStatClasses" style="color:var(--cyan); font-size:1.2rem; font-family:var(--font-head);">11</strong>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">TOTAL DOCS</div>
+            <strong id="hubStatDocs" style="color:var(--cyan); font-size:1.2rem; font-family:var(--font-head);">154</strong>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">VOCAB SIZE</div>
+            <strong id="hubStatVocab" style="color:var(--cyan); font-size:1.2rem; font-family:var(--font-head);">1,280</strong>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">MARKOV PAIRS</div>
+            <strong id="hubStatMarkov" style="color:var(--cyan); font-size:1.2rem; font-family:var(--font-head);">1,840</strong>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">TRAINING SPEED</div>
+            <strong style="color:var(--accent); font-size:1.2rem; font-family:var(--font-head);">&lt; 3.5ms</strong>
+          </div>
+        </div>
+
+        <div class="hub-columns" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+          <!-- Left Column: Training Console & Corpus Injector -->
+          <div style="display:flex; flex-direction:column; gap:15px;">
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <strong style="color:var(--cyan); display:block; font-size:0.85rem; letter-spacing: 0.5px;">🛠️ RIGOROUS RE-TRAINING CONTROL</strong>
+              <p style="margin:0; font-size:0.75rem; color:var(--text-muted); line-height:1.4;">Re-index N-grams, compute TF-IDF relevance ratios, rebuild Trie search vectors, and recompile bigram transitions.</p>
+              <button class="sp-btn sp-btn-new" id="btnHubRetrain" onclick="retrainModel()" style="background:var(--accent); border-color:var(--accent); color:#0f172a; width: 100%; font-weight:bold;">
+                ⚡ RUN RIGOROUS RETRAINING
+              </button>
+              
+              <!-- Console Log Trace -->
+              <div id="hubConsoleLog" style="background:#050a12; border:1px solid rgba(0, 229, 255, 0.15); border-radius:6px; height:120px; font-family:monospace; font-size:0.7rem; color:var(--cyan); padding:8px; overflow-y:auto; white-space:pre-wrap; line-height:1.4; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);">[INFO] System waiting for neural calibration...</div>
+            </div>
+
+            <!-- Corpus Injector Form -->
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+              <strong style="color:var(--cyan); display:block; font-size:0.85rem; letter-spacing: 0.5px;">➕ INJECT NEW SYMPTOM DATA</strong>
+              <p style="margin:0; font-size:0.75rem; color:var(--text-muted); line-height:1.4;">Add customized training phrases in English or Odia to dynamically reinforce and expand the classifier's features.</p>
+              
+              <div style="display:flex; gap:8px;">
+                <div style="flex:1;">
+                  <label for="hubInjectCondition" style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:2px;">Target Condition</label>
+                  <select id="hubInjectCondition" style="width:100%; padding:6px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; font-size:0.75rem;">
+                    <option value="fever">Fever / ଜ୍ୱର</option>
+                    <option value="headache">Headache / ମୁଣ୍ଡବିନ୍ଧା Suspected Migraine</option>
+                    <option value="cough">Cough / କାଶ Bronchial Risk</option>
+                    <option value="chest pain">Chest Pain / ଛାତି ଯନ୍ତ୍ରଣา Ischemia</option>
+                    <option value="stomach pain">Stomach Pain / ପେଟ କାଟୁଛି</option>
+                    <option value="joint pain">Joint Pain / ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ</option>
+                    <option value="skin rash">Skin Rash / ଚର୍ମ କୁଣ୍ଡେଇ ହେବା</option>
+                    <option value="high blood pressure">Hypertension / ଉଚ୍ଚ ରକ୍ତਚାପ</option>
+                    <option value="diabetes">Diabetes / ମଧୁମେହ Glycemia</option>
+                    <option value="eye pain">Eye Pain / ଆଖି ବିନ୍ଧา Ocular</option>
+                    <option value="back pain">Back Pain / ଅଣ୍ଟା ବୀନ୍ଧା Lumbar</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label for="hubInjectPhrase" style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:2px;">Symptom Observation Phrase (English or Odia)</label>
+                <input type="text" id="hubInjectPhrase" placeholder="e.g. jara hela deha tharuchi gachha hot" style="width:100%; padding:8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; font-size:0.75rem;" autocomplete="off" />
+              </div>
+
+              <button class="sp-btn" id="btnHubInject" onclick="injectTrainingPhrase()" style="width:100%; padding:6px; border-color:var(--teal); color:var(--teal); font-size:0.75rem;">
+                📥 INJECT INTO TRAINING CORPUS & RETRAIN
+              </button>
+            </div>
+          </div>
+
+          <!-- Right Column: Live Diagnostics Sandbox Playground -->
+          <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+            <strong style="color:var(--accent); display:block; font-size:0.85rem; letter-spacing: 0.5px;">🔬 LIVE INFERENCE SANDBOX PLAYGROUND</strong>
+            <p style="margin:0; font-size:0.75rem; color:var(--text-muted); line-height:1.4;">Type any arbitrary symptom phrase below. The sandboxed Bayesian classifier will calculate posterior probabilities on-the-fly and update the probability meters instantly.</p>
+            
+            <input type="text" id="hubSandboxInput" placeholder="Type symptom keywords here (e.g. chest pain deha garam)..." oninput="runSandboxInference(this.value)" style="width:100%; padding:8px; background:rgba(0,255,179,0.25); color:white; border-radius:4px; font-size:0.8rem; box-shadow:0 0 8px rgba(0,255,179,0.1);" autocomplete="off" />
+            
+            <div id="hubSandboxOutputList" style="display:flex; flex-direction:column; gap:8px; margin-top:5px; max-height:220px; overflow-y:auto; padding-right:5px;">
+              <!-- Dynamic Diagnostic Probability meters rendered here -->
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:5px;">
+          <button class="sp-btn sp-btn-new" onclick="closeTrainingHub()" style="padding: 8px 16px;">Close Training Center</button>
         </div>
       </div>
     </div>

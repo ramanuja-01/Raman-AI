@@ -1011,11 +1011,50 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
   }
 }
 
-.tutorial-modal, .session-panel, #vaultModal {
+.tutorial-modal, .session-panel, #vaultModal, #trainingHubModal {
   background: rgba(8, 18, 35, 0.85) !important;
   backdrop-filter: blur(20px) saturate(180%) !important;
   -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
   border: 1px solid rgba(0, 229, 255, 0.2) !important;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 229, 255, 0.1) !important;
   border-radius: 16px !important;
+}
+
+/* ===== SLM TRAINING HUB CUSTOM CSS ===== */
+.sandbox-meter-row {
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.sandbox-meter-row:hover {
+  background: rgba(0, 255, 179, 0.03);
+  border-color: rgba(0, 255, 179, 0.2);
+  transform: translateX(2px);
+}
+
+.sandbox-meter-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+}
+
+.sandbox-meter-bar-bg {
+  background: rgba(255, 255, 255, 0.05);
+  height: 6px;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.sandbox-meter-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  box-shadow: 0 0 6px var(--cyan);
 }
