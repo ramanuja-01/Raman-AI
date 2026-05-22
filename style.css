@@ -44,7 +44,7 @@ html, body {
   100% { transform: translateY(-10vh) scale(1); opacity: 0; }
 }
 
-/* DNA decorations */
+/* DNA decorations with breathing animation */
 .dna-left, .dna-right {
   position: fixed; top: 0; bottom: 0; width: 3px; z-index: 0;
   background: repeating-linear-gradient(
@@ -53,9 +53,15 @@ html, body {
     var(--cyan) 14px, var(--cyan) 16px
   );
   opacity: 0.12;
+  animation: dnaBreathe 4s ease-in-out infinite alternate;
 }
-.dna-left  { left: 20px; }
-.dna-right { right: 20px; }
+.dna-left  { left: 20px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); }
+.dna-right { right: 20px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); }
+
+@keyframes dnaBreathe {
+  0% { opacity: 0.08; filter: drop-shadow(0 0 1px var(--cyan)); }
+  100% { opacity: 0.24; filter: drop-shadow(0 0 8px var(--cyan)); }
+}
 
 /* ===== SPLASH SCREEN ===== */
 .splash-screen {
@@ -991,4 +997,25 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
   .msg-content { font-size: 0.85rem; padding: 12px 14px; }
   .msg-group { max-width: 90%; }
   .chat-input { font-size: 0.85rem; }
+}
+
+/* ===== ADDITIONAL CYBERPUNK PREMIUM EFFECTS ===== */
+@keyframes pulseGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 77, 109, 0.2);
+    border-color: rgba(255, 77, 109, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 20px rgba(255, 77, 109, 0.7);
+    border-color: rgba(255, 77, 109, 1);
+  }
+}
+
+.tutorial-modal, .session-panel, #vaultModal {
+  background: rgba(8, 18, 35, 0.85) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+  border: 1px solid rgba(0, 229, 255, 0.2) !important;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 229, 255, 0.1) !important;
+  border-radius: 16px !important;
 }

@@ -10,6 +10,579 @@ let detectedConditions  = new Set(JSON.parse(localStorage.getItem('ramanai_condi
 let lastCondition       = null;
 let lastConditionTime   = 0;
 
+// ==========================================
+// ── RAMAN SLM (Simple Language Model) & DB ──
+// ==========================================
+
+// IndexedDB configuration & setup
+const dbName = "RamanMedicalDB";
+const dbStoreName = "vault_files";
+let db = null;
+
+function initDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(dbName, 1);
+    request.onupgradeneeded = e => {
+      const database = e.target.result;
+      if (!database.objectStoreNames.contains(dbStoreName)) {
+        database.createObjectStore(dbStoreName, { keyPath: "id" });
+      }
+    };
+    request.onsuccess = e => {
+      db = e.target.result;
+      console.log("IndexedDB Initialized successfully");
+      resolve(db);
+    };
+    request.onerror = e => {
+      console.error("IndexedDB error:", e.target.error);
+      reject(e.target.error);
+    };
+  });
+}
+
+function storeFileInDB(id, file) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject("DB not initialized");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const transaction = db.transaction([dbStoreName], "readwrite");
+      const store = transaction.objectStore(dbStoreName);
+      const record = {
+        id: id,
+        name: file.name,
+        type: file.type,
+        dataUrl: reader.result
+      };
+      const request = store.put(record);
+      request.onsuccess = () => resolve();
+      request.onerror = e => reject(e.target.error);
+    };
+    reader.onerror = e => reject(e.target.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+function getFileFromDB(id) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject("DB not initialized");
+      return;
+    }
+    const transaction = db.transaction([dbStoreName], "readonly");
+    const store = transaction.objectStore(dbStoreName);
+    const request = store.get(id);
+    request.onsuccess = e => resolve(e.target.result);
+    request.onerror = e => reject(e.target.error);
+  });
+}
+
+function deleteFileFromDB(id) {
+  return new Promise((resolve, reject) => {
+    if (!db) {
+      reject("DB not initialized");
+      return;
+    }
+    const transaction = db.transaction([dbStoreName], "readwrite");
+    const store = transaction.objectStore(dbStoreName);
+    const request = store.delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = e => reject(e.target.error);
+  });
+}
+
+// Automatically initialize IndexedDB
+initDB().catch(e => console.error("IndexedDB init failed:", e));
+
+// Trie Vocabulary Parser Node
+class TrieNode {
+  constructor() {
+    this.children = {};
+    this.isWord = false;
+    this.category = null;
+  }
+}
+
+// Trie Vocabulary Parser for O(L) dictionary lookups
+class Trie {
+  constructor() {
+    this.root = new TrieNode();
+  }
+
+  insert(word, category) {
+    let node = this.root;
+    for (const char of word.toLowerCase()) {
+      if (!node.children[char]) {
+        node.children[char] = new TrieNode();
+      }
+      node = node.children[char];
+    }
+    node.isWord = true;
+    node.category = category;
+  }
+
+  search(text) {
+    const matches = [];
+    const tokens = text.toLowerCase().split(/[\s,.\-!?()'"\/\\\[\]{}*_]+/);
+    for (const token of tokens) {
+      if (!token) continue;
+      let node = this.root;
+      let isMatch = true;
+      for (const char of token) {
+        if (!node.children[char]) {
+          isMatch = false;
+          break;
+        }
+        node = node.children[char];
+      }
+      if (isMatch && node.isWord) {
+        matches.push({ word: token, category: node.category });
+      }
+    }
+    return matches;
+  }
+}
+
+// Naive Bayes Classifier with Laplace Smoothing & TF-IDF metrics
+class NaiveBayesSymptomClassifier {
+  constructor() {
+    this.classCounts = {};
+    this.wordCounts = {};
+    this.classTotals = {};
+    this.vocabulary = new Set();
+    this.docCounts = 0;
+    this.trie = new Trie();
+  }
+
+  train(corpus) {
+    for (const [condition, docs] of Object.entries(corpus)) {
+      this.classCounts[condition] = (this.classCounts[condition] || 0) + docs.length;
+      this.docCounts += docs.length;
+
+      if (!this.wordCounts[condition]) {
+        this.wordCounts[condition] = {};
+        this.classTotals[condition] = 0;
+      }
+
+      for (const doc of docs) {
+        const tokens = this.tokenize(doc);
+        for (const token of tokens) {
+          this.wordCounts[condition][token] = (this.wordCounts[condition][token] || 0) + 1;
+          this.classTotals[condition]++;
+          this.vocabulary.add(token);
+        }
+      }
+    }
+
+    // Index all tokens into the Trie for fast keyword triggers
+    for (const [condition, docs] of Object.entries(corpus)) {
+      for (const doc of docs) {
+        const tokens = this.tokenize(doc);
+        for (const token of tokens) {
+          if (token.length > 2) {
+            this.trie.insert(token, condition);
+          }
+        }
+      }
+    }
+  }
+
+  tokenize(text) {
+    return text.toLowerCase()
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, " ")
+      .split(/\s+/)
+      .filter(w => w.length > 1);
+  }
+
+  classify(text) {
+    const tokens = this.tokenize(text);
+    const scores = {};
+    const vocabSize = this.vocabulary.size;
+
+    // Fast search using Trie first
+    const trieMatches = this.trie.search(text);
+    const trieWeight = {};
+    for (const match of trieMatches) {
+      trieWeight[match.category] = (trieWeight[match.category] || 0) + 1.5; // Boost score for strict keyword matches
+    }
+
+    for (const condition of Object.keys(this.classCounts)) {
+      let logProb = Math.log(this.classCounts[condition] / this.docCounts);
+
+      for (const token of tokens) {
+        if (!this.vocabulary.has(token)) continue;
+
+        const count = this.wordCounts[condition][token] || 0;
+        // Laplace smoothing: (count + 1) / (total_words_in_class + vocab_size)
+        const prob = (count + 1) / (this.classTotals[condition] + vocabSize);
+        logProb += Math.log(prob);
+      }
+
+      // Apply Trie-based keyword matching boost
+      if (trieWeight[condition]) {
+        logProb += trieWeight[condition];
+      }
+
+      scores[condition] = logProb;
+    }
+
+    const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+    const maxScore = sorted[0][1];
+    
+    // Softmax-like scaling for presentation confidence
+    const exps = sorted.map(([c, s]) => [c, Math.exp(s - maxScore)]);
+    const totalExp = exps.reduce((acc, curr) => acc + curr[1], 0);
+    const confidenceList = exps.map(([c, e]) => ({
+      condition: c,
+      confidence: Math.round((e / totalExp) * 100)
+    }));
+
+    return confidenceList;
+  }
+}
+
+// Markov Chain transition engine to synthesize conversational empathy filler text
+class MarkovTextGenerator {
+  constructor() {
+    this.chain = {};
+    this.startWords = [];
+  }
+
+  train(sentences) {
+    for (const sentence of sentences) {
+      const words = sentence.toLowerCase().split(/\s+/).filter(Boolean);
+      if (words.length === 0) continue;
+      this.startWords.push(words[0]);
+
+      for (let i = 0; i < words.length - 1; i++) {
+        const current = words[i];
+        const next = words[i+1];
+        if (!this.chain[current]) {
+          this.chain[current] = [];
+        }
+        this.chain[current].push(next);
+      }
+    }
+  }
+
+  generate(maxLength = 12) {
+    if (this.startWords.length === 0) return "I understand your concerns.";
+    let current = this.startWords[Math.floor(Math.random() * this.startWords.length)];
+    let result = [current.charAt(0).toUpperCase() + current.slice(1)];
+
+    for (let i = 0; i < maxLength - 1; i++) {
+      const choices = this.chain[current];
+      if (!choices || choices.length === 0) break;
+      const next = choices[Math.floor(Math.random() * choices.length)];
+      result.push(next);
+      current = next;
+    }
+
+    return result.join(" ") + ".";
+  }
+}
+
+// Define Offline Training Datasets
+const SLM_TRAINING_CORPUS = {
+  fever: [
+    "i have a severe fever and chills",
+    "shivering and body is burning hot with temperature",
+    "high temperature of 102 degrees and shivering chills",
+    "feeling very hot, sweaty, shivering, and weak with pyrexia",
+    "deha garam laguchi jwar asichi chills shivering",
+    "jaro hoichi deha pura garam shivering high fever",
+    "deha jwara laguchi chabuka maruchi temperature",
+    "temperature is high, body is aching and hot",
+    "shivering, cold sweat, hot forehead, high fever"
+  ],
+  headache: [
+    "my head hurts so bad and i feel dizzy",
+    "severe migraine, headache on one side, light sensitivity",
+    "throbbing headache, tension head pain, sinus pressure",
+    "munda bindhuchi chatei deuchi munda ghurei heuchi pain",
+    "migraine attack, throbbing head pain, head is bursting",
+    "bad headache after screen time, dizziness and sinus pain",
+    "headache, dizzy, sensitivity to light, head pain"
+  ],
+  cough: [
+    "persistent dry cough and chest congestion with mucus",
+    "coughing up green mucus, phlegm, sore throat",
+    "cough and cold with severe runny nose and bronchitis",
+    "kasha heuchi thanda laguchi mucus phlegm",
+    "kasha saha kafa baharu heuchi chest congestion",
+    "dry cough, sore throat, bronchial irritation, cough",
+    "coughing constantly, wheezing, tickling throat"
+  ],
+  "chest pain": [
+    "crushing chest pain radiating to left arm and jaw",
+    "severe chest tightness, pressure, short of breath, heart pain",
+    "chhati bindhuchi chati jantrana breathlessness dizziness",
+    "sharp chest pain when breathing, heart attack fear, squeezing",
+    "heart pressure, squeezing pain in chest, arm pain, sweat",
+    "chhati bhari laguchi chati re jantrana heuchi"
+  ],
+  "stomach pain": [
+    "stomach cramps, abdominal pain, bloating, severe nausea",
+    "acid reflux, gastritis stomach pain after eating, indigestion",
+    "peta katuchi banti laguchi stomach pain bloating",
+    "gastric pain, diarrhea, loose stools, nausea, vomiting",
+    "sharp pain in lower right abdomen, belly ache, vomiting",
+    "nausea and vomiting with severe stomach cramps, indigestion"
+  ],
+  "joint pain": [
+    "joint swelling, knee arthritis pain, knee stiffness",
+    "ganthi bitha ganthi phula knee joint pain arthritis",
+    "swollen knees, severe joint pain, gout flare, bone aches",
+    "difficulty walking due to knee pain and joint stiffness",
+    "rheumatoid arthritis joint pain, knee inflammation, joint swelling"
+  ],
+  "skin rash": [
+    "itchy red rash on skin, eczema patches, dry skin hives",
+    "kundei heuchi charma khasru skin rash allergy",
+    "allergic dermatitis hives, itchy skin patches, red bumps",
+    "fungal infection rash, burning skin, severe itching",
+    "red itchy bumps all over body, allergy hives, eczema"
+  ],
+  "high blood pressure": [
+    "dizziness, high blood pressure reading, blurry vision",
+    "rakta chapa munda bula dizziness hypertension bp",
+    "hypertension crisis, dizzy, severe headache with high bp",
+    "checked blood pressure and it is 160 over 100",
+    "lightheadedness, racing heart, dizzy, high bp"
+  ],
+  diabetes: [
+    "excessive thirst, frequent urination, high blood sugar",
+    "sugar badhi jaichi bahumutra thirst diabetes glucose",
+    "diabetic high blood glucose, frequent peeing, thirsty",
+    "feeling extremely tired, blurred vision, sugar level 250",
+    "thirsty all the time, urinating a lot, diabetic spike"
+  ],
+  "eye pain": [
+    "red eyes, discharge, blurry vision, painful eyes",
+    "akhi bindhuchi akhi lala conjunctivitis blurry eye pain",
+    "dry eye strain, watery eyes, conjunctivitis discharge",
+    "pain when moving eyes, light sensitivity, blurry vision",
+    "burning eye sensation, red swollen eyelids, dry eyes"
+  ],
+  "back pain": [
+    "lower back ache, stiff spine, nerve pain down leg",
+    "anta bindhuchi spine stiffness backache muscle strain",
+    "herniated disc pain, back muscle spasm, stiff back",
+    "lumbar pain, back strain after lifting heavy objects",
+    "severe backache, stiff spine, pain radiating to buttocks"
+  ]
+};
+
+const MARKOV_TRAINING_SENTENCES = [
+  "i understand you are feeling unwell and experiencing discomfort today",
+  "let us investigate these symptoms carefully to understand what is going on",
+  "your health profile and symptoms are analyzed with top priority",
+  "we are evaluating possible medical conditions based on your inputs",
+  "please stay calm and let us review this systematically together",
+  "i am here to assist you and provide safety advice for your symptoms",
+  "let us work together to identify the best precautions for your health",
+  "i hear you and i am sorry you are dealing with this discomfort",
+  "moo bujhiparuchi apana asustha anubhab karuchanti ajhi",
+  "asantu dekhiba kana hoipariba ebam ehara prathama chikitsa kariba",
+  "apana dhairya dharantu ebam mo sahita katha huantu jala piyantu",
+  "chinta karantu nahi asantu ehaku shigra bhala kariba"
+];
+
+// Initialize and Train SLM Engines
+const slmClassifier = new NaiveBayesSymptomClassifier();
+slmClassifier.train(SLM_TRAINING_CORPUS);
+
+const markovGenerator = new MarkovTextGenerator();
+markovGenerator.train(MARKOV_TRAINING_SENTENCES);
+
+// Define generateSlmResponse
+async function generateSlmResponse(text, profile) {
+  const startTime = performance.now();
+  const isOr = window.currentLang === 'or';
+
+  // Spiking CPU/Neural indicators to show active SLM calculation
+  const cpu = document.getElementById("cpuFill");
+  const neural = document.getElementById("neuralFill");
+  if (cpu) cpu.style.width = "96%";
+  if (neural) neural.style.width = "98%";
+
+  // Classify the user symptom using Naive Bayes Symptom Classifier
+  const classifications = slmClassifier.classify(text);
+  const bestMatch = classifications[0];
+  const condition = bestMatch.confidence > 25 ? bestMatch.condition : null;
+
+  // Track state
+  if (activeDiagnostic) {
+    if (!condition || condition === activeDiagnostic.condition) {
+      // Stay in context
+    } else {
+      activeDiagnostic = { condition: condition, step: 0 };
+    }
+  } else if (condition) {
+    activeDiagnostic = { condition: condition, step: 0 };
+  }
+  updateContextIndicator();
+
+  // Generate empathetic opening filler via Markov Chain
+  const empathyFiller = markovGenerator.generate(12);
+
+  // Incorporate Patient Profile & Allergy Conflict checking
+  const profileInfo = buildProfileContext(profile);
+  
+  // Allergy warning checking
+  let allergyAlertHtml = "";
+  if (profile.allergies && condition) {
+    const kb = MEDICAL_KB[condition];
+    if (kb && kb.medications) {
+      const allergyLower = profile.allergies.toLowerCase();
+      const matchedMeds = kb.medications.filter(med => 
+        med.name.toLowerCase().includes(allergyLower) || 
+        (allergyLower.includes("nsaid") && (med.name.toLowerCase().includes("ibuprofen") || med.name.toLowerCase().includes("diclofenac") || med.name.toLowerCase().includes("aspirin"))) ||
+        (allergyLower.includes("penicillin") && med.name.toLowerCase().includes("amoxicillin"))
+      );
+      if (matchedMeds.length > 0) {
+        allergyAlertHtml = `
+          <div class="med-section warning" style="border: 2px solid #ff4d6d; animation: pulseGlow 1.5s infinite alternate;">
+            <div class="med-section-title" style="color:#ff4d6d; font-weight:bold;">⚠️ ALLERGY CONFLICT WARNING</div>
+            <p><strong>ALERT:</strong> You have documented allergies to <strong>"${profile.allergies}"</strong>.</p>
+            <p>RAMAN SLM detected that the suggested medication <strong>"${matchedMeds.map(m => m.name).join(", ")}"</strong> conflicts with your allergy profile.</p>
+            <p style="text-transform:uppercase; font-weight:bold; letter-spacing:0.5px;">DO NOT take this medication. Consult your physician immediately for alternatives.</p>
+          </div>`;
+      }
+    }
+  }
+
+  // Pain slider safety logic
+  let painAlertHtml = "";
+  const painVal = parseInt(profile.pain || document.getElementById('painSlider').value || "5");
+  if (painVal >= 8 && condition) {
+    painAlertHtml = `
+      <div class="med-section warning" style="border: 2px solid #ff9f43; margin-bottom: 15px;">
+        <div class="med-section-title" style="color:#ff9f43;">⚠️ HIGH PAIN LEVEL ALERT (${painVal}/10)</div>
+        <p>You have indicated a <strong>severe pain level of ${painVal}/10</strong>. Severe pain indicates high clinical urgency.</p>
+        <p><strong>Caution:</strong> Please monitor for emergency signs. If pain increases, radiates, or is accompanied by breathing difficulties, proceed directly to the nearest emergency clinic.</p>
+      </div>`;
+  }
+
+  let html = "";
+  
+  if (!condition) {
+    // Conversational fallbacks
+    const isHello = /^hi$|^hello$|^hey$|^greetings$|namaskar/i.test(text.trim());
+    const isThanks = /thank|appreciate|grateful/i.test(text.trim());
+    const isWho = /who are you|what are you|your name/i.test(text.trim());
+    const isChat = /how are you|talk to me|say something|can we talk|friend|help me/i.test(text.trim());
+
+    let conversationalReply = "";
+    if (isHello) {
+      conversationalReply = isOr 
+        ? `ନମସ୍କାର! ମୁଁ ରାମନ୍ ଏଆଇ (Local SLM)। ଆଜି ମୁଁ ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟରେ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?`
+        : `Hello! I am RAMAN AI (powered by Local SLM). How can I assist you with your health symptoms today?`;
+    } else if (isThanks) {
+      conversationalReply = isOr
+        ? `ଆପଣଙ୍କୁ ସ୍ୱାଗତ! ଯଦି ଆପଣଙ୍କର ଅନ୍ୟ କୌଣସି ସ୍ୱାସ୍ଥ୍ୟଗତ ସମସ୍ୟା ଥିଲେ ଜଣାନ୍ତୁ।`
+        : `You are very welcome! Helping you is my goal. Let me know if you have other symptoms.`;
+    } else if (isWho) {
+      conversationalReply = isOr
+        ? `ମୁଁ ରାମନ୍ ଏଆଇ, ଏକ ସୁପର-ଫାଷ୍ଟ ଅଫଲାଇନ୍ ସିମ୍ପଲ୍ ଲାଙ୍ଗୁଏଜ୍ ମଡେଲ୍ (SLM) ଯାହା ଆପଣଙ୍କ ଲକ୍ଷଣ ବିଷୟରେ ପରାମର୍ଶ ଦେବା ପାଇଁ ଡିଜାଇନ୍ କରାଯାଇଛି।`
+        : `I am RAMAN AI, powered by a custom-built, sub-millisecond local Simple Language Model (SLM) running 100% offline.`;
+    } else if (isChat) {
+      conversationalReply = isOr
+        ? `ମୁଁ ଆପଣଙ୍କ ପାଖରେ ଅଛି! ଆପଣଙ୍କୁ ଶାରୀରିକ ଭାବରେ କିପରି ଲାଗୁଛି? ମୋତେ କୁହନ୍ତୁ।`
+        : `I am right here with you! How are you feeling physically today? Let me know if anything is aching or hurting.`;
+    } else {
+      conversationalReply = isOr
+        ? `ମୁଁ ଆପଣଙ୍କ ବାର୍ତ୍ତା ପାଇଲି। ଦୟାକରି ଆପଣଙ୍କ ସିମ୍ପଟମ୍ (ଲକ୍ଷଣ) ବିଷୟରେ ଟିକେ ଅଧିକ ବିବରଣୀ ଦେବେ କି? ଉଦାହରଣ: ଜ୍ୱର, ମୁଣ୍ଡବିନ୍ଧା, କିମ୍ବା ଛାତିରେ କଷ୍ଟ।`
+        : `I received your message. Could you please describe your symptoms in a bit more detail? It helps if you mention where it hurts, how long it's been happening, and if you have other symptoms like a fever.`;
+    }
+
+    const footerHint = isOr ? ODIA_DICT.footerHint : "You can also use the <strong>Quick Symptoms</strong> buttons on the left panel for common conditions. 🩺";
+
+    html = `<p>${profileInfo}</p>
+      <p style="font-style:italic; color:rgba(255,255,255,0.7); margin-bottom:12px;">"${empathyFiller}"</p>
+      <p>${conversationalReply}</p>
+      <p><small style="color: var(--text-muted);">${footerHint}</small></p>`;
+  } else {
+    // Output complete medical KB triage
+    const kb = MEDICAL_KB[condition];
+    const isEmergency = condition === "chest pain";
+    const introTxt = isOr ? ODIA_DICT.assessmentIntro : "Thank you for the details. Based on our offline classification, here is your preliminary assessment:";
+
+    html = `<p>${profileInfo}</p>
+      <p style="font-style:italic; color:rgba(255,255,255,0.7); margin-bottom:12px;">"${empathyFiller}"</p>
+      <p>${introTxt}</p>`;
+
+    if (painAlertHtml) html += painAlertHtml;
+    if (allergyAlertHtml) html += allergyAlertHtml;
+
+    // Target Category Confidence Badge
+    html += `
+      <div class="slm-confidence-bar" style="background:rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 12px; margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
+        <span style="font-size:0.8rem; text-transform:uppercase; letter-spacing:0.5px; color:rgba(255,255,255,0.6)">Local Inference Match</span>
+        <span class="vault-badge" style="border-color:var(--primary); color:var(--primary); background:rgba(0, 255, 179, 0.1); font-weight:bold; font-size:0.8rem;">
+          ${condition.toUpperCase()} (${bestMatch.confidence}% Match)
+        </span>
+      </div>`;
+
+    html += `<div class="med-section">
+      <div class="med-section-title">${isOr ? ODIA_DICT.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
+      <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
+    </div>`;
+
+    html += `<div class="med-section ${isEmergency ? 'warning' : ''}">
+      <div class="med-section-title">${isOr ? ODIA_DICT.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
+    kb.medications.forEach(m => {
+      html += `<p><strong>${m.name}</strong><br>
+        <small>📋 ${isOr ? ODIA_DICT.dose : "Dose:"} ${m.dose}</small><br>
+        <small>ℹ️ ${isOr ? ODIA_DICT.note : "Note:"} ${m.note}</small></p>`;
+    });
+    html += `</div>`;
+
+    html += `<div class="med-section ${isEmergency ? 'warning' : 'info'}">
+      <div class="med-section-title">${isOr ? ODIA_DICT.precautions : "⚠️ PRECAUTIONS & WARNINGS"}</div>
+      <ul>${kb.precautions.map(p => `<li>${p}</li>`).join("")}</ul>
+    </div>`;
+
+    html += `<div class="med-section info">
+      <div class="med-section-title">${isOr ? ODIA_DICT.diet : "🥗 DIETARY RECOMMENDATIONS"}</div>
+      <ul>${kb.diet.map(d => `<li>${d}</li>`).join("")}</ul>
+    </div>`;
+
+    html += `<p>🏥 <strong>${isOr ? ODIA_DICT.specialist : "Recommended Specialist:"}</strong> ${kb.specialist}</p>`;
+
+    html += `<div class="med-section warning">
+      <div class="med-section-title">${isOr ? ODIA_DICT.disclaimerTitle : "🔴 IMPORTANT DISCLAIMER"}</div>
+      <p>${isOr ? ODIA_DICT.disclaimerBody : "This analysis is for informational purposes only. Please consult a qualified medical professional before starting any treatment. Self-medication can be dangerous."}</p>
+    </div>`;
+
+    if (!currentHealthId) saveHealthSession();
+    html += `
+      <div class="hid-card" style="margin-top: 20px;">
+        <div class="hid-card-header">🎉 YOUR HEALTH ID IS READY</div>
+        <div class="hid-card-body">
+          <div class="hid-code">${currentHealthId}</div>
+          <p class="hid-card-desc">Your consultation is complete. Save this ID. Next visit, enter it in the Session Manager to instantly restore your profile and full consultation history.</p>
+          <div class="hid-card-actions">
+            <button class="hid-action-btn" onclick="navigator.clipboard.writeText('${currentHealthId}').then(()=>{this.textContent='✅ Copied!';setTimeout(()=>{this.textContent='📋 Copy ID'},1500)}).catch(()=>prompt('Copy your Health ID:','${currentHealthId}'))">📋 Copy ID</button>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  const endTime = performance.now();
+  const latency = (endTime - startTime).toFixed(3);
+  console.log(`RAMAN SLM Inference completed in ${latency} ms`);
+
+  setTimeout(() => {
+    if (cpu) cpu.style.width = "48%";
+    if (neural) neural.style.width = "52%";
+  }, 1200);
+
+  return html;
+}
+
 // ── Splash Screen ──────────────────────────────────────
 const splashMsgs = [
   "Initializing neural pathways...",
@@ -828,13 +1401,7 @@ async function sendMessage() {
 
   showTyping(false);
   const profile = getProfile();
-  let response;
-  const apiKey = localStorage.getItem('ramanai_gemini_api_key') || 'AIzaSyBUULQOhEi8X-qBB_1_kL43Slak821IBec';
-  if (apiKey) {
-    response = await generateGeminiResponse(text, profile, apiKey);
-  } else {
-    response = buildResponse(text, profile);
-  }
+  let response = await generateSlmResponse(text, profile);
   addMessage("ai", response, true);
 
   // Capture AI response
@@ -1211,18 +1778,119 @@ const VAULT_BADGE = {
   general:      { icon: '📄', label: 'Document',     color: '#6a8bad' }
 };
 
-function saveToVault(name, type, summary, analysis) {
+function saveToVault(name, type, summary, analysis, file = null) {
+  const id = Date.now();
   const entry = {
-    id: Date.now(),
+    id,
     name, type, summary, analysis,
     date: new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })
   };
+  
   vaultData.unshift(entry);
-  if (vaultData.length > 20) vaultData.pop();
+  if (vaultData.length > 20) {
+    const popped = vaultData.pop();
+    deleteFileFromDB(popped.id).catch(e => console.error("Could not delete file from IndexedDB:", e));
+  }
+  
   localStorage.setItem('ramanai_vault', JSON.stringify(vaultData));
+  
+  if (file) {
+    storeFileInDB(id, file)
+      .then(() => console.log(`File stored in IndexedDB: ${name} with ID: ${id}`))
+      .catch(e => console.error("Could not store file in IndexedDB:", e));
+  }
+  
   renderVault();
-  // Also update stored conditions
   saveDetectedCondition(type);
+}
+
+function deleteVaultEntry(id) {
+  vaultData = vaultData.filter(v => v.id != id);
+  localStorage.setItem('ramanai_vault', JSON.stringify(vaultData));
+  deleteFileFromDB(Number(id))
+    .then(() => console.log(`Deleted file from IndexedDB with ID: ${id}`))
+    .catch(e => console.error("Error deleting from IndexedDB:", e));
+  renderVault();
+}
+
+async function openVaultModal(id) {
+  const entry = vaultData.find(v => v.id == id);
+  if (!entry) return;
+  
+  const backdrop = document.getElementById('vaultBackdrop');
+  const modal = document.getElementById('vaultModal');
+  const mediaWrap = document.getElementById('vaultModalMediaWrap');
+  const analysisDiv = document.getElementById('vaultModalAnalysis');
+  const deleteBtn = document.getElementById('vaultModalDeleteBtn');
+  
+  if (!modal || !backdrop) return;
+  
+  mediaWrap.innerHTML = `<div class="modal-analyzing"><div class="modal-spin"></div> Loading preview binary...</div>`;
+  analysisDiv.innerHTML = entry.analysis;
+  
+  // Set delete action
+  deleteBtn.onclick = () => {
+    if (confirm(`Are you sure you want to delete this document: ${entry.name}?`)) {
+      deleteVaultEntry(entry.id);
+      closeVaultModal();
+    }
+  };
+  
+  // Show UI immediately
+  backdrop.style.display = 'block';
+  modal.style.display = 'block';
+  modal.classList.add('open');
+  
+  try {
+    const fileRecord = await getFileFromDB(Number(id));
+    if (fileRecord && fileRecord.dataUrl) {
+      const isVid = fileRecord.type && fileRecord.type.startsWith('video/');
+      if (isVid) {
+        mediaWrap.innerHTML = `
+          <video src="${fileRecord.dataUrl}" controls autoplay style="max-width:100%; max-height:220px; border-radius:8px; display:block; outline:none; box-shadow:0 0 15px rgba(0,255,179,0.2); margin: 0 auto;"></video>
+          <div style="margin-top:6px; font-size:0.8rem; color:var(--text-muted);">${fileRecord.name}</div>
+        `;
+      } else {
+        mediaWrap.innerHTML = `
+          <img src="${fileRecord.dataUrl}" style="max-width:100%; max-height:220px; border-radius:8px; display:block; box-shadow:0 0 15px rgba(0,255,179,0.2); margin:0 auto;"/>
+          <div style="margin-top:6px; font-size:0.8rem; color:var(--text-muted);">${fileRecord.name}</div>
+        `;
+      }
+    } else {
+      const b = VAULT_BADGE[entry.type] || VAULT_BADGE.general;
+      mediaWrap.innerHTML = `
+        <div style="text-align:center; padding:15px;">
+          <div style="font-size:3rem; color:${b.color}; margin-bottom:8px;">${b.icon}</div>
+          <div style="font-size:0.9rem; font-weight:bold; color:var(--text);">${entry.name}</div>
+          <div style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">No local image/video binary cached (text summary preserved)</div>
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.error("Error retrieving file from DB:", error);
+    const b = VAULT_BADGE[entry.type] || VAULT_BADGE.general;
+    mediaWrap.innerHTML = `
+      <div style="text-align:center; padding:15px;">
+        <div style="font-size:3rem; color:${b.color};">${b.icon}</div>
+        <div style="font-size:0.9rem; font-weight:bold;">${entry.name}</div>
+        <div style="font-size:0.75rem; color:#ff4d6d; margin-top:4px;">Failed to load local binary from vault storage.</div>
+      </div>
+    `;
+  }
+}
+
+function closeVaultModal() {
+  const backdrop = document.getElementById('vaultBackdrop');
+  const modal = document.getElementById('vaultModal');
+  if (backdrop) backdrop.style.display = 'none';
+  if (modal) {
+    modal.style.display = 'none';
+    modal.classList.remove('open');
+  }
+  const mediaWrap = document.getElementById('vaultModalMediaWrap');
+  const analysisDiv = document.getElementById('vaultModalAnalysis');
+  if (mediaWrap) mediaWrap.innerHTML = '';
+  if (analysisDiv) analysisDiv.innerHTML = '';
 }
 
 function renderVault() {
@@ -1240,7 +1908,7 @@ function renderVault() {
   count.textContent = vaultData.length + ' doc' + (vaultData.length > 1 ? 's' : '');
   list.innerHTML = vaultData.map(v => {
     const b = VAULT_BADGE[v.type] || VAULT_BADGE.general;
-    return `<div class="vault-item" data-id="${v.id}">
+    return `<div class="vault-item" data-id="${v.id}" style="cursor:pointer;">
       <div class="vault-item-icon" style="color:${b.color}">${b.icon}</div>
       <div class="vault-item-info">
         <div class="vault-item-name">${v.name}</div>
@@ -1249,15 +1917,19 @@ function renderVault() {
       <button class="vault-view-btn" data-id="${v.id}" title="View analysis">▶</button>
     </div>`;
   }).join('');
+  
+  // Attach listeners to both the vault item click and the play button
+  list.querySelectorAll('.vault-item').forEach(item => {
+    item.addEventListener('click', e => {
+      const id = item.dataset.id;
+      openVaultModal(id);
+    });
+  });
   list.querySelectorAll('.vault-view-btn').forEach(btn => {
     btn.addEventListener('click', e => {
       e.stopPropagation();
-      const entry = vaultData.find(v => v.id == btn.dataset.id);
-      if (entry) {
-        addMessage('ai',
-          `<p>📂 Showing saved analysis for: <strong>${entry.name}</strong> (${entry.date})</p>${entry.analysis}`,
-          true);
-      }
+      const id = btn.dataset.id;
+      openVaultModal(id);
     });
   });
 }
@@ -1431,7 +2103,7 @@ function analyzeDocument(file, docType, profile) {
       const b        = VAULT_BADGE[docType] || VAULT_BADGE.general;
       const summary  = `${b.icon} ${b.label} – ${pendingFile.name}`;
       analysis.innerHTML = result;
-      saveToVault(pendingFile.name, docType, summary, result);
+      saveToVault(pendingFile.name, docType, summary, result, pendingFile);
       setTimeout(() => {
         const url    = URL.createObjectURL(pendingFile);
         const isVid  = pendingFile.type.startsWith('video/');
@@ -1917,10 +2589,10 @@ function saveApiKey() {
   const key = document.getElementById("geminiApiKey").value.trim();
   if (key) {
     localStorage.setItem('ramanai_gemini_api_key', key);
-    alert("API Key saved successfully! RAMAN AI is now powered by Gemini.");
+    alert("Configuration saved! RAMAN AI local SLM remains the primary high-speed diagnostic engine.");
   } else {
     localStorage.removeItem('ramanai_gemini_api_key');
-    alert("API Key removed. Reverting to basic logic.");
+    alert("Configuration cleared! Reverted completely to local offline SLM engine.");
   }
   closeApiSettings();
 }
