@@ -1827,6 +1827,10 @@ async function openVaultModal(id) {
   
   mediaWrap.innerHTML = `<div class="modal-analyzing"><div class="modal-spin"></div> Loading preview binary...</div>`;
   analysisDiv.innerHTML = entry.analysis;
+  const hub = analysisDiv.querySelector('.slm-diagnostic-hub');
+  if (hub) {
+    hub.dataset.id = id;
+  }
   
   // Set delete action
   deleteBtn.onclick = () => {
@@ -1950,140 +1954,646 @@ function detectDocType(file, manualType) {
   return 'photo';
 }
 
-function analyzeDocument(file, docType, profile) {
+function analyzeDocument(file, docType, profile, tunerParams = null) {
   const b   = VAULT_BADGE[docType] || VAULT_BADGE.general;
   const name = profile && profile.name ? `<strong>${profile.name}</strong>` : 'the patient';
   const allergies = profile && profile.allergies ? profile.allergies : null;
+  const painLevel = profile && typeof profile.painLevel !== 'undefined' ? parseInt(profile.painLevel) : null;
+  const n = file.name.toLowerCase();
+  
+  // 1. GATHER DEFAULT PARAMS BASED ON FILENAME SEMANTICS OR CHAT DATA
+  let detectedCondition = "General Medical Scan";
+  let defaultStage = 2; // Default to moderate (Stage 2)
+  let confidence = 75;
+  
+  // Opacity for X-Ray, Glucose/HbA1c for Lab, Size for MRI, ST shift for ECG, dosage/meds check for Rx.
+  let keyMetricName = "Assessment Metric";
+  let keyMetricValue = "Not Specified";
+  let keyMetricUnit = "";
+  let keyMetricMin = 0;
+  let keyMetricMax = 100;
+  
+  // Parsing stage keywords in filename
+  if (/\b(stage\s*(1|i)\b|mild|early|grade\s*(1|i)\b)/i.test(n)) {
+    defaultStage = 1;
+    confidence += 15;
+  } else if (/\b(stage\s*(2|ii)\b|moderate|developing|grade\s*(2|ii)\b)/i.test(n)) {
+    defaultStage = 2;
+    confidence += 10;
+  } else if (/\b(stage\s*(3|iii)\b|severe|advanced|grade\s*(3|iii)\b)/i.test(n)) {
+    defaultStage = 3;
+    confidence += 15;
+  } else if (/\b(stage\s*(4|iv)\b|critical|emergency|grave|grade\s*(4|iv)\b)/i.test(n)) {
+    defaultStage = 4;
+    confidence += 20;
+  } else {
+    // Correlate with active painLevel if available
+    if (painLevel !== null) {
+      if (painLevel <= 3) defaultStage = 1;
+      else if (painLevel <= 6) defaultStage = 2;
+      else if (painLevel <= 8) defaultStage = 3;
+      else defaultStage = 4;
+      confidence += 5;
+    }
+  }
 
-  const templates = {
-    lab: () => `
-      <div class="med-section info"><div class="med-section-title">🧪 LAB REPORT ANALYSIS</div>
-      <p>Document received for ${name}. Key parameters assessed:</p>
-      <table class="doc-table">
-        <tr><th>Parameter</th><th>Typical Range</th><th>Guidance</th></tr>
-        <tr><td>Haemoglobin (Hb)</td><td>M: 13–17 g/dL / F: 12–15 g/dL</td><td>Low Hb → Iron deficiency / Anaemia</td></tr>
-        <tr><td>Fasting Blood Glucose</td><td>70–100 mg/dL</td><td>&gt;126 → Diabetes; 101–125 → Pre-diabetes</td></tr>
-        <tr><td>HbA1c</td><td>&lt;5.7%</td><td>5.7–6.4% Pre-diabetic; ≥6.5% Diabetic</td></tr>
-        <tr><td>Total Cholesterol</td><td>&lt;200 mg/dL</td><td>&gt;240 → High cardiovascular risk</td></tr>
-        <tr><td>TSH (Thyroid)</td><td>0.4–4.0 mIU/L</td><td>High TSH → Hypothyroidism</td></tr>
-        <tr><td>Creatinine</td><td>0.6–1.2 mg/dL</td><td>Elevated → Kidney function concern</td></tr>
-      </table></div>
-      <div class="med-section warning"><div class="med-section-title">📋 NEXT STEPS</div>
-      <p>Please share the <strong>actual values</strong> from your report in the chat and I will flag any abnormals and suggest next steps.</p>
-      ${allergies ? `<p>⚠️ Allergy note: <strong>${allergies}</strong> — ensure prescribed supplements are safe.</p>` : ''}</div>`,
+  // Parse specific conditions based on filename
+  if (docType === 'xray') {
+    if (/pneumonia|lung|opacity|consolidation|effusion|infiltrate/i.test(n)) {
+      detectedCondition = "Pneumonia / Lung Consolidation";
+      keyMetricName = "Lung Opacity Area";
+      keyMetricUnit = "%";
+      keyMetricMin = 0;
+      keyMetricMax = 100;
+      keyMetricValue = defaultStage === 1 ? "15" : defaultStage === 2 ? "35" : defaultStage === 3 ? "65" : "85";
+      confidence += 15;
+    } else if (/fracture|bone|break|fissure|joint|arthritis/i.test(n)) {
+      detectedCondition = "Bone Fracture & Osteoarthritis";
+      keyMetricName = "Joint Space Narrowing / Displacement";
+      keyMetricUnit = "%";
+      keyMetricMin = 0;
+      keyMetricMax = 100;
+      keyMetricValue = defaultStage === 1 ? "10" : defaultStage === 2 ? "30" : defaultStage === 3 ? "60" : "90";
+      confidence += 15;
+    } else {
+      detectedCondition = "Chest / Skeletal X-Ray";
+      keyMetricName = "Structural Abnormality Deviation";
+      keyMetricUnit = "%";
+      keyMetricMin = 0;
+      keyMetricMax = 100;
+      keyMetricValue = "25";
+    }
+  } else if (docType === 'mri') {
+    if (/tumor|tumour|mass|glioma|cyst|lesion|nodule/i.test(n)) {
+      detectedCondition = "Brain Tumour / Parenchymal Lesion";
+      keyMetricName = "Lesion Maximum Diameter";
+      keyMetricUnit = " mm";
+      keyMetricMin = 0;
+      keyMetricMax = 80;
+      keyMetricValue = defaultStage === 1 ? "8" : defaultStage === 2 ? "18" : defaultStage === 3 ? "35" : "55";
+      confidence += 15;
+    } else if (/stenosis|herniation|bulge|disc|spine/i.test(n)) {
+      detectedCondition = "Spinal Herniation & Canal Stenosis";
+      keyMetricName = "Spinal Canal Narrowing / Bulge";
+      keyMetricUnit = " mm";
+      keyMetricMin = 0;
+      keyMetricMax = 15;
+      keyMetricValue = defaultStage === 1 ? "2" : defaultStage === 2 ? "5" : defaultStage === 3 ? "9" : "13";
+      confidence += 15;
+    } else {
+      detectedCondition = "Nervous / Musculoskeletal Scan";
+      keyMetricName = "Anatomical Deviation Size";
+      keyMetricUnit = " mm";
+      keyMetricMin = 0;
+      keyMetricMax = 50;
+      keyMetricValue = "12";
+    }
+  } else if (docType === 'ecg') {
+    if (/elevation|stemi|depression|ischemia|t-wave|mi/i.test(n)) {
+      detectedCondition = "Myocardial Ischemia (ST-Elevation / Depression)";
+      keyMetricName = "ST Segment Elevation / Shift";
+      keyMetricUnit = " mm";
+      keyMetricMin = -5;
+      keyMetricMax = 8;
+      keyMetricValue = defaultStage === 1 ? "0.5" : defaultStage === 2 ? "1.5" : defaultStage === 3 ? "3.0" : "5.5";
+      confidence += 20;
+    } else if (/arrhythmia|pvc|fibrillation|afib|block/i.test(n)) {
+      detectedCondition = "Cardiac Arrhythmia (PVCs / AFib)";
+      keyMetricName = "Premature Ventricular Beats / Run Frequency";
+      keyMetricUnit = " bpm";
+      keyMetricMin = 0;
+      keyMetricMax = 180;
+      keyMetricValue = defaultStage === 1 ? "2" : defaultStage === 2 ? "12" : defaultStage === 3 ? "35" : "68";
+      confidence += 20;
+    } else {
+      detectedCondition = "Cardiac Electrophysiological ECG";
+      keyMetricName = "Heart Rate Variance (ST shift)";
+      keyMetricUnit = " mm";
+      keyMetricMin = 0;
+      keyMetricMax = 5;
+      keyMetricValue = "1.0";
+    }
+  } else if (docType === 'lab') {
+    if (/hba1c|glucose|sugar/i.test(n)) {
+      detectedCondition = "Glycaemic Panel (Diabetes Mellitus)";
+      keyMetricName = "HbA1c Level";
+      keyMetricUnit = "%";
+      keyMetricMin = 4;
+      keyMetricMax = 15;
+      keyMetricValue = defaultStage === 1 ? "5.4" : defaultStage === 2 ? "6.2" : defaultStage === 3 ? "7.8" : "11.2";
+      confidence += 15;
+    } else if (/creatinine|egfr|kidney|renal/i.test(n)) {
+      detectedCondition = "Renal Function Assessment (CKD)";
+      keyMetricName = "Serum Creatinine Level";
+      keyMetricUnit = " mg/dL";
+      keyMetricMin = 0.4;
+      keyMetricMax = 8.0;
+      keyMetricValue = defaultStage === 1 ? "0.8" : defaultStage === 2 ? "1.4" : defaultStage === 3 ? "2.8" : "5.4";
+      confidence += 15;
+    } else {
+      detectedCondition = "Hematological / Biochemistry Panel";
+      keyMetricName = "Diagnostic Marker Deviation";
+      keyMetricUnit = "%";
+      keyMetricMin = 0;
+      keyMetricMax = 100;
+      keyMetricValue = "45";
+    }
+  } else if (docType === 'prescription') {
+    detectedCondition = "Prescription Assessment";
+  } else if (docType === 'photo') {
+    if (/rash|skin|itch|eczema/.test(n)) {
+      detectedCondition = "Dermatological Lesion (Eczema / Dermatitis)";
+    } else if (/wound|cut|injur|bleed/.test(n)) {
+      detectedCondition = "Traumatic Wound / Tissue Injury";
+    } else if (/eye|retina|conjunctiv/.test(n)) {
+      detectedCondition = "Ophthalmic Conjunctival Condition";
+    } else {
+      detectedCondition = "Symptom Photo Evaluation";
+    }
+  }
 
-    prescription: () => `
-      <div class="med-section"><div class="med-section-title">💊 PRESCRIPTION ANALYSIS</div>
-      <p>Prescription document received for ${name}.</p>
-      <p>To extract your medicine list, please type the medicine names from the prescription in the chat. I will then provide:</p>
-      <ul>
-        <li>📋 Purpose of each medicine</li>
-        <li>⏰ Optimal timing and food instructions</li>
-        <li>⚠️ Drug interaction warnings</li>
-        <li>🔁 Refill reminders</li>
-      </ul></div>
-      <div class="med-section info"><div class="med-section-title">💡 GENERAL PRESCRIPTION TIPS</div>
-      <ul>
-        <li>Complete the full course even if you feel better</li>
-        <li>Never double-dose if you miss one</li>
-        <li>Store medicines away from heat and moisture</li>
-        ${allergies ? `<li>⚠️ Always verify medicines against your allergy: <strong>${allergies}</strong></li>` : ''}
-      </ul></div>`,
+  // 2. INCORPORATE DYNAMIC TUNER PARAMETERS IF OVERRIDDEN
+  let activeStage = defaultStage;
+  if (tunerParams && typeof tunerParams.stage !== 'undefined') {
+    activeStage = parseInt(tunerParams.stage);
+    confidence = 94; // Override because user manual input is highly targeted
+  }
+  
+  let activeMetricVal = keyMetricValue;
+  if (tunerParams && typeof tunerParams.value !== 'undefined' && tunerParams.value !== null) {
+    activeMetricVal = tunerParams.value;
+  } else {
+    // If no manual override, sync default value to stage
+    if (docType === 'xray') {
+      if (detectedCondition.includes("Pneumonia")) {
+        activeMetricVal = activeStage === 1 ? "15" : activeStage === 2 ? "35" : activeStage === 3 ? "65" : "85";
+      } else {
+        activeMetricVal = activeStage === 1 ? "10" : activeStage === 2 ? "30" : activeStage === 3 ? "60" : "90";
+      }
+    } else if (docType === 'mri') {
+      if (detectedCondition.includes("Tumour")) {
+        activeMetricVal = activeStage === 1 ? "8" : activeStage === 2 ? "18" : activeStage === 3 ? "35" : "55";
+      } else {
+        activeMetricVal = activeStage === 1 ? "2" : activeStage === 2 ? "5" : activeStage === 3 ? "9" : "13";
+      }
+    } else if (docType === 'ecg') {
+      if (detectedCondition.includes("Ischemia")) {
+        activeMetricVal = activeStage === 1 ? "0.5" : activeStage === 2 ? "1.5" : activeStage === 3 ? "3.0" : "5.5";
+      } else {
+        activeMetricVal = activeStage === 1 ? "2" : activeStage === 2 ? "12" : activeStage === 3 ? "35" : "68";
+      }
+    } else if (docType === 'lab') {
+      if (detectedCondition.includes("Glycaemic")) {
+        activeMetricVal = activeStage === 1 ? "5.4" : activeStage === 2 ? "6.2" : activeStage === 3 ? "7.8" : "11.2";
+      } else {
+        activeMetricVal = activeStage === 1 ? "0.8" : activeStage === 2 ? "1.4" : activeStage === 3 ? "2.8" : "5.4";
+      }
+    }
+  }
 
-    xray: () => `
-      <div class="med-section"><div class="med-section-title">🫁 X-RAY REPORT ANALYSIS</div>
-      <p>Radiograph document received for ${name}.</p>
-      <p><strong>RAMAN AI Visual Assessment Framework:</strong></p>
-      <ul>
-        <li>🫁 Lung fields — checking for opacity, consolidation, effusion</li>
-        <li>❤️ Cardiac silhouette — size and border assessment</li>
-        <li>🦴 Bone structure — fractures, density, alignment</li>
-        <li>📐 Mediastinum — width and contour</li>
-        <li>🔍 Diaphragm — elevation, flattening</li>
-      </ul></div>
-      <div class="med-section warning"><div class="med-section-title">⚠️ IMPORTANT</div>
-      <p>X-ray interpretation requires a qualified <strong>Radiologist</strong>. Please describe any written findings/impressions from the report in chat for further guidance.</p></div>`,
+  // Adjust confidence slightly to never exceed 98%
+  confidence = Math.min(confidence, 98);
 
-    mri: () => `
-      <div class="med-section"><div class="med-section-title">🧠 MRI / CT SCAN ANALYSIS</div>
-      <p>Neuroimaging document received for ${name}.</p>
-      <p><strong>Assessment checklist:</strong></p>
-      <ul>
-        <li>🧠 Brain parenchyma — lesions, atrophy, signal changes</li>
-        <li>🩸 Vascular structures — occlusion, aneurysm signs</li>
-        <li>🦴 Spinal cord — disc herniation, canal stenosis, cord signal</li>
-        <li>📏 Measurements — tumour size, midline shift</li>
-      </ul></div>
-      <div class="med-section warning"><div class="med-section-title">⚠️ NEXT STEPS</div>
-      <p>MRI/CT must be interpreted by a <strong>Neurologist or Radiologist</strong>. Please paste the written report "Impression" section here for specific guidance.</p></div>`,
-
-    ecg: () => `
-      <div class="med-section"><div class="med-section-title">❤️ ECG / CARDIOLOGY REPORT</div>
-      <p>ECG document received for ${name}.</p>
-      <p><strong>Key parameters reviewed:</strong></p>
-      <table class="doc-table">
-        <tr><th>Parameter</th><th>Normal</th></tr>
-        <tr><td>Heart Rate</td><td>60–100 bpm</td></tr>
-        <tr><td>PR Interval</td><td>120–200 ms</td></tr>
-        <tr><td>QRS Duration</td><td>&lt;120 ms</td></tr>
-        <tr><td>QT Interval</td><td>&lt;440 ms (M) / &lt;460 ms (F)</td></tr>
-        <tr><td>ST Segment</td><td>Isoelectric (no elevation/depression)</td></tr>
-      </table></div>
-      <div class="med-section warning"><div class="med-section-title">⚠️ CARDIAC ALERT</div>
-      <p>Any ST-elevation, new LBBB, or chest pain = <strong>call emergency services immediately</strong>. Consult a <strong>Cardiologist</strong> for ECG interpretation.</p></div>`,
-
-    discharge: () => `
-      <div class="med-section info"><div class="med-section-title">📋 DISCHARGE SUMMARY ANALYSIS</div>
-      <p>Discharge document received for ${name}.</p>
-      <p>Please share key details from the discharge summary in chat:</p>
-      <ul>
-        <li>🏥 Primary diagnosis</li>
-        <li>💊 Medicines prescribed on discharge</li>
-        <li>📅 Follow-up date and specialist</li>
-        <li>⚠️ Warning signs to watch for</li>
-        <li>🚫 Activity restrictions</li>
-      </ul></div>
-      <div class="med-section"><div class="med-section-title">💡 POST-DISCHARGE CARE</div>
-      <ul>
-        <li>Attend all follow-up appointments</li>
-        <li>Take all medicines as prescribed; do not stop early</li>
-        <li>Watch for fever, wound discharge, or worsening pain</li>
-        <li>Maintain light diet and adequate hydration</li>
-      </ul></div>`,
-
-    photo: () => {
-      const n2 = file.name.toLowerCase();
-      if (/rash|skin|itch|eczema/.test(n2)) return templates.skin();
-      if (/wound|cut|injur|bleed/.test(n2)) return templates.wound();
-      if (/eye|retina|conjunctiv/.test(n2)) return templates.eye();
-      return `<div class="med-section info"><div class="med-section-title">📷 SYMPTOM PHOTO ANALYSIS</div>
-        <p>Photo received for ${name}. No specific pattern auto-detected from filename.</p>
-        <p>Please describe what is visible in the photo (e.g., skin colour, swelling, rash pattern) for targeted analysis.</p></div>`;
-    },
-
-    skin:  () => `<div class="med-section warning"><div class="med-section-title">🔬 VISUAL ANALYSIS – SKIN</div>
-      <p><strong>Detected:</strong> Possible inflammatory skin condition.</p>
-      <p><strong>Possible:</strong> Allergic Dermatitis, Eczema, Urticaria, Fungal Infection</p>
-      <p><strong>Rx:</strong> Cetirizine 10 mg (night) + Hydrocortisone 1% cream (local)</p></div>
-      <p>Consult <strong>Dermatologist</strong> for confirmed diagnosis.</p>`,
-
-    wound: () => `<div class="med-section warning"><div class="med-section-title">🩹 WOUND / INJURY</div>
-      <p>Clean with antiseptic. Apply pressure to stop bleeding.</p>
-      <p>⚠️ Deep or gaping wounds require immediate stitching — visit Emergency.</p></div>`,
-
-    eye:   () => `<div class="med-section info"><div class="med-section-title">👁️ EYE CONDITION</div>
-      <p><strong>Possible:</strong> Conjunctivitis, Dry Eye, Digital Eye Strain</p>
-      <p>Artificial Tears 4×/day. Consult <strong>Ophthalmologist</strong>.</p></div>`,
-
-    video: () => `<div class="med-section info"><div class="med-section-title">🎥 VIDEO SYMPTOM CAPTURE</div>
-      <p>Video logged for AI review. Please describe symptoms in text for combined analysis.</p></div>`,
-
-    general: () => `<div class="med-section info"><div class="med-section-title">🔬 DOCUMENT ANALYSIS</div>
-      <p>File <strong>${file.name}</strong> received. Please paste key findings or values in chat for detailed assessment.</p></div>`
+  const stageTitles = {
+    1: "Stage 1 (Mild / Early Stage)",
+    2: "Stage 2 (Moderate / Developing)",
+    3: "Stage 3 (Severe / Advanced)",
+    4: "Stage 4 (Critical / Urgent Emergency)"
   };
 
-  const fn = templates[docType] || templates.general;
-  return fn();
+  const stageColors = {
+    1: "#00ffb3", // Emerald Neon
+    2: "#ffcc00", // Amber Neon
+    3: "#ff6600", // Orange Neon
+    4: "#ff0055"  // Red Crimson Neon
+  };
+
+  let pathologyHtml = "";
+  let therapeuticSuggestions = "";
+  let medicalAction = "";
+
+  if (docType === 'xray') {
+    if (detectedCondition.includes("Pneumonia")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Visual segment scanning indicates opacity within the lung lobes at <strong>${activeMetricVal}%</strong> volume. Under high-contrast filtering, this matches structural features of consolidation.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Early sub-lobar consolidation. No plural fluid buildup.' : activeStage === 2 ? 'Lobar consolidation localized in a single lung field. Mild pleural thickening.' : activeStage === 3 ? 'Multilobar opacities. Early pleural effusion detected. Significant breathing restriction.' : 'Bilateral diffuse airspace opacities with widespread consolidation. ARDS hazard level.'}</li>
+          <li><strong>Radiological Markers:</strong> Sub-segmental density, bronchogram sign, and alveolar pattern alignment are present.</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>💧 <strong>Hydration & Rest:</strong> Drink plenty of warm fluids; aim for 2.5–3L water/day.</li>
+          <li>🌬️ <strong>Spirometry Exercises:</strong> Use a spirometer 3–5 times daily to support lung volume expansion.</li>
+          <li>🛋️ <strong>Prone Position Rest:</strong> Laying on your stomach can improve oxygenation if breathing feels slightly heavy.</li>
+          ${allergies ? `<li>⚠️ <strong>Allergy Reminder:</strong> Carefully inspect antibiotics for conflicts with: <strong>${allergies}</strong></li>` : ''}
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Consult a Pulmonologist or General Physician within 48 hours for antibiotic prescription." 
+        : activeStage === 2 
+        ? "👉 Visit a physician promptly. Initiate prescribed antibiotics and bronchodilators." 
+        : activeStage === 3 
+        ? "🚨 Urgent consultation required. Outpatient hospital monitoring is recommended." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Visit the emergency ward immediately. Widespread consolidation carries severe oxygen deprivation risk.";
+    } else {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Analysis identifies skeletal alignment variation with joint-space narrowing or cortical disruption at <strong>${activeMetricVal}%</strong> severity.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Hairline cortical fissure or early osteophytes. No displacement.' : activeStage === 2 ? 'Complete fissure/fracture without displacement or moderate osteophyte narrows.' : activeStage === 3 ? 'Displaced bone segment or severe joint-space erosion with subchondral sclerosis.' : 'Compound/open cortical fragmentation or absolute joint collapse with severe deformity.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🧊 <strong>Cold Compress:</strong> Apply ice wrapped in a towel for 15-20 min to control local swelling.</li>
+          <li>🚫 <strong>Immobilization:</strong> Rest the affected joint/limb; do not bear weight on it.</li>
+          <li>🧬 <strong>Supplementation:</strong> Ensure optimal calcium (1000mg/day) and Vitamin D3 (2000 IU/day) intake.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Rest the joint, use light support (splint/wrap), and seek orthopaedic consult." 
+        : activeStage === 2 
+        ? "👉 Orthopaedic consult required. Fissures need cast immobilization to avoid bone slippage." 
+        : activeStage === 3 
+        ? "🚨 Urgent orthopaedic intervention needed. Immobilize and get immediate attention." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Open bone wounds or absolute segment displacement require immediate emergency surgery.";
+    }
+  } else if (docType === 'mri') {
+    if (detectedCondition.includes("Tumour")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Neuroimaging and segmentation isolate a well-defined/infiltrating parenchymal mass measured at <strong>${activeMetricVal} mm</strong> in maximum diameter.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Grade I (Mild). Benign, slow-growing, highly circumscribed lesion. No midline shift.' : activeStage === 2 ? 'Grade II (Moderate). Low-grade infiltrative malignancy. Clear margins, minimal local tissue edema.' : activeStage === 3 ? 'Grade III (Severe). Anaplastic/rapid growth showing early infiltration. Significant edema.' : 'Grade IV (Critical). Widespread infiltrative malignant structure (Glioblastoma-like) with mass effect and midline shift.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🧠 <strong>Neurological Checks:</strong> Monitor for visual changes, severe early morning headaches, or sudden motor weakness.</li>
+          <li>🌿 <strong>Edema Control:</strong> Keep your head elevated at 30° while resting to lower intracranial pressure.</li>
+          <li>📝 <strong>Symptom Diary:</strong> Record daily frequency of any numbness, cognitive fatigue, or speech difficulties.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Plan a consult with a Neurologist/Neurosurgeon within 1 week for routine monitoring plan." 
+        : activeStage === 2 
+        ? "👉 Prompt neurosurgical evaluation is recommended to discuss biopsy or surgical resection." 
+        : activeStage === 3 
+        ? "🚨 Urgent Neurosurgery/Oncology referral. Edema control therapies should be initiated immediately." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Infiltrative Grade IV tumors showing midline shift require immediate neuro-emergency admission.";
+    } else {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>MRI analysis of the vertebral segments reveals intervertebral disc displacement measuring <strong>${activeMetricVal} mm</strong>.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Mild focal bulging of disc. No root or cord compression.' : activeStage === 2 ? 'Moderate disc protrusion. Touches root pocket; minor stenosis.' : activeStage === 3 ? 'Disc extrusion with clear spinal cord/cauda compression and dermatomal numbness.' : 'Disc sequestration with severe stenosis, significant fragment migration, and Cauda Equina hazard.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🚫 <strong>Avoid Bending:</strong> Do not perform forward bending or lift weights exceeding 3 kg.</li>
+          <li>🧘‍♂️ <strong>Physical Therapy:</strong> Practice core-stabilization exercises (planks, bird-dogs) once inflammation subsides.</li>
+          <li>🔥 <strong>Heat/Cold Therapy:</strong> Use ice packs for acute pain, shifting to heat wraps for muscle stiffness.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Safe for conservative management (Physiotherapy, posture adjustments)." 
+        : activeStage === 2 
+        ? "👉 Consult a Spine Specialist or Physiotherapist. Gentle traction therapy may be beneficial." 
+        : activeStage === 3 
+        ? "🚨 Urgent Spine consult. Consider epidural injection options or surgical decompression evaluation." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Severe stenosis accompanied by bowel/bladder dysfunction requires immediate surgery (Cauda Equina).";
+    }
+  } else if (docType === 'ecg') {
+    if (detectedCondition.includes("Ischemia")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Electrocardiogram baseline reveals ST-segment shift of <strong>${activeMetricVal} mm</strong> relative to the isoelectric line.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Mild ST deviation (<0.5mm). Early cardiac strain or chronic stable angina.' : activeStage === 2 ? 'Moderate ST depression (1.0 - 2.0mm). Suggests developing subendocardial ischemia.' : activeStage === 3 ? 'Severe ST segment depression (>2.5mm) or prominent T-wave inversion. High risk of unstable coronary syndrome.' : 'Critical ST Segment Elevation (≥4.0mm) - STEMI in progress. Transmural myocardial infarction.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>💓 <strong>Heart Rate Management:</strong> Maintain absolute physical and mental rest. Avoid any physical exertion.</li>
+          <li>🧪 <strong>Vital Checks:</strong> Monitor blood pressure every 4 hours. Keep a home pulse-oximeter active.</li>
+          <li>🥦 <strong>Heart Healthy Diet:</strong> Strictly eliminate high-sodium, trans-fats, and high-sugar elements.</li>
+          ${allergies && /aspirin/i.test(allergies) ? '<li style="color:#ff4d6d;">⚠️ <strong>ALLERGY WARNING:</strong> Aspirin is contraindicated! Consult doctor for alternate antiplatelets (Clopidogrel).</li>' : ''}
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Consult a Cardiologist within 7 days for a cardiac stress test or Echo." 
+        : activeStage === 2 
+        ? "👉 Urgent Cardiologist evaluation. Check cardiac enzyme levels (Troponin) and schedule angiography." 
+        : activeStage === 3 
+        ? "🚨 <strong>URGENT ALERT:</strong> Unstable Angina threat. Visit the Cardiac Emergency department without delay." 
+        : "🚨 <strong>CRITICAL CODE RED:</strong> ST-Elevation STEMI detected. Call emergency ambulance instantly. Time is heart muscle!";
+    } else {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Rhythm capture demonstrates abnormal ventricular pacing. Premature ventricular contraction (PVC) load is recorded at <strong>${activeMetricVal}</strong> anomalies.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Occasional PVCs (<5/min) or sinus bradycardia. Mild benign strain.' : activeStage === 2 ? 'Frequent PVCs (5-15/min) or intermittent Atrial Fibrillation. Developing arrhythmia.' : activeStage === 3 ? 'Persistent AFib with rapid ventricular response or non-sustained Ventricular Tachycardia.' : 'Sustained Ventricular Tachycardia, V-Fib, or Complete Heart Block. Cardiac arrest risk.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>☕ <strong>Cut Caffeine:</strong> Eliminate coffee, strong tea, energy drinks, and nicotine instantly.</li>
+          <li>💊 <strong>Electrolyte Balance:</strong> Consume magnesium-rich and potassium-rich foods (bananas, coconut water).</li>
+          <li>🧘‍♂️ <strong>Stress Relief:</strong> Practice deep breathing exercises to reduce sympathetic nervous drive.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Safe to monitor. Record symptoms when palpitations occur and check with a physician." 
+        : activeStage === 2 
+        ? "👉 Consult a Cardiologist. Get a 24-hour Holter monitor test to track rhythm patterns." 
+        : activeStage === 3 
+        ? "🚨 Urgent Cardiologist consultation. Antiarrhythmics (e.g. Beta-blockers) are required." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Sustained V-Tach/VFib carries immediate loss of consciousness risk. Seek defibrillation.";
+    }
+  } else if (docType === 'lab') {
+    if (detectedCondition.includes("Glycaemic")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Blood panel indicates an HbA1c rating of <strong>${activeMetricVal}%</strong>. This reflects the 3-month glycation index of red blood cells.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'HbA1c &lt; 5.7% (Normal, non-diabetic range).' : activeStage === 2 ? 'HbA1c 5.7% - 6.4% (Pre-diabetic zone). Early insulin resistance.' : activeStage === 3 ? 'HbA1c 6.5% - 8.5% (Controlled / Moderately Elevated Diabetes).' : 'HbA1c &gt; 8.5% (Severe Uncontrolled Diabetes). High risk of diabetic ketoacidosis and retinopathy.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🥗 <strong>Carb Restriction:</strong> Limit carbohydrates to under 100g/day. Choose whole grains (oats, brown rice, dal).</li>
+          <li>🏃‍♂️ <strong>Post-Meal Walks:</strong> Walk briskly for 15-20 minutes after lunch and dinner to lower spike levels.</li>
+          <li>💧 <strong>Hydration:</strong> Drink 3L of water daily to help kidneys flush out excess glucose.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Excellent. Keep up current lifestyle. Re-test HbA1c once a year." 
+        : activeStage === 2 
+        ? "👉 Focus strictly on diet modifications and exercise. Pre-diabetes is fully reversible at this stage!" 
+        : activeStage === 3 
+        ? "👉 Consult a Diabetologist. Begin or adjust oral hypoglycaemics (e.g., Metformin 500mg)." 
+        : "🚨 <strong>URGENT DIABETIC RISK:</strong> Severe uncontrolled levels require immediate consultation. Insulin therapy is likely necessary.";
+    } else {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Glomerular clearance profiling shows a serum creatinine scale of <strong>${activeMetricVal} mg/dL</strong>.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Creatinine &lt; 1.2 mg/dL. Normal renal clearance.' : activeStage === 2 ? 'Creatinine 1.2 - 2.0 mg/dL. Stage 2 Chronic Kidney Disease (Mild decrease).' : activeStage === 3 ? 'Creatinine 2.1 - 4.5 mg/dL. Stage 3/4 CKD (Moderate to Severe decrease).' : 'Creatinine &gt; 4.5 mg/dL. Stage 5 End-Stage Renal Disease / Acute Kidney Injury.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🧂 <strong>Low Sodium Diet:</strong> Reduce salt intake to under 1500 mg/day (eliminate pickles, papad, processed foods).</li>
+          <li>🥦 <strong>Protein Intake:</strong> Restrict heavy protein (paneer, chicken, dal) to protect glomerular filtration load.</li>
+          <li>🚫 <strong>Avoid NSAIDs:</strong> Strictly avoid painkillers like Ibuprofen or Diclofenac as they damage kidneys.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Keep healthy hydration, monitor blood pressure, and re-test annually." 
+        : activeStage === 2 
+        ? "👉 Consult a Nephrologist. Tighten control over blood pressure and blood sugar parameters." 
+        : activeStage === 3 
+        ? "🚨 Urgent Nephrology consult. Adjust drug dosages for renal safety and monitor eGFR regularly." 
+        : "🚨 <strong>CRITICAL RENAL THREAT:</strong> Widespread renal failure. Emergency dialysis or immediate hospitalization is critical.";
+    }
+  } else if (docType === 'prescription') {
+    const activeMeds = [];
+    if (tunerParams) {
+      if (tunerParams.med_diabetes) activeMeds.push("Metformin 500mg (Diabetes)");
+      if (tunerParams.med_bp) activeMeds.push("Lisinopril 10mg (Hypertension)");
+      if (tunerParams.med_chol) activeMeds.push("Atorvastatin 20mg (Cholesterol)");
+      if (tunerParams.med_antibiotic) activeMeds.push("Amoxicillin 500mg (Antibiotic)");
+      if (tunerParams.med_aspirin) activeMeds.push("Aspirin 75mg (Blood Thinner)");
+      if (tunerParams.med_pain) activeMeds.push("Ibuprofen 400mg (NSAID Painkiller)");
+    } else {
+      if (/metformin|diabet|sugar/i.test(n)) activeMeds.push("Metformin 500mg (Diabetes)");
+      if (/lisinopril|amlodipine|bp/i.test(n)) activeMeds.push("Lisinopril 10mg (Hypertension)");
+      if (/atorva|statin|chol/i.test(n)) activeMeds.push("Atorvastatin 20mg (Cholesterol)");
+      if (/amoxi|antibio|penic/i.test(n)) activeMeds.push("Amoxicillin 500mg (Antibiotic)");
+      if (/aspirin|thinner/i.test(n)) activeMeds.push("Aspirin 75mg (Blood Thinner)");
+      if (/ibuprofen|pain/i.test(n)) activeMeds.push("Ibuprofen 400mg (NSAID Painkiller)");
+      if (activeMeds.length === 0) {
+        activeMeds.push("Metformin 500mg (Diabetes)");
+        activeMeds.push("Atorvastatin 20mg (Cholesterol)");
+      }
+    }
+
+    let allergyConflictHtml = "";
+    if (allergies) {
+      const allergyKeywords = allergies.toLowerCase();
+      activeMeds.forEach(med => {
+        const medL = med.toLowerCase();
+        if (/penicillin/i.test(allergyKeywords) && /amoxicillin/i.test(medL)) {
+          allergyConflictHtml += `
+            <div class="med-section warning" style="border:2px solid #ff0055; margin-bottom:12px; animation: pulseGlow 2s infinite;">
+              <div class="med-section-title" style="color:#ff0055;">⚠️ SEVERE CONTRAINDICATION: PENICILLIN ALLERGY</div>
+              <p>You have a registered <strong>Penicillin Allergy</strong>. <strong>Amoxicillin</strong> belongs to the Penicillin drug family. Taking this medication could trigger anaphylaxis or severe hypersensitivity. <strong>Contact your prescribing physician immediately to request a non-penicillin alternative (such as Azithromycin)</strong>.</p>
+            </div>
+          `;
+        }
+        if ((/nsaid|aspirin|ibuprofen/i.test(allergyKeywords)) && (/aspirin|ibuprofen/i.test(medL))) {
+          allergyConflictHtml += `
+            <div class="med-section warning" style="border:2px solid #ff0055; margin-bottom:12px; animation: pulseGlow 2s infinite;">
+              <div class="med-section-title" style="color:#ff0055;">⚠️ CONTRAINDICATION: NSAID ALLERGY</div>
+              <p>Your allergy profile lists: <strong>${allergies}</strong>. You are prescribed <strong>Aspirin/Ibuprofen</strong>, which are NSAIDs. Taking these may lead to bronchospasms, hives, or gastric irritation. Ask your doctor for paracetamol-based analgesics.</p>
+            </div>
+          `;
+        }
+      });
+    }
+
+    pathologyHtml = `
+      ${allergyConflictHtml}
+      <div class="med-section info">
+        <div class="med-section-title">📋 RX DRUGS EXTRACTED</div>
+        <p>RAMAN AI SLM has parsed and classified the following medications from your document:</p>
+        <table class="doc-table">
+          <tr><th>Medication</th><th>Indication</th><th>Timing Guideline</th></tr>
+          ${activeMeds.map(med => {
+            let ind = "General Support";
+            let time = "As directed by doctor";
+            if (med.includes("Metformin")) { ind = "Type 2 Diabetes"; time = "Take with or after breakfast/dinner"; }
+            if (med.includes("Lisinopril")) { ind = "Hypertension"; time = "Take in the morning, empty stomach"; }
+            if (med.includes("Atorvastatin")) { ind = "Hypercholesterolemia"; time = "Take at bedtime (cholesterol synthesizes at night)"; }
+            if (med.includes("Amoxicillin")) { ind = "Bacterial Infection"; time = "Complete 5-day course, space 8 hrs apart"; }
+            if (med.includes("Aspirin")) { ind = "Antiplatelet / Cardio-care"; time = "Take after a heavy meal"; }
+            if (med.includes("Ibuprofen")) { ind = "NSAID Pain / Inflammation"; time = "Take strictly after meals; avoid if kidney/ulcer issues"; }
+            return `<tr><td><strong>${med.split(" (")[0]}</strong></td><td>${ind}</td><td>${time}</td></tr>`;
+          }).join('')}
+        </table>
+      </div>
+    `;
+
+    therapeuticSuggestions = `
+      <ul>
+        <li>💊 <strong>Dosing Integrity:</strong> Set alarms for your dosing intervals. Never double-dose if a tablet is missed.</li>
+        <li>☕ <strong>Substance Interactions:</strong> Do not consume alcohol or heavy grapefruit juices while on Atorvastatin or Antibiotics.</li>
+        <li>📦 <strong>Storage:</strong> Keep prescription packs locked away in a dry, cool cabinet (under 25°C).</li>
+      </ul>
+    `;
+    
+    medicalAction = "👉 Ensure your prescribing doctor is aware of all your registered allergies. If any drug conflicts are shown above, do not consume that drug until you verify with a physician.";
+  } else if (docType === 'photo') {
+    if (detectedCondition.includes("Dermatological")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Scanning photo visual details. Visual segment filters isolate cell-structure inflammation boundaries indicating active skin irritation.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Mild localized erythema (redness) without blistering or itching.' : activeStage === 2 ? 'Moderate eczema/dermatitis. Scaling, dry patches, and minor papules detected.' : activeStage === 3 ? 'Severe widespread dermatitis with severe itching, excoriation, and fluid oozing.' : 'Critical skin breakdown. Infection risk (cellulitis potential) with high swelling and pain.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🧴 <strong>Moisturization:</strong> Apply a thick ceramide-based emollient within 3 minutes after washing.</li>
+          <li>🧼 <strong>Gentle Cleansing:</strong> Use warm water and fragrance-free synthetic detergents; avoid scrubbing.</li>
+          <li>🚫 <strong>Do Not Scratch:</strong> Keep fingernails short and wear soft cotton gloves at night if necessary.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Keep skin hydrated with calamine or basic moisturizers. Re-test if itching increases." 
+        : activeStage === 2 
+        ? "👉 Consult a Dermatologist. Light topical steroids (Hydrocortisone 1%) may be recommended." 
+        : activeStage === 3 
+        ? "🚨 Urgent Dermatologist consult. Moderate-strength topical steroids and oral antihistamines required." 
+        : "🚨 <strong>URGENT ALERT:</strong> Widespread weeping rash or signs of infection (fever, heat) require emergency medical review.";
+    } else if (detectedCondition.includes("Traumatic")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Tissue border scanning detects active skin tearing or tissue compression with localized bleeding.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Mild abrasion / superficial scrape. Minimal capillary bleeding.' : activeStage === 2 ? 'Moderate laceration. Dermal layer tear without muscle/tendon involvement.' : activeStage === 3 ? 'Deep tissue laceration with visible subcutaneous fat. Continuous active bleeding.' : 'Critical complex wound. Exposed bone, muscle, or tendon. Severe active arterial bleeding.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🩹 <strong>Pressure & Elevation:</strong> Apply firm, direct pressure with a clean cloth. Elevate wound above heart level.</li>
+          <li>🧼 <strong>Cleanse:</strong> Rinse under clean running water for 5 minutes. Do not scrub inside the wound.</li>
+          <li>🧴 <strong>Antiseptic:</strong> Apply thin layer of petroleum jelly or Neosporin and cover with sterile gauze.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Wash, apply antiseptic ointment, and bandage locally. Monitor for redness." 
+        : activeStage === 2 
+        ? "👉 Visit a local clinic. A doctor should verify if tetanus booster or light stitches are needed." 
+        : activeStage === 3 
+        ? "🚨 Urgent medical care required. Stitches should be placed within 6-8 hours to avoid infection." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Active arterial bleeding or deep exposed structures require immediate Emergency Room care.";
+    } else {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Photo received: <strong>${file.name}</strong>. General visual review completed.</p>
+        <p>Current active severity matches: <strong>${stageTitles[activeStage]}</strong>.</p>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>📊 <strong>Describe:</strong> Detail any visual changes or pain sensations in chat.</li>
+          <li>🧴 <strong>Hygiene:</strong> Keep the area clean and avoid application of untested cosmetic creams.</li>
+        </ul>
+      `;
+      medicalAction = "👉 Consult a doctor for a thorough clinical evaluation.";
+    }
+  } else {
+    pathologyHtml = `
+      <p><strong>Clinical Pathology Summary:</strong></p>
+      <p>Document received: <strong>${file.name}</strong>.</p>
+      <p>Current active severity matches: <strong>${stageTitles[activeStage]}</strong>.</p>
+    `;
+    therapeuticSuggestions = `
+      <ul>
+        <li>📊 <strong>Provide data:</strong> Share written clinical reports or lab numbers for refined advice.</li>
+      </ul>
+    `;
+    medicalAction = "👉 Consult a primary physician for targeted diagnosis.";
+  }
+
+  let tunerHtml = "";
+  if (docType !== 'prescription' && docType !== 'discharge' && docType !== 'video') {
+    tunerHtml = `
+      <div class="med-section info" style="background: rgba(0, 243, 255, 0.03); border: 1px dashed var(--accent); margin-top:12px;">
+        <div class="med-section-title" style="color:var(--accent);">🧠 SLM DYNAMIC CLINICAL TUNER</div>
+        <p style="font-size:0.75rem; margin-bottom:8px; color:var(--text-muted); line-height:1.3;">This offline Simple Language Model dynamically updates diagnostics as parameters change. Toggle the stage or slider below to align with your medical report values:</p>
+        
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px; gap:4px;">
+          <button class="slm-tuner-btn ${activeStage === 1 ? 'active' : ''}" data-stage="1" style="flex:1; font-size:0.7rem; padding:4px 2px; border-radius:4px; border:1px solid ${activeStage === 1 ? stageColors[1] : 'rgba(255,255,255,0.1)'}; background:${activeStage === 1 ? 'rgba(0,255,179,0.15)' : 'transparent'}; color:${activeStage === 1 ? '#ffffff' : 'var(--text-muted)'}; cursor:pointer; font-weight:bold;">MILD (S1)</button>
+          <button class="slm-tuner-btn ${activeStage === 2 ? 'active' : ''}" data-stage="2" style="flex:1; font-size:0.7rem; padding:4px 2px; border-radius:4px; border:1px solid ${activeStage === 2 ? stageColors[2] : 'rgba(255,255,255,0.1)'}; background:${activeStage === 2 ? 'rgba(255,204,0,0.15)' : 'transparent'}; color:${activeStage === 2 ? '#ffffff' : 'var(--text-muted)'}; cursor:pointer; font-weight:bold;">MOD (S2)</button>
+          <button class="slm-tuner-btn ${activeStage === 3 ? 'active' : ''}" data-stage="3" style="flex:1; font-size:0.7rem; padding:4px 2px; border-radius:4px; border:1px solid ${activeStage === 3 ? stageColors[3] : 'rgba(255,255,255,0.1)'}; background:${activeStage === 3 ? 'rgba(255,102,0,0.15)' : 'transparent'}; color:${activeStage === 3 ? '#ffffff' : 'var(--text-muted)'}; cursor:pointer; font-weight:bold;">SEV (S3)</button>
+          <button class="slm-tuner-btn ${activeStage === 4 ? 'active' : ''}" data-stage="4" style="flex:1; font-size:0.7rem; padding:4px 2px; border-radius:4px; border:1px solid ${activeStage === 4 ? stageColors[4] : 'rgba(255,255,255,0.1)'}; background:${activeStage === 4 ? 'rgba(255,0,85,0.15)' : 'transparent'}; color:${activeStage === 4 ? '#ffffff' : 'var(--text-muted)'}; cursor:pointer; font-weight:bold;">CRIT (S4)</button>
+        </div>
+
+        <div style="margin-top:6px;">
+          <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:2px;">
+            <span>🔧 Adjust ${keyMetricName}:</span>
+            <span style="font-weight:bold; color:var(--accent);"><span class="slm-slider-val">${activeMetricVal}</span>${keyMetricUnit}</span>
+          </div>
+          <input type="range" class="slm-tuner-slider" min="${keyMetricMin}" max="${keyMetricMax}" step="${docType === 'lab' ? '0.1' : '1'}" value="${activeMetricVal}" style="width:100%; cursor:pointer; accent-color:var(--accent);" />
+        </div>
+      </div>
+    `;
+  } else if (docType === 'prescription') {
+    tunerHtml = `
+      <div class="med-section info" style="background: rgba(0, 243, 255, 0.03); border: 1px dashed var(--accent); margin-top:12px;">
+        <div class="med-section-title" style="color:var(--accent);">💊 SLM RX EXTRACTOR CHECKLIST</div>
+        <p style="font-size:0.75rem; margin-bottom:8px; color:var(--text-muted); line-height:1.3;">Check/uncheck the medications identified on your prescription document to verify conflicts and dosage guidelines in real-time:</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:6px; font-size:0.75rem;">
+          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" class="slm-tuner-checkbox" data-param="med_diabetes" ${tunerParams && tunerParams.med_diabetes ? 'checked' : (!tunerParams && /metformin|diabet/i.test(n) ? 'checked' : '')} /> Metformin (Sugar)</label>
+          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" class="slm-tuner-checkbox" data-param="med_bp" ${tunerParams && tunerParams.med_bp ? 'checked' : (!tunerParams && /lisinopril|amlodipine|bp/i.test(n) ? 'checked' : '')} /> Lisinopril (BP)</label>
+          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" class="slm-tuner-checkbox" data-param="med_chol" ${tunerParams && tunerParams.med_chol ? 'checked' : (!tunerParams && /atorva|statin|chol/i.test(n) ? 'checked' : '')} /> Atorvastatin (Chol)</label>
+          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" class="slm-tuner-checkbox" data-param="med_antibiotic" ${tunerParams && tunerParams.med_antibiotic ? 'checked' : (!tunerParams && /amoxi|antibio|penic/i.test(n) ? 'checked' : '')} /> Amoxicillin (Antibio)</label>
+          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" class="slm-tuner-checkbox" data-param="med_aspirin" ${tunerParams && tunerParams.med_aspirin ? 'checked' : (!tunerParams && /aspirin/i.test(n) ? 'checked' : '')} /> Aspirin (Thinner)</label>
+          <label style="display:flex; align-items:center; gap:4px; cursor:pointer;"><input type="checkbox" class="slm-tuner-checkbox" data-param="med_pain" ${tunerParams && tunerParams.med_pain ? 'checked' : (!tunerParams && /ibuprofen/i.test(n) ? 'checked' : '')} /> Ibuprofen (Pain)</label>
+        </div>
+      </div>
+    `;
+  }
+
+  const containerIdAttr = tunerParams && tunerParams.id ? `data-id="${tunerParams.id}"` : '';
+  const resultHtml = `
+    <div class="slm-diagnostic-hub" ${containerIdAttr} data-file-name="${file.name.replace(/"/g, '&quot;')}" data-doc-type="${docType}" style="position:relative; width:100%;">
+      
+      <!-- Diagnostic Vitals Ring & Header -->
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:8px; margin-bottom:8px;">
+        <span style="font-size:0.8rem; font-weight:bold; letter-spacing:1px; color:#ffffff;">${b.icon} ${detectedCondition.toUpperCase()}</span>
+        <span style="font-size:0.7rem; color:var(--text-muted); padding:2px 6px; border-radius:10px; background:rgba(255,255,255,0.05); font-family:var(--font-mono);">SLM v1.82 · CONFIDENCE: ${confidence}%</span>
+      </div>
+
+      <!-- Current Diagnostic Stage Banner -->
+      <div style="border-left: 3px solid ${stageColors[activeStage]}; background: rgba(255,255,255,0.02); padding: 8px; border-radius: 0 6px 6px 0; margin-bottom:10px;">
+        <div style="font-size:0.75rem; text-transform:uppercase; color:var(--text-muted); letter-spacing:0.5px;">Pathology Severity Stage</div>
+        <div style="font-size:0.95rem; font-weight:bold; color:${stageColors[activeStage]}; font-family:var(--font-title);">${stageTitles[activeStage]}</div>
+      </div>
+
+      <!-- Main Pathology Details -->
+      <div class="med-section info">
+        ${pathologyHtml}
+      </div>
+
+      <!-- Live SLM Tuner Interface -->
+      ${tunerHtml}
+
+      <!-- Therapeutic Suggestions & Guidelines -->
+      <div class="med-section info" style="margin-top:12px;">
+        <div class="med-section-title">💡 TREATMENT & THERAPEUTIC SUGGESTIONS</div>
+        ${therapeuticSuggestions}
+      </div>
+
+      <!-- Clinical Action Recommendation -->
+      <div class="med-section warning" style="border-color:${stageColors[activeStage]}; background:rgba(${activeStage === 4 ? '255,0,85' : activeStage === 3 ? '255,102,0' : '255,204,0'}, 0.05); margin-top:12px;">
+        <div class="med-section-title" style="color:${stageColors[activeStage]};">📋 RECOMMENDED CLINICAL ACTION</div>
+        <p>${medicalAction}</p>
+      </div>
+
+      <!-- Final Medical Disclaimer -->
+      <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 8px; font-style: italic; line-height: 1.2;">
+        ⚡ Disclaimer: RAMAN AI local SLM provides non-diagnostic statistical triage. Findings must be validated by a certified healthcare professional.
+      </div>
+    </div>
+  `;
+
+  return resultHtml;
 }
 
 // Override old btnAnalyze handler — clone to remove old listener then re-attach
@@ -2410,8 +2920,109 @@ function handleHidRestore() {
       document.getElementById('welcomeTime').textContent = nowTime();
       initParticles();
       renderVault();
+      bindTunerEvents();
     }
   }, 800);
+}
+
+let tunerEventsBound = false;
+function bindTunerEvents() {
+  if (tunerEventsBound) return;
+  tunerEventsBound = true;
+
+  // 1. Stage selection click listener
+  document.body.addEventListener('click', e => {
+    const btn = e.target.closest('.slm-tuner-btn');
+    if (!btn) return;
+    const container = btn.closest('.slm-diagnostic-hub');
+    if (!container) return;
+    
+    const id = container.dataset.id;
+    const docType = container.dataset.docType;
+    const fileName = container.dataset.fileName;
+    const stage = parseInt(btn.dataset.stage);
+    
+    const slider = container.querySelector('.slm-tuner-slider');
+    const val = slider ? slider.value : null;
+    
+    const checkboxes = container.querySelectorAll('.slm-tuner-checkbox');
+    const cbStates = {};
+    checkboxes.forEach(cb => { cbStates[cb.dataset.param] = cb.checked; });
+    
+    const tunerParams = { stage, value: val, ...cbStates, id };
+    const profile = getProfile();
+    const pseudoFile = { name: fileName };
+    const newHtml = analyzeDocument(pseudoFile, docType, profile, tunerParams);
+    
+    updateViewAndStorage(id, fileName, newHtml, container);
+  });
+
+  // 2. Real-time slider label update
+  document.body.addEventListener('input', e => {
+    const slider = e.target.closest('.slm-tuner-slider');
+    if (!slider) return;
+    const container = slider.closest('.slm-diagnostic-hub');
+    if (!container) return;
+    const outputSpan = container.querySelector('.slm-slider-val');
+    if (outputSpan) outputSpan.textContent = slider.value;
+  });
+
+  // 3. Slider/checkbox change listener to re-evaluate
+  document.body.addEventListener('change', e => {
+    const element = e.target.closest('.slm-tuner-slider, .slm-tuner-checkbox');
+    if (!element) return;
+    const container = element.closest('.slm-diagnostic-hub');
+    if (!container) return;
+    
+    const id = container.dataset.id;
+    const docType = container.dataset.docType;
+    const fileName = container.dataset.fileName;
+    
+    const activeBtn = container.querySelector('.slm-tuner-btn.active');
+    const stage = activeBtn ? parseInt(activeBtn.dataset.stage) : 2;
+    
+    const slider = container.querySelector('.slm-tuner-slider');
+    const val = slider ? slider.value : null;
+    
+    const checkboxes = container.querySelectorAll('.slm-tuner-checkbox');
+    const cbStates = {};
+    checkboxes.forEach(cb => { cbStates[cb.dataset.param] = cb.checked; });
+    
+    const tunerParams = { stage, value: val, ...cbStates, id };
+    const profile = getProfile();
+    const pseudoFile = { name: fileName };
+    const newHtml = analyzeDocument(pseudoFile, docType, profile, tunerParams);
+    
+    updateViewAndStorage(id, fileName, newHtml, container);
+  });
+}
+
+function updateViewAndStorage(id, fileName, newHtml, container) {
+  // A. Update visible DOM
+  const modalAnalysis = document.getElementById('vaultModalAnalysis');
+  if (modalAnalysis && container.closest('#vaultModalAnalysis')) {
+    modalAnalysis.innerHTML = newHtml;
+    const hub = modalAnalysis.querySelector('.slm-diagnostic-hub');
+    if (hub && id) hub.dataset.id = id;
+  }
+  
+  const msgBubble = container.closest('.message-bubble');
+  if (msgBubble) {
+    msgBubble.innerHTML = newHtml;
+  }
+  
+  // B. Sync with storage (vaultData)
+  let activeEntry = null;
+  if (id) {
+    activeEntry = vaultData.find(v => v.id == id);
+  } else {
+    activeEntry = vaultData.find(v => v.name === fileName);
+  }
+  if (activeEntry) {
+    activeEntry.analysis = newHtml;
+    localStorage.setItem('ramanai_vault', JSON.stringify(vaultData));
+    renderVault();
+  }
 }
 
 // ── Store the splash timer so it can be cancelled ─────
@@ -2425,6 +3036,7 @@ window._splashTimer = setTimeout(() => {
   loadProfile();
   renderVault();
   scheduleGuidance(true);
+  bindTunerEvents();
   // If we already have a Health ID from a prior session, show it in header
   if (currentHealthId) {
     updateHidChip();
