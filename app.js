@@ -4828,6 +4828,7 @@ function openTrainingHub() {
 
   backdrop.style.display = "block";
   modal.style.display = "block";
+  modal.classList.add("open");
   
   // Render active stats in HUD
   updateTrainingHubStats();
@@ -4843,7 +4844,10 @@ function closeTrainingHub() {
   const backdrop = document.getElementById("trainingHubBackdrop");
   const modal = document.getElementById("trainingHubModal");
   if (backdrop) backdrop.style.display = "none";
-  if (modal) modal.style.display = "none";
+  if (modal) {
+    modal.style.display = "none";
+    modal.classList.remove("open");
+  }
 }
 
 function updateTrainingHubStats() {
