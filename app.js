@@ -649,7 +649,7 @@ async function generateSlmResponse(text, profile) {
       "toe", "foot", "neck", "ear", "nose", "mouth", "tongue", "tooth", "teeth", "gum", 
       "stomachache", "headache", "chestache", "backache", "earache", "toothache", "itchy", "itch", 
       "scratch", "redness", "spots", "pimples", "shivering", "shiver", "chill", "chills", "sweat", 
-      "sweating"
+      "sweating", "tired", "exhausted"
     ]);
 
     const outOfContextKeywords = new Set([

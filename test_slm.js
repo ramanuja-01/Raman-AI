@@ -314,6 +314,46 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  // ----------------------------------------------------
+  // Test 7: Generative Empathy Monolingualism & Smart Conversational Triage
+  // ----------------------------------------------------
+  await runTest("Generative Empathy Monolingualism & Smart Conversational Triage", async () => {
+    let ok = true;
+
+    // 1. Verify English Empathy is pure English (contains no Odia characters/words)
+    window.currentLang = 'en';
+    const empathyEn = markovGenerator.generate(15);
+    const hasOdiaInEn = /[\u0B00-\u0B7F]/.test(empathyEn); // Unicode range for Odia script
+    ok = assert(!hasOdiaInEn, `English empathy generated pure English: "${empathyEn}"`) && ok;
+
+    // 2. Verify Odia Empathy is pure Odia (contains Odia words from training sentences)
+    window.currentLang = 'or';
+    const empathyOr = markovGenerator.generate(15);
+    const isOrWord = empathyOr.toLowerCase().split(/\s+/).some(w => ["apana", "moo", "chinta", "asantu", "swasthya", "bujhiparuchi", "karuntu", "aame"].includes(w.replace(/[.,]/g, "")));
+    ok = assert(isOrWord, `Odia empathy generated pure Odia: "${empathyOr}"`) && ok;
+
+    // 3. Verify targeted fallback for sickness
+    window.currentLang = 'en';
+    const sickResponse = await generateSlmResponse("i am feeling sick", { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" });
+    console.log("DEBUG SICK:", sickResponse);
+    const isTargetedSick = sickResponse.includes("describe your specific symptoms in more detail");
+    ok = assert(isTargetedSick, "Fallback for 'feeling sick' returns targeted sickness triage question.") && ok;
+
+    // 4. Verify targeted fallback for pain (using a query that bypasses high-confidence classification)
+    const painResponse = await generateSlmResponse("my toe is hurt", { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" });
+    console.log("DEBUG PAIN:", painResponse);
+    const isTargetedPain = painResponse.includes("specify exactly where it hurts");
+    ok = assert(isTargetedPain, "Fallback for 'my toe is hurt' returns targeted pain localization question.") && ok;
+
+    // 5. Verify targeted fallback for fatigue (using a query that bypasses high-confidence classification)
+    const fatigueResponse = await generateSlmResponse("i feel exhausted", { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" });
+    console.log("DEBUG FATIGUE:", fatigueResponse);
+    const isTargetedFatigue = fatigueResponse.includes("weakness or fatigue is a common symptom");
+    ok = assert(isTargetedFatigue, "Fallback for 'i feel exhausted' returns targeted hydration and sleep advice.") && ok;
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");
