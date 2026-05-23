@@ -304,37 +304,52 @@ class NaiveBayesSymptomClassifier {
 // Markov Chain transition engine to synthesize conversational empathy filler text (Bigram transition state)
 class MarkovTextGenerator {
   constructor() {
-    this.chain = {};
-    this.startPairs = [];
+    this.chainEn = {};
+    this.startPairsEn = [];
+    this.chainOr = {};
+    this.startPairsOr = [];
   }
 
-  train(sentences) {
+  train(sentences, lang = 'en') {
+    const chain = lang === 'or' ? this.chainOr : this.chainEn;
+    const startPairs = lang === 'or' ? this.startPairsOr : this.startPairsEn;
+
     for (const sentence of sentences) {
       const words = sentence.toLowerCase().split(/\s+/).filter(Boolean);
       if (words.length < 2) continue;
-      this.startPairs.push([words[0], words[1]]);
+      startPairs.push([words[0], words[1]]);
 
       for (let i = 0; i < words.length - 2; i++) {
         const key = words[i] + "_" + words[i+1];
         const next = words[i+2];
-        if (!this.chain[key]) {
-          this.chain[key] = [];
+        if (!chain[key]) {
+          chain[key] = [];
         }
-        this.chain[key].push(next);
+        chain[key].push(next);
       }
     }
   }
 
   generate(maxLength = 15) {
-    if (this.startPairs.length === 0) return "I understand your concerns.";
-    const start = this.startPairs[Math.floor(Math.random() * this.startPairs.length)];
+    const isOr = window.currentLang === 'or';
+    const chain = isOr ? this.chainOr : this.chainEn;
+    const startPairs = isOr ? this.startPairsOr : this.startPairsEn;
+
+    if (startPairs.length === 0) {
+      // Return a static fallback if not trained
+      return isOr 
+        ? "ମୁଁ ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ସମସ୍ୟା ବୁଝିପାରୁଛି।" 
+        : "I understand your health concerns.";
+    }
+    
+    const start = startPairs[Math.floor(Math.random() * startPairs.length)];
     let w1 = start[0];
     let w2 = start[1];
     let result = [w1.charAt(0).toUpperCase() + w1.slice(1), w2];
 
     for (let i = 0; i < maxLength - 2; i++) {
       const key = w1 + "_" + w2;
-      const choices = this.chain[key];
+      const choices = chain[key];
       if (!choices || choices.length === 0) break;
       const next = choices[Math.floor(Math.random() * choices.length)];
       result.push(next);
@@ -505,7 +520,7 @@ const SLM_TRAINING_CORPUS = {
   ]
 };
 
-const MARKOV_TRAINING_SENTENCES = [
+const MARKOV_TRAINING_SENTENCES_EN = [
   "i understand you are feeling unwell and experiencing discomfort today",
   "let us investigate these symptoms carefully to understand what is going on",
   "your health profile and symptoms are analyzed with top priority",
@@ -516,17 +531,22 @@ const MARKOV_TRAINING_SENTENCES = [
   "i hear you and i am sorry you are dealing with this discomfort",
   "we want to make sure you get the right clinical advice",
   "let us examine your vitals and risk profile to establish triage safety",
+  "your safety and well-being remain our absolute clinical focus",
+  "let us proceed with care and evaluate these health concerns immediately",
+  "i am committed to checking your symptoms thoroughly to ensure safety",
+  "symptom observation and profile data are processed with extreme privacy"
+];
+
+const MARKOV_TRAINING_SENTENCES_OR = [
   "moo bujhiparuchi apana asustha anubhab karuchanti ajhi ebam kasta pauchanti",
   "asantu dekhiba kana hoipariba ebam ehara prathama chikitsa kariba milisiri",
   "apana dhairya dharantu ebam mo sahita katha huantu jala piyantu sustha rahantu",
   "chinta karantu nahi asantu ehaku shigra bhala kariba sahaya karibi",
   "apana nija jatna niyantu ebam ehi Upachara shigra prarambha karantu",
-  "your safety and well-being remain our absolute clinical focus",
-  "let us proceed with care and evaluate these health concerns immediately",
-  "i am committed to checking your symptoms thoroughly to ensure safety",
   "apana bilkul chinta karantu nahi aame ehara prathama samadhana kariba",
-  "chhati jantrana thile druta emergency chikitsa pain 108 ku call karantu",
-  "symptom observation and profile data are processed with extreme privacy"
+  "apana dhairya dharantu aame apananku purna sahajya karibu",
+  "swasthya samasya bhala kariba aamara prathama kartabya",
+  "symptom ebam medical profile gupata bhabe parichalita heba"
 ];
 
 // Initialize and Train SLM Engines
@@ -534,7 +554,8 @@ const slmClassifier = new NaiveBayesSymptomClassifier();
 slmClassifier.train(SLM_TRAINING_CORPUS);
 
 const markovGenerator = new MarkovTextGenerator();
-markovGenerator.train(MARKOV_TRAINING_SENTENCES);
+markovGenerator.train(MARKOV_TRAINING_SENTENCES_EN, 'en');
+markovGenerator.train(MARKOV_TRAINING_SENTENCES_OR, 'or');
 
 // Define generateSlmResponse
 async function generateSlmResponse(text, profile) {
@@ -699,9 +720,24 @@ async function generateSlmResponse(text, profile) {
         ? `ମୁଁ ଆପଣଙ୍କ ପାଖରେ ଅଛି! ଆପଣଙ୍କୁ ଶାରୀରିକ ଭାବରେ କିପରି ଲାଗୁଛି? ମୋତେ କୁହନ୍ତୁ।`
         : `I am right here with you! How are you feeling physically today? Let me know if anything is aching or hurting.`;
     } else {
-      conversationalReply = isOr
-        ? `ମୁଁ ଆପଣଙ୍କ ବାର୍ତ୍ତା ପାଇଲି। ଦୟାକରି ଆପଣଙ୍କ ସିମ୍ପଟମ୍ (ଲକ୍ଷଣ) ବିଷୟରେ ଟିକେ ଅଧିକ ବିବରଣୀ ଦେବେ କି? ଉଦାହରଣ: ଜ୍ୱର, ମୁଣ୍ଡବିନ୍ଧା, କିମ୍ବା ଛାତିରେ କଷ୍ଟ।`
-        : `I received your message. Could you please describe your symptoms in a bit more detail? It helps if you mention where it hurts, how long it's been happening, and if you have other symptoms like a fever.`;
+      const lowerText = text.toLowerCase();
+      if (/sick|unwell|not feel|not good|asustha|deh kharab/i.test(lowerText)) {
+        conversationalReply = isOr
+          ? `ଆପଣ ଅସୁସ୍ଥ ଅନୁଭବ କରୁଥିବାରୁ ମୁଁ ଦୁଃଖିତ। ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ସମସ୍ୟା ଭଲଭାବେ ବୁଝିବା ପାଇଁ, ଦୟାକରି କହିବେ କି ଆପଣଙ୍କର ଜ୍ୱର, କାଶ, ମୁଣ୍ଡବିନ୍ଧା କିମ୍ବା ଶରୀରରେ ଯନ୍ତ୍ରଣା ହେଉଛି କି?`
+          : `I am sorry to hear you are feeling unwell. To help me triage your condition, could you describe your specific symptoms in more detail (e.g. fever, cough, body pain, or headache)?`;
+      } else if (/pain|hurt|ache|bitha|jantrana|kanchuni/i.test(lowerText)) {
+        conversationalReply = isOr
+          ? `ଆପଣ ଶରୀରରେ ଯନ୍ତ୍ରଣା ହେଉଥିବା ବିଷୟରେ କହିଲେ। ଦୟାକରି ଜଣାଇବେ କି ଯନ୍ତ୍ରଣา କେଉଁଠି ହେଉଛି (ଯେପରିକି ଛାତି, ମୁଣ୍ଡ, ପେଟ, ଆଣ୍ଠୁଗଣ୍ଠି କିମ୍ବା ଅଣ୍ଟା) ଏବଂ ଏହା କେତେ ତୀବ୍ର?`
+          : `You mentioned experiencing pain. Could you please specify exactly where it hurts (e.g. chest, head, stomach, joints, or back) and describe the intensity (mild, moderate, or severe)?`;
+      } else if (/tired|fatigue|weak|exhausted|durbala|klanta/i.test(lowerText)) {
+        conversationalReply = isOr
+          ? `ଦୁର୍ବଳତା କିମ୍ବା ଥକ୍କାପଣ ହେବା ଏକ ସାଧାରଣ ଲକ୍ଷଣ ଅଟେ। ଆପଣ ପର୍ଯ୍ୟାପ୍ତ ପରିମାଣର ବିଶ୍ରାମ ନେଉଛନ୍ତି କି ଏବଂ ପ୍ରଚୁର ଜଳପାନ କରୁଛନ୍ତି କି? ଯଦି ଆପଣଙ୍କର ଜ୍ୱର କିମ୍ବା ମୁଣ୍ଡ ବୁଲାଉଛି, ଦୟାକରି ଜଣାନ୍ତୁ।`
+          : `Experiencing weakness or fatigue is a common symptom. Are you getting enough sleep and staying hydrated? If you have other symptoms like a fever or dizziness, please let me know.`;
+      } else {
+        conversationalReply = isOr
+          ? `ମୁଁ ଆପଣଙ୍କ ବାର୍ତ୍ତା ପାଇଲି। ଦୟାକରି ଆପଣଙ୍କ ସିମ୍ପଟମ୍ (ଲକ୍ଷଣ) ବିଷୟରେ ଟିକେ ଅଧିକ ବିବରଣୀ ଦେବେ କି? ଉଦାହରଣ: ଜ୍ୱର, ମୁଣ୍ଡବିନ୍ଧା, କିମ୍ବା ଛାତିରେ କଷ୍ଟ।`
+          : `I received your message. Could you please describe your symptoms in a bit more detail? It helps if you mention where it hurts, how long it's been happening, and if you have other symptoms like a fever.`;
+      }
     }
 
     const footerHint = isOr ? ODIA_DICT.footerHint : "You can also use the <strong>Quick Symptoms</strong> buttons on the left panel for common conditions. 🩺";
