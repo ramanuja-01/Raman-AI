@@ -471,7 +471,9 @@ const SLM_TRAINING_CORPUS = {
     "sugar badhi jaichi barambar parisra laguchi diabetes spike",
     "polyuria polydipsia diabetic hyperglycemia fatigue dry mouth",
     "fasting glucose high 180 hba1c sugar spike diabetes",
-    "extreme fatigue thirsty barambar parisra diabetic glucose"
+    "extreme fatigue thirsty barambar parisra diabetic glucose",
+    "blood glucose test result is 260 mg/dL glycemia",
+    "aakhi dekhajiba chhota fatigue bahumutra sugar spike"
   ],
   "eye pain": [
     "red eyes, discharge, blurry vision, painful eyes",
@@ -483,7 +485,9 @@ const SLM_TRAINING_CORPUS = {
     "akhi lal padichi pani baharuche akhi bitha conjunctivitis",
     "sore eyes discharge itchiness photophobia blurry vision",
     "ocular pain dry eyes computer screen strain redness",
-    "akhi pani baharuchi red eye pain strain watery"
+    "akhi pani baharuchi red eye pain strain watery",
+    "photophobia dry itchy red eye infection conjunctivitis",
+    "aakhi lal phuli jaichi aakhi bitha computer strain"
   ],
   "back pain": [
     "lower back ache, stiff spine, nerve pain down leg",
@@ -495,7 +499,9 @@ const SLM_TRAINING_CORPUS = {
     "anta bitha heuchi spine betha muscle catch strain",
     "lumbar spine stiffness backache radiating leg pain numbness",
     "back pain muscle pull spine spasm lifting heavy objects",
-    "anta bindha stiff spine lumbar ache backache"
+    "anta bindha stiff spine lumbar ache backache",
+    "lumbar back pain spasm poor posture lumbar spondylosis",
+    "anta bindha bitha heuchi chalibare kasta poor posture"
   ]
 };
 
@@ -514,7 +520,13 @@ const MARKOV_TRAINING_SENTENCES = [
   "asantu dekhiba kana hoipariba ebam ehara prathama chikitsa kariba milisiri",
   "apana dhairya dharantu ebam mo sahita katha huantu jala piyantu sustha rahantu",
   "chinta karantu nahi asantu ehaku shigra bhala kariba sahaya karibi",
-  "apana nija jatna niyantu ebam ehi Upachara shigra prarambha karantu"
+  "apana nija jatna niyantu ebam ehi Upachara shigra prarambha karantu",
+  "your safety and well-being remain our absolute clinical focus",
+  "let us proceed with care and evaluate these health concerns immediately",
+  "i am committed to checking your symptoms thoroughly to ensure safety",
+  "apana bilkul chinta karantu nahi aame ehara prathama samadhana kariba",
+  "chhati jantrana thile druta emergency chikitsa pain 108 ku call karantu",
+  "symptom observation and profile data are processed with extreme privacy"
 ];
 
 // Initialize and Train SLM Engines
@@ -3451,6 +3463,20 @@ function openApiSettings() {
   if (openaiBaseUrlInput) openaiBaseUrlInput.value = openaiBaseUrl;
   if (openaiModelInput) openaiModelInput.value = openaiModelName;
 
+  // Load Hyperparameters
+  const temp = localStorage.getItem("ramanai_llm_temp") || "0.2";
+  const maxTokens = localStorage.getItem("ramanai_llm_max_tokens") || "2048";
+  
+  const tempInput = document.getElementById("llmTemperature");
+  const tempDisplay = document.getElementById("tempValue");
+  if (tempInput) tempInput.value = temp;
+  if (tempDisplay) tempDisplay.textContent = temp;
+
+  const tokensInput = document.getElementById("llmMaxTokens");
+  const tokensDisplay = document.getElementById("tokensValue");
+  if (tokensInput) tokensInput.value = maxTokens;
+  if (tokensDisplay) tokensDisplay.textContent = maxTokens;
+
   // Align panel display
   toggleProviderSettings();
 }
@@ -3493,6 +3519,14 @@ function saveApiKey() {
   }
   localStorage.setItem("ramanai_openai_base_url", openaiBaseUrl);
   localStorage.setItem("ramanai_openai_model", openaiModelName);
+
+  // Save Hyperparameters
+  const tempInput = document.getElementById("llmTemperature");
+  const tokensInput = document.getElementById("llmMaxTokens");
+  const temp = tempInput ? tempInput.value : "0.2";
+  const maxTokens = tokensInput ? tokensInput.value : "2048";
+  localStorage.setItem("ramanai_llm_temp", temp);
+  localStorage.setItem("ramanai_llm_max_tokens", maxTokens);
 
   const isOr = window.currentLang === 'or';
   if (provider === "local-slm") {
@@ -4962,6 +4996,10 @@ ${profileCtx}`;
     parts: [{ text: text }]
   });
 
+  // Load dynamically saved parameters
+  const temp = parseFloat(localStorage.getItem("ramanai_llm_temp") || "0.2");
+  const maxTokens = parseInt(localStorage.getItem("ramanai_llm_max_tokens") || "2048");
+
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
       method: "POST",
@@ -4971,7 +5009,8 @@ ${profileCtx}`;
       body: JSON.stringify({
         contents: history,
         generationConfig: {
-          temperature: 0.2,
+          temperature: temp,
+          maxOutputTokens: maxTokens
         }
       })
     });
@@ -5036,6 +5075,10 @@ ${profileCtx}`;
     content: text
   });
 
+  // Load dynamically saved parameters
+  const temp = parseFloat(localStorage.getItem("ramanai_llm_temp") || "0.2");
+  const maxTokens = parseInt(localStorage.getItem("ramanai_llm_max_tokens") || "2048");
+
   try {
     const headers = {
       "Content-Type": "application/json"
@@ -5050,7 +5093,8 @@ ${profileCtx}`;
       body: JSON.stringify({
         model: model,
         messages: messages,
-        temperature: 0.2
+        temperature: temp,
+        max_tokens: maxTokens
       })
     });
 
@@ -5278,5 +5322,43 @@ function runSandboxInference(text) {
     `;
   });
 
-  listEl.innerHTML = html;
+  const tokens = slmClassifier.tokenize(text);
+  const trieMatches = slmClassifier.trie.search(text);
+  
+  // Find mapped unigrams/bigrams
+  const activeTokens = tokens.filter(t => slmClassifier.vocabulary.has(t) || slmClassifier.trie.search(t).length > 0);
+  const activeUnigrams = activeTokens.filter(t => !t.includes(" "));
+  const activeNgrams = activeTokens.filter(t => t.includes(" "));
+  
+  const diagnosticTraceHtml = `
+    <div style="margin-top: 15px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.08); font-family: monospace; font-size: 0.72rem; line-height: 1.4;">
+      <div style="color:var(--accent); font-weight:bold; margin-bottom:8px; font-family:var(--font-head); letter-spacing:0.5px;">🧬 NEURAL TRACE & TOKEN ANALYSIS</div>
+      
+      <div style="margin-bottom: 6px;">
+        <span style="color:var(--text-muted);">Trie Phrase Matches:</span> 
+        ${trieMatches.length > 0 
+          ? trieMatches.map(m => `<span style="background:rgba(0, 229, 255, 0.15); color:var(--cyan); border:1px solid rgba(0, 229, 255, 0.3); padding:1px 4px; border-radius:4px; margin-right:4px; display:inline-block; margin-top:2px;">${m.word} ➔ [${m.category}]</span>`).join("")
+          : '<span style="color:rgba(255,255,255,0.25);">None</span>'
+        }
+      </div>
+
+      <div style="margin-bottom: 6px;">
+        <span style="color:var(--text-muted);">Extracted Key Unigrams:</span> 
+        ${activeUnigrams.length > 0
+          ? Array.from(new Set(activeUnigrams)).map(u => `<span style="background:rgba(0, 255, 179, 0.15); color:var(--accent); border:1px solid rgba(0, 255, 179, 0.3); padding:1px 4px; border-radius:4px; margin-right:4px; display:inline-block; margin-top:2px;">${u}</span>`).join("")
+          : '<span style="color:rgba(255,255,255,0.25);">None</span>'
+        }
+      </div>
+
+      <div>
+        <span style="color:var(--text-muted);">Extracted N-grams (Bigrams/Trigrams):</span> 
+        ${activeNgrams.length > 0
+          ? Array.from(new Set(activeNgrams)).map(n => `<span style="background:rgba(255, 159, 67, 0.15); color:#ff9f43; border:1px solid rgba(255, 159, 67, 0.3); padding:1px 4px; border-radius:4px; margin-right:4px; display:inline-block; margin-top:2px;">${n}</span>`).join("")
+          : '<span style="color:rgba(255,255,255,0.25);">None</span>'
+        }
+      </div>
+    </div>
+  `;
+
+  listEl.innerHTML = html + diagnosticTraceHtml;
 }
