@@ -41,6 +41,8 @@ const makeMockElement = () => {
     cloneNode() { return makeMockElement(); },
     appendChild() { return makeMockElement(); },
     removeChild() {},
+    querySelector() { return makeMockElement(); },
+    querySelectorAll() { return []; },
     parentNode: {
       replaceChild() {}
     }

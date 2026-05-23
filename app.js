@@ -1595,7 +1595,32 @@ async function sendMessage() {
 
   showTyping(false);
   const profile = getProfile();
-  let response = await generateSlmResponse(text, profile);
+  
+  let response = "";
+  const provider = localStorage.getItem("ramanai_llm_provider") || "local-slm";
+  const isOr = window.currentLang === 'or';
+
+  if (provider === "gemini") {
+    const key = localStorage.getItem("ramanai_gemini_api_key");
+    const model = localStorage.getItem("ramanai_gemini_model") || "gemini-1.5-flash";
+    if (key) {
+      response = await generateGeminiResponse(text, profile, key, model);
+    } else {
+      const warningText = isOr 
+        ? `<div class="med-section warning"><p>⚠️ <strong>ଗୁଗଲ୍ ଜେମିନି API କି ମିଳିଲା ନାହିଁ:</strong> ଦୟาକରି API ସେଟିଙ୍ଗ୍ସକୁ ଯାଇ API Key ପ୍ରଦାନ କରନ୍ତୁ କିମ୍ବା ଲୋକାଲ୍ SLM ବ୍ୟବହାର କରନ୍ତୁ।</p><p>ରାମନ୍ ଲୋକାଲ୍ SLM ସହିତ ଅଫ୍‌ଲାଇନ୍ ଇନଫରେନ୍ସ କରାଯାଉଛି...</p></div>`
+        : `<div class="med-section warning"><p>⚠️ <strong>Google Gemini API Key Missing:</strong> Please check your System & Model Settings to configure a valid API key.</p><p>Falling back to high-speed offline RAMAN Local SLM triage...</p></div>`;
+      addMessage("ai", warningText, true);
+      response = await generateSlmResponse(text, profile);
+    }
+  } else if (provider === "openai") {
+    const key = localStorage.getItem("ramanai_openai_api_key") || "";
+    const baseUrl = localStorage.getItem("ramanai_openai_base_url") || "https://api.openai.com/v1";
+    const model = localStorage.getItem("ramanai_openai_model") || "gpt-4o";
+    response = await generateOpenAiResponse(text, profile, key, baseUrl, model);
+  } else {
+    response = await generateSlmResponse(text, profile);
+  }
+
   addMessage("ai", response, true);
 
   // Capture AI response
@@ -3380,6 +3405,19 @@ function restoreFromPanel(forceId = null) {
 // ── GEMINI API INTEGRATION ─────────────────────────────
 // ═══════════════════════════════════════════════════════
 
+function toggleProviderSettings() {
+  const providerSelect = document.getElementById("llmProvider");
+  if (!providerSelect) return;
+  const provider = providerSelect.value;
+  const localSlmPanel = document.getElementById("settingsLocalSlm");
+  const geminiPanel = document.getElementById("settingsGemini");
+  const openaiPanel = document.getElementById("settingsOpenAi");
+
+  if (localSlmPanel) localSlmPanel.style.display = provider === "local-slm" ? "block" : "none";
+  if (geminiPanel) geminiPanel.style.display = provider === "gemini" ? "block" : "none";
+  if (openaiPanel) openaiPanel.style.display = provider === "openai" ? "block" : "none";
+}
+
 function openApiSettings() {
   const backdrop = document.getElementById("apiSettingsBackdrop");
   const modal = document.getElementById("apiSettingsModal");
@@ -3388,8 +3426,33 @@ function openApiSettings() {
     modal.style.display = "block";
     modal.classList.add("open");
   }
-  const savedKey = localStorage.getItem('ramanai_gemini_api_key');
-  if (savedKey) document.getElementById("geminiApiKey").value = savedKey;
+
+  // Load provider
+  const provider = localStorage.getItem("ramanai_llm_provider") || "local-slm";
+  const providerSelect = document.getElementById("llmProvider");
+  if (providerSelect) providerSelect.value = provider;
+
+  // Load Gemini details
+  const geminiKey = localStorage.getItem("ramanai_gemini_api_key") || "";
+  const geminiModel = localStorage.getItem("ramanai_gemini_model") || "gemini-1.5-flash";
+  const geminiKeyInput = document.getElementById("geminiApiKey");
+  const geminiModelSelect = document.getElementById("geminiModel");
+  if (geminiKeyInput) geminiKeyInput.value = geminiKey;
+  if (geminiModelSelect) geminiModelSelect.value = geminiModel;
+
+  // Load OpenAI details
+  const openaiKey = localStorage.getItem("ramanai_openai_api_key") || "";
+  const openaiBaseUrl = localStorage.getItem("ramanai_openai_base_url") || "https://api.openai.com/v1";
+  const openaiModelName = localStorage.getItem("ramanai_openai_model") || "gpt-4o";
+  const openaiKeyInput = document.getElementById("openaiApiKey");
+  const openaiBaseUrlInput = document.getElementById("openaiBaseUrl");
+  const openaiModelInput = document.getElementById("openaiModel");
+  if (openaiKeyInput) openaiKeyInput.value = openaiKey;
+  if (openaiBaseUrlInput) openaiBaseUrlInput.value = openaiBaseUrl;
+  if (openaiModelInput) openaiModelInput.value = openaiModelName;
+
+  // Align panel display
+  toggleProviderSettings();
 }
 
 function closeApiSettings() {
@@ -3403,14 +3466,52 @@ function closeApiSettings() {
 }
 
 function saveApiKey() {
-  const key = document.getElementById("geminiApiKey").value.trim();
-  if (key) {
-    localStorage.setItem('ramanai_gemini_api_key', key);
-    alert("Configuration saved! RAMAN AI local SLM remains the primary high-speed diagnostic engine.");
+  const providerSelect = document.getElementById("llmProvider");
+  const provider = providerSelect ? providerSelect.value : "local-slm";
+  
+  localStorage.setItem("ramanai_llm_provider", provider);
+
+  // Gemini Settings
+  const geminiKey = document.getElementById("geminiApiKey") ? document.getElementById("geminiApiKey").value.trim() : "";
+  const geminiModel = document.getElementById("geminiModel") ? document.getElementById("geminiModel").value : "gemini-1.5-flash";
+  if (geminiKey) {
+    localStorage.setItem("ramanai_gemini_api_key", geminiKey);
   } else {
-    localStorage.removeItem('ramanai_gemini_api_key');
-    alert("Configuration cleared! Reverted completely to local offline SLM engine.");
+    localStorage.removeItem("ramanai_gemini_api_key");
   }
+  localStorage.setItem("ramanai_gemini_model", geminiModel);
+
+  // OpenAI / Custom Gateway Settings
+  const openaiKey = document.getElementById("openaiApiKey") ? document.getElementById("openaiApiKey").value.trim() : "";
+  const openaiBaseUrl = document.getElementById("openaiBaseUrl") ? document.getElementById("openaiBaseUrl").value.trim() : "https://api.openai.com/v1";
+  const openaiModelName = document.getElementById("openaiModel") ? document.getElementById("openaiModel").value.trim() : "gpt-4o";
+  
+  if (openaiKey) {
+    localStorage.setItem("ramanai_openai_api_key", openaiKey);
+  } else {
+    localStorage.removeItem("ramanai_openai_api_key");
+  }
+  localStorage.setItem("ramanai_openai_base_url", openaiBaseUrl);
+  localStorage.setItem("ramanai_openai_model", openaiModelName);
+
+  const isOr = window.currentLang === 'or';
+  if (provider === "local-slm") {
+    const alertMsg = isOr 
+      ? "କନଫିଗରେସନ୍ ସଫଳତାର ସହ ସଂରକ୍ଷିତ ହେଲା! ରାମନ୍ ଲୋକାଲ୍ SLM ସକ୍ରିୟ ଅଛି।"
+      : "Configuration saved! RAMAN Local SLM is the active engine.";
+    alert(alertMsg);
+  } else if (provider === "gemini") {
+    const alertMsg = isOr
+      ? "କନଫିଗରେସନ୍ ସଫଳତାର ସହ ସଂରକ୍ଷିତ ହେଲା! ଗୁଗଲ୍ ଜେମିନି API ସକ୍ରିୟ ଅଛି।"
+      : "Configuration saved! Google Gemini API is the active engine.";
+    alert(alertMsg);
+  } else if (provider === "openai") {
+    const alertMsg = isOr
+      ? "କନଫିଗରେସନ୍ ସଫଳତାର ସହ ସଂରକ୍ଷିତ ହେଲା! କଷ୍ଟମ୍ API ଗେଟୱେ ସକ୍ରିୟ ଅଛି।"
+      : "Configuration saved! Custom API Gateway is the active engine.";
+    alert(alertMsg);
+  }
+
   closeApiSettings();
 }
 
@@ -4814,7 +4915,7 @@ function bindConsultationEvents() {
   });
 }
 
-async function generateGeminiResponse(text, profile, apiKey) {
+async function generateGeminiResponse(text, profile, apiKey, model) {
   const profileCtx = `Patient Profile: Name: ${profile.name || 'Unknown'}, Age: ${profile.age || 'Unknown'}, Gender: ${profile.gender || 'Unknown'}, Blood Group: ${profile.blood || 'Unknown'}, Allergies: ${profile.allergies || 'None'}.`;
   const isOr = window.currentLang === 'or';
   
@@ -4862,7 +4963,7 @@ ${profileCtx}`;
   });
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -4891,6 +4992,84 @@ ${profileCtx}`;
   } catch (error) {
     console.error("Fetch error:", error);
     return `<div class="med-section warning"><p>⚠️ Network error. Could not reach Gemini API.</p></div>`;
+  }
+}
+
+async function generateOpenAiResponse(text, profile, apiKey, baseUrl, model) {
+  const profileCtx = `Patient Profile: Name: ${profile.name || 'Unknown'}, Age: ${profile.age || 'Unknown'}, Gender: ${profile.gender || 'Unknown'}, Blood Group: ${profile.blood || 'Unknown'}, Allergies: ${profile.allergies || 'None'}.`;
+  const isOr = window.currentLang === 'or';
+  
+  const systemInstruction = `You are RAMAN AI - Experiment No. 170, an empathetic and highly advanced medical intelligence assistant.
+Your goal is to triage symptoms, suggest possible conditions, and recommend general medications or dietary adjustments based strictly on the following Medical Knowledge Base.
+
+MEDICAL KNOWLEDGE BASE:
+${JSON.stringify(MEDICAL_KB)}
+
+RULES:
+1. Be empathetic and professional.
+2. If the user's symptoms match something in the MEDICAL KNOWLEDGE BASE, use that information to structure your response. Include possible conditions, medications (with dosage), precautions, and dietary recommendations.
+3. If the user mentions chest pain radiating to the arm/jaw, or any emergency symptom, immediately recommend calling emergency services.
+4. Always include a disclaimer that you are an AI and they should consult a real doctor.
+5. You MUST respond in HTML format (using <p>, <ul>, <li>, <strong>, etc.) so it renders nicely in the chat UI. Do not use markdown backticks for HTML. Use div classes like <div class="med-section info"><div class="med-section-title">Title</div>...</div>.
+6. The user is speaking ${isOr ? 'Odia' : 'English'}. You MUST reply entirely in ${isOr ? 'Odia' : 'English'}.
+
+Here is the current patient profile:
+${profileCtx}`;
+
+  const messages = [];
+  messages.push({
+    role: 'system',
+    content: systemInstruction
+  });
+
+  // Append actual chat history
+  chatHistory.forEach(msg => {
+    messages.push({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.text
+    });
+  });
+
+  // Append current message
+  messages.push({
+    role: 'user',
+    content: text
+  });
+
+  try {
+    const headers = {
+      "Content-Type": "application/json"
+    };
+    if (apiKey) {
+      headers["Authorization"] = `Bearer ${apiKey}`;
+    }
+
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({
+        model: model,
+        messages: messages,
+        temperature: 0.2
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("OpenAI API Error:", errorData);
+      const errMsg = errorData.error ? errorData.error.message : 'Unable to connect to Custom Gateway';
+      return `<div class="med-section warning"><p>⚠️ API Error: ${errMsg}</p><p><small>Please check your API configuration in Settings.</small></p></div>`;
+    }
+
+    const data = await response.json();
+    if (data.choices && data.choices[0] && data.choices[0].message) {
+      return data.choices[0].message.content;
+    } else {
+      return `<p>An unexpected response format was returned from the API.</p>`;
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+    return `<div class="med-section warning"><p>⚠️ Network error. Could not reach OpenAI API Gateway.</p></div>`;
   }
 }
 
