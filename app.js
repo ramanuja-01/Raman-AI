@@ -1762,14 +1762,27 @@ function addMessage(role, content, isHTML = false) {
     if (sc) sc.textContent = sessionMsgs;
   }
 
-  // Auto-add reactions to AI messages
+  // Auto-add reactions and voice TTS reader to AI messages
   if (role === "ai") {
     const r = document.createElement("div");
     r.className = "msg-reactions";
-    r.innerHTML = `<button class="reaction-btn" title="Helpful">👍</button>
+    r.innerHTML = `<button class="reaction-btn voice-read-btn" title="Listen to diagnosis" style="display: inline-flex; align-items: center; gap: 4px; border-color: rgba(0, 229, 255, 0.3); color: var(--cyan); margin-right: 8px;">🎙️ Listen</button>
+      <button class="reaction-btn" title="Helpful">👍</button>
       <button class="reaction-btn" title="Love it">❤️</button>
       <button class="reaction-btn" title="Great">🙌</button>`;
-    r.querySelectorAll(".reaction-btn").forEach(b => {
+    
+    // Voice speech handler registration
+    const voiceBtn = r.querySelector(".voice-read-btn");
+    if (voiceBtn) {
+      voiceBtn.addEventListener("click", () => {
+        const bubble = div.querySelector(".message-bubble");
+        if (bubble) {
+          window.speakMessageText(voiceBtn, bubble.innerText || bubble.textContent);
+        }
+      });
+    }
+
+    r.querySelectorAll(".reaction-btn:not(.voice-read-btn)").forEach(b => {
       b.addEventListener("click", () => b.classList.toggle("reacted"));
     });
     div.querySelector(".message-content").appendChild(r);
@@ -6383,4 +6396,64 @@ function initAnatomicalScanner() {
 setTimeout(() => {
   initAnatomicalScanner();
 }, 400);
+
+// ── Text-to-Speech (TTS) Prescription Reader ───────────
+let currentUtterance = null;
+
+window.speakMessageText = function(btn, text) {
+  // If voice is currently speaking, cancel it immediately
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    if (btn.classList.contains("speaking-active")) {
+      window.resetVoiceBtn(btn);
+      return;
+    }
+  }
+
+  // Reset all other voice buttons on active messages
+  document.querySelectorAll(".voice-read-btn").forEach(b => {
+    window.resetVoiceBtn(b);
+  });
+
+  // Clean clinical text (filter out UI emojis and warnings for clean speech delivery)
+  let cleanText = text
+    .replace(/📋|💊|🔬|🧠|📁|❤️|🚨|⚠️|👍|🙌|🤖|🧑|🕐/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/<\/?[^>]+(>|$)/g, "") // Strip raw HTML tags just in case
+    .trim();
+
+  if (!cleanText) return;
+
+  const utterance = new SpeechSynthesisUtterance(cleanText);
+  
+  // Senses whether text contains native Odia characters or active language state is Odia
+  const isOr = window.currentLang === 'or' || /[\u0B00-\u0B7F]/.test(cleanText);
+  utterance.lang = isOr ? "hi-IN" : "en-US"; // hi-IN is an extremely accurate, soft phonetic voice for bilingual/Indian accents
+  utterance.rate = 0.95; // Slightly slower, more clinical and authoritative delivery rate
+  utterance.pitch = 1.0;
+
+  utterance.onstart = () => {
+    btn.innerHTML = "⏹ Stop";
+    btn.style.color = "var(--red-warn)";
+    btn.style.borderColor = "var(--red-warn)";
+    btn.classList.add("speaking-active");
+    btn.style.animation = "voicePulse 0.8s ease-in-out infinite alternate";
+  };
+
+  utterance.onend = utterance.onerror = () => {
+    window.resetVoiceBtn(btn);
+  };
+
+  currentUtterance = utterance;
+  window.speechSynthesis.speak(utterance);
+};
+
+window.resetVoiceBtn = function(btn) {
+  btn.innerHTML = "🎙️ Listen";
+  btn.style.color = "var(--cyan)";
+  btn.style.borderColor = "rgba(0, 229, 255, 0.3)";
+  btn.classList.remove("speaking-active");
+  btn.style.animation = "";
+};
+
 
