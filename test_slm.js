@@ -182,6 +182,10 @@ try {
     .replace(/\blet activeConsultation\b/g, 'var activeConsultation')
     .replace(/\blet currentHealthId\b/g, 'var currentHealthId')
     .replace(/\bconst MEDICAL_KB\b/g, 'var MEDICAL_KB')
+    .replace(/\bconst CLINICAL_DICTS\b/g, 'var CLINICAL_DICTS')
+    .replace(/\bconst SLM_TRAINING_CORPUS\b/g, 'var SLM_TRAINING_CORPUS')
+    .replace(/\basync function fetchBiomedicalSynonyms\b/g, 'global.fetchBiomedicalSynonyms = async function fetchBiomedicalSynonyms')
+    .replace(/\basync function autoTrainSLMWithKeywords\b/g, 'global.autoTrainSLMWithKeywords = async function autoTrainSLMWithKeywords')
     .replace(/\bclass TrieNode\b/g, 'global.TrieNode = class TrieNode')
     .replace(/\bclass Trie\b/g, 'global.Trie = class Trie')
     .replace(/\bclass NaiveBayesSymptomClassifier\b/g, 'global.NaiveBayesSymptomClassifier = class NaiveBayesSymptomClassifier')
@@ -693,6 +697,56 @@ async function runTest(name, fn) {
     global.speechSynthesis.speak = oldSpeechSpeak;
 
     return ok;
+  });
+
+  await runTest("Dynamic SLM Auto-Training & Vocabulary Expansion", async () => {
+    let ok = true;
+
+    // 1. Verify CLINICAL_DICTS is defined and has valid keys
+    ok = assert(typeof CLINICAL_DICTS === "object", "CLINICAL_DICTS is defined as a global object.") && ok;
+    ok = assert(Array.isArray(CLINICAL_DICTS.pneumonia), "Pneumonia dictionary has a valid array of synonyms.") && ok;
+
+    // 2. Mock a Europe PMC API call and verify fetchBiomedicalSynonyms behaves correctly
+    const oldFetch = global.fetch;
+    const mockJson = {
+      resultList: {
+        result: [
+          { title: "Clinical evaluation of Lobar Consolidation and bronchial density", abstractText: "This paper discusses alveolar consolidation and pleural effusion." }
+        ]
+      }
+    };
+    global.fetch = function(url) {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(mockJson)
+      });
+    };
+
+    // 3. Test fetchBiomedicalSynonyms with mock
+    return fetchBiomedicalSynonyms("Pneumonia", "xray").then(result => {
+      ok = assert(result.source === "Europe PMC Live Search", "fetchBiomedicalSynonyms successfully routes through live Europe PMC mock.") && ok;
+      ok = assert(result.keywords.includes("alveolar consolidation") || result.keywords.includes("pleural effusion"), "Parsed synonyms are successfully extracted from Mock titles/abstracts.") && ok;
+
+      // 4. Test auto-training execution
+      const mockConsole = makeMockElement();
+      return autoTrainSLMWithKeywords("pneumonia", "Pneumonia", "xray", mockConsole).then(() => {
+        ok = assert(SLM_TRAINING_CORPUS.pneumonia.length > 0, "autoTrainSLMWithKeywords successfully registers brand new condition class 'pneumonia'.") && ok;
+        
+        // 5. Test offline classification on the newly retrained class
+        const classification = slmClassifier.classify("active clinical indications of alveolar consolidation in lung");
+        const topResult = classification[0];
+        
+        ok = assert(topResult.condition === "pneumonia", "Retrained Naive Bayes classifier correctly identifies 'pneumonia' offline with newly learned phrases.") && ok;
+        ok = assert(topResult.confidence > 50, "Classification confidence exceeds 50% for learned offline diagnostic terms.") && ok;
+
+        // Cleanup and restore
+        global.fetch = oldFetch;
+        localStorage.removeItem('ramanai_expanded_corpus');
+
+        return ok;
+      });
+    });
   });
 
   // --- Diagnostic Summary ---

@@ -8,6 +8,7 @@
   --cyan:       #00e5ff;
   --cyan-dim:   #00b8cc;
   --teal:       #00ffb3;
+  --accent:     var(--teal);
   --blue:       #1a6fff;
   --red-warn:   #ff4d6d;
   --text-main:  #e2eaf5;
