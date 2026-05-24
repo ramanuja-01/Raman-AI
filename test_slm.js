@@ -114,6 +114,59 @@ global.MutationObserver = class {
   observe() {}
   disconnect() {}
 };
+
+// --- Mocking Web Audio and Speech Synthesis for Node.js ---
+class MockAudioParam {
+  constructor(val = 0) { this.value = val; }
+  setValueAtTime() { return this; }
+  exponentialRampToValueAtTime() { return this; }
+  linearRampToValueAtTime() { return this; }
+}
+class MockAudioNode {
+  constructor() {
+    this.frequency = new MockAudioParam(440);
+    this.Q = new MockAudioParam(1);
+    this.gain = new MockAudioParam(1);
+    this.type = "sine";
+  }
+  connect() { return this; }
+  start() {}
+  stop() {}
+}
+class MockAudioContext {
+  constructor() {
+    this.currentTime = 0;
+    this.destination = {};
+  }
+  createOscillator() { return new MockAudioNode(); }
+  createGain() { return new MockAudioNode(); }
+  createBiquadFilter() { return new MockAudioNode(); }
+}
+global.AudioContext = MockAudioContext;
+global.window.AudioContext = MockAudioContext;
+
+class MockSpeechSynthesisUtterance {
+  constructor(text) {
+    this.text = text;
+    this.lang = "en-US";
+    this.rate = 1.0;
+    this.onstart = null;
+    this.onend = null;
+    this.onerror = null;
+  }
+}
+const mockSpeechSynthesis = {
+  speak(utterance) {
+    if (utterance.onstart) utterance.onstart();
+    if (utterance.onend) utterance.onend();
+  },
+  cancel() {}
+};
+global.SpeechSynthesisUtterance = MockSpeechSynthesisUtterance;
+global.window.SpeechSynthesisUtterance = MockSpeechSynthesisUtterance;
+global.speechSynthesis = mockSpeechSynthesis;
+global.window.speechSynthesis = mockSpeechSynthesis;
+
 global.console.log = console.log;
 global.console.error = console.error;
 
@@ -571,6 +624,73 @@ async function runTest(name, fn) {
     // Clean up DOM mock
     global.document.getElementById = oldGetElement;
     localStorage.removeItem('ramanai_diary_history');
+
+    return ok;
+  });
+
+  runTest("High-Fidelity Audio-Visual Telemetry & Speech Synthesis", () => {
+    let ok = true;
+
+    // 1. Verify BioTelemetrySFX properties and toggle controls
+    ok = assert(typeof window.BioTelemetrySFX === "object", "BioTelemetrySFX engine is declared as a global object.") && ok;
+    ok = assert(window.BioTelemetrySFX.enabled === true, "BioTelemetrySFX is enabled by default.") && ok;
+
+    // 2. Verify all waveforms play successfully in-memory without throwing errors
+    try {
+      window.BioTelemetrySFX.playClick();
+      window.BioTelemetrySFX.playScan();
+      window.BioTelemetrySFX.playAlarm();
+      window.BioTelemetrySFX.playSlide();
+      window.BioTelemetrySFX.playSuccess();
+      window.BioTelemetrySFX.playError();
+      window.BioTelemetrySFX.playDataTick();
+      ok = assert(true, "All seven synthesized clinical waveforms execute cleanly in-memory.") && ok;
+    } catch (e) {
+      ok = assert(false, "Audio synthesis failed with error: " + e.message) && ok;
+    }
+
+    // 3. Test global audio toggler
+    const oldBtn = global.document.getElementById("btnAudioToggle");
+    const mockBtn = makeMockElement();
+    mockBtn.id = "btnAudioToggle";
+    
+    // Inject mock button
+    const oldGetElement = global.document.getElementById.bind(global.document);
+    global.document.getElementById = function(id) {
+      if (id === "btnAudioToggle") return mockBtn;
+      return oldGetElement(id);
+    };
+
+    window.toggleBioTelemetryAudio();
+    ok = assert(window.BioTelemetrySFX.enabled === false, "toggleBioTelemetryAudio successfully disables the SFX engine globally.") && ok;
+    ok = assert(mockBtn.innerHTML.includes("SOUND: OFF"), "Audio toggle button updates label to SOUND: OFF on disable.") && ok;
+
+    window.toggleBioTelemetryAudio();
+    ok = assert(window.BioTelemetrySFX.enabled === true, "toggleBioTelemetryAudio successfully re-enables the SFX engine globally.") && ok;
+    ok = assert(mockBtn.innerHTML.includes("SOUND: ON"), "Audio toggle button updates label to SOUND: ON on re-enable.") && ok;
+
+    // Clean up DOM mock
+    global.document.getElementById = oldGetElement;
+
+    // 4. Test Clinical Text-to-Speech (TTS) prescription reader filters
+    const oldSpeechSpeak = global.speechSynthesis.speak;
+    let spokenText = "";
+    global.speechSynthesis.speak = function(utterance) {
+      spokenText = utterance.text;
+    };
+
+    // Test text cleaning: strip UI emojis, non-verbal markers, HTML, metadata
+    const rawPrescriptionText = "🌡️ BP: 120/80 | 🧠 SUGGESTION: <b>Take Paracetamol 650mg</b> twice a day. 😊 [ICD-11: fever]";
+    window.speakMessageText(makeMockElement(), rawPrescriptionText);
+
+    ok = assert(!spokenText.includes("🌡️"), "speechSynthesis sanitizes and strips emojis from readout.") && ok;
+    ok = assert(!spokenText.includes("😊"), "speechSynthesis sanitizes and strips smiley face emojis from readout.") && ok;
+    ok = assert(!spokenText.includes("<b>") && !spokenText.includes("</b>"), "speechSynthesis sanitizes and strips HTML tags from readout.") && ok;
+    ok = assert(!spokenText.includes("[ICD-11: fever]"), "speechSynthesis sanitizes and strips bracketed metadata tags from readout.") && ok;
+    ok = assert(spokenText.includes("BP: 120/80") && spokenText.includes("Take Paracetamol 650mg"), "speechSynthesis preserves clean clinical readout message contents.") && ok;
+
+    // Clean up speak mock
+    global.speechSynthesis.speak = oldSpeechSpeak;
 
     return ok;
   });

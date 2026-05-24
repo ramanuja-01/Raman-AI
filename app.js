@@ -6451,11 +6451,14 @@ window.speakMessageText = function(btn, text) {
     window.resetVoiceBtn(b);
   });
 
-  // Clean clinical text (filter out UI emojis and warnings for clean speech delivery)
+  // Clean clinical text (filter out UI emojis, non-verbal markers, HTML tags, and metadata for clean speech delivery)
   let cleanText = text
-    .replace(/📋|💊|🔬|🧠|📁|❤️|🚨|⚠️|👍|🙌|🤖|🧑|🕐/g, "")
+    .replace(/<\/?[^>]+(>|$)/g, "") // Strip HTML tags
     .replace(/&nbsp;/g, " ")
-    .replace(/<\/?[^>]+(>|$)/g, "") // Strip raw HTML tags just in case
+    .replace(/\[[^\]]*\]/g, "") // Strip bracketed metadata like [ICD-11: ...] or [SNOMED: ...]
+    .replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]|\uD83C[\uDDE6-\uDDFF]|[\u2011-\u26FF]|[\u2700-\u27BF]/g, "") // Strip standard emojis and dingbats (like 🌡️, 😊, etc.)
+    .replace(/📋|💊|🔬|🧠|📁|❤️|🚨|⚠️|👍|🙌|🤖|🧑|🕐/g, "") // Safeguard explicit UI emojis
+    .replace(/\s+/g, " ") // Collapse multiple spaces
     .trim();
 
   if (!cleanText) return;
