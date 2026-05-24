@@ -800,8 +800,26 @@ async function generateSlmResponse(text, profile) {
     </div>`;
 
     if (!currentHealthId) saveHealthSession();
+
+    const pdfBtnText = isOr ? "📋 ପ୍ରେସକ୍ରିପସନ୍ PDF ଡାଉନଲୋଡ୍ କରନ୍ତୁ" : "📋 DOWNLOAD CLINICAL PDF PRESCRIPTION";
+    const pdfBtnDesc = isOr 
+      ? "ଆପଣଙ୍କ ସୁବିଧା ପାଇଁ ଏହି ପ୍ରେସକ୍ରିପସନ୍ ର ଏକ ପ୍ରିଣ୍ଟ୍-ରେଡି A4 PDF ଡକ୍ୟୁମେଣ୍ଟ୍ ଡାଉନଲୋଡ୍ କରନ୍ତୁ।"
+      : "For your convenience, download a print-ready A4 PDF document containing your complete clinical assessment and pharmacotherapy guidelines.";
+
     html += `
-      <div class="hid-card" style="margin-top: 20px;">
+      <div class="hid-card" style="margin-top: 20px; border-color: var(--teal); background: rgba(0, 255, 179, 0.03);">
+        <div class="hid-card-header" style="color: var(--teal);">📄 CLINICAL PDF PRESCRIPTION</div>
+        <div class="hid-card-body">
+          <p class="hid-card-desc">${pdfBtnDesc}</p>
+          <div class="hid-card-actions" style="margin-bottom: 15px;">
+            <button class="hid-action-btn" onclick="window.downloadSlmPrescriptionPDF('${condition}')" style="background: var(--teal); color: #0f172a; width: 100%; border: none; padding: 10px; font-weight: bold; border-radius: 6px; cursor: pointer; box-shadow: 0 0 10px rgba(0, 255, 179, 0.2);">
+              ${pdfBtnText}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="hid-card" style="margin-top: 15px;">
         <div class="hid-card-header">🎉 YOUR HEALTH ID IS READY</div>
         <div class="hid-card-body">
           <div class="hid-code">${currentHealthId}</div>
@@ -908,8 +926,8 @@ const MEDICAL_KB = {
   fever: {
     conditions: ["Viral Infection", "Bacterial Infection", "Flu (Influenza)", "Common Cold", "COVID-19"],
     medications: [
-      { name: "Paracetamol (Acetaminophen)", dose: "500–1000 mg every 6–8 hours", note: "First-line antipyretic" },
-      { name: "Ibuprofen", dose: "400 mg every 8 hours with food", note: "Also reduces inflammation" }
+      { name: "Paracetamol (Acetaminophen)", dose: "500–1000 mg every 6–8 hours as needed (Maximum 4000 mg per 24 hours)", note: "First-line antipyretic & analgesic. Directly acts on the hypothalamus to reduce high body temperature. Take with a glass of water; can be administered with or without food. Avoid other acetaminophen-containing medications to prevent accidental hepatotoxicity." },
+      { name: "Ibuprofen", dose: "400 mg every 8 hours with food (Maximum 1200 mg per 24 hours)", note: "Non-steroidal anti-inflammatory drug (NSAID). Relieves fever, body aches, and inflammatory responses by blocking prostaglandin synthesis. ALWAYS take with food, milk, or antacids to safeguard gastric mucosa. Do not use if history of peptic ulcers or severe kidney disease." }
     ],
     precautions: ["Stay hydrated – drink 8–10 glasses of water/day", "Rest adequately", "Monitor temperature every 4 hours", "Seek urgent care if fever exceeds 104°F (40°C)"],
     diet: ["Warm soups and broths", "Fresh citrus fruits (Vitamin C)", "Ginger and tulsi tea", "Avoid cold foods and beverages"],
@@ -918,9 +936,9 @@ const MEDICAL_KB = {
   headache: {
     conditions: ["Tension Headache", "Migraine", "Dehydration", "Sinusitis", "Hypertension"],
     medications: [
-      { name: "Paracetamol", dose: "500–1000 mg as needed", note: "Mild to moderate headache" },
-      { name: "Ibuprofen", dose: "400 mg every 8 hours", note: "Effective for tension headaches" },
-      { name: "Sumatriptan", dose: "50 mg at onset (migraine only)", note: "For diagnosed migraines" }
+      { name: "Paracetamol", dose: "500–1000 mg every 6 hours as needed (Maximum 4000 mg/day)", note: "First-line relief for mild-to-moderate tension headaches. Minimizes headache severity by inhibiting prostaglandin synthesis in the central nervous system. Safe for gastric lining, but avoid alcohol consumption during use." },
+      { name: "Ibuprofen", dose: "400 mg every 8 hours with food", note: "Highly effective NSAID targeting vascular and muscular tension components of tension headaches. Take after meals to avoid gastrointestinal discomfort." },
+      { name: "Sumatriptan", dose: "50 mg orally at the immediate onset of migraine attack; may repeat once after 2 hours if pain persists (Maximum 100 mg per 24 hours)", note: "Selective 5-HT1 receptor agonist. Specifically targets migraine attacks by constricting dilated cranial blood vessels and blocking inflammatory neuropeptide release. Take immediately at the first sign of aura or pain. Do not use if history of ischemic heart disease or uncontrolled hypertension." }
     ],
     precautions: ["Avoid screen time and bright lights", "Apply cold/warm compress on forehead", "Seek emergency care for sudden severe 'thunderclap' headache"],
     diet: ["Drink plenty of water", "Avoid caffeine excess", "Small regular meals", "Magnesium-rich foods (nuts, leafy greens)"],
@@ -929,9 +947,9 @@ const MEDICAL_KB = {
   cough: {
     conditions: ["Common Cold", "Bronchitis", "Asthma", "GERD", "Pneumonia", "Allergic Rhinitis"],
     medications: [
-      { name: "Dextromethorphan", dose: "10–20 mg every 4–6 hours", note: "Dry / non-productive cough" },
-      { name: "Guaifenesin", dose: "200–400 mg every 4 hours", note: "Productive cough with mucus" },
-      { name: "Salbutamol Inhaler", dose: "1–2 puffs as needed", note: "If wheeze / asthma suspected" }
+      { name: "Dextromethorphan", dose: "10–20 mg every 4–6 hours as needed (Maximum 120 mg/day)", note: "Non-narcotic cough suppressant. Directly acts on the cough center in the medulla oblongata to inhibit dry, hacking, non-productive coughs. May cause mild drowsiness; avoid driving or operating heavy machinery during use." },
+      { name: "Guaifenesin", dose: "200–400 mg every 4 hours as needed with a full glass of water (Maximum 2400 mg/day)", note: "Expectorant. Reduces the viscosity of tenacious respiratory secretions and thins mucus, making it easier to cough up and clear from bronchial pathways. Maintain high water intake to optimize expectorant efficiency." },
+      { name: "Salbutamol Inhaler", dose: "1–2 inhalations (90–180 mcg) every 4–6 hours as needed for bronchospasm relief", note: "Short-acting beta-2 adrenergic receptor agonist (bronchodilator). Relaxes bronchial smooth muscles to rapidly relieve chest tightness, wheezing, and coughing. Shake well before use and rinse mouth with water after inhalation to prevent dry throat." }
     ],
     precautions: ["Avoid cold air and smoke", "Stay hydrated", "Use steam inhalation", "Persistent cough >3 weeks needs investigation"],
     diet: ["Warm fluids – honey-lemon water", "Turmeric milk (Haldi doodh)", "Avoid dairy if producing mucus"],
@@ -940,8 +958,8 @@ const MEDICAL_KB = {
   "chest pain": {
     conditions: ["⚠️ Cardiac Emergency (Rule out immediately)", "Costochondritis", "GERD / Acid Reflux", "Muscle Strain", "Anxiety / Panic Attack"],
     medications: [
-      { name: "⚠️ EMERGENCY", dose: "Call 108 immediately if crushing chest pain, pain radiating to arm/jaw, sweating, breathlessness", note: "Do NOT self-medicate cardiac emergencies" },
-      { name: "Antacids (for GERD-related)", dose: "As directed by physician", note: "Only after ruling out cardiac cause" }
+      { name: "⚠️ EMERGENCY", dose: "Call emergency medical services (108/911) immediately without delay", note: "CRITICAL NOTICE: Crushing or squeezing retrosternal chest pain radiating to the left arm, neck, or jaw, accompanied by diaphoresis (sweating), dyspnea (breathlessness), and dizziness, is a suspected acute myocardial infarction (heart attack). DO NOT take standard pain medications or wait; seek immediate ER assessment." },
+      { name: "Antacids (for GERD-related)", dose: "10–20 mL of liquid antacid suspension or 1–2 chewable tablets as directed", note: "Neutralizes stomach acid to relieve esophageal reflux pain. Administer ONLY after a qualified emergency physician has physically evaluated your chest symptoms and fully ruled out cardiac conditions." }
     ],
     precautions: ["⚠️ CRITICAL: Treat all chest pain as cardiac until proven otherwise", "Call emergency services (108) immediately", "Do NOT drive yourself to hospital", "Chew aspirin 325mg if cardiac event suspected and not allergic"],
     diet: ["Avoid spicy, fatty foods", "Eat smaller meals", "No alcohol or caffeine"],
@@ -950,9 +968,9 @@ const MEDICAL_KB = {
   "stomach pain": {
     conditions: ["Gastritis", "Irritable Bowel Syndrome (IBS)", "Appendicitis", "Peptic Ulcer", "Food Poisoning", "Indigestion"],
     medications: [
-      { name: "Omeprazole (PPI)", dose: "20 mg once daily before breakfast", note: "For gastritis / acid-related pain" },
-      { name: "Buscopan (Hyoscine)", dose: "10–20 mg 3 times daily", note: "For cramping / spasms" },
-      { name: "ORS (Oral Rehydration Salts)", dose: "As needed with water", note: "For vomiting / diarrhoea" }
+      { name: "Omeprazole (PPI)", dose: "20 mg orally once daily, strictly 30–60 minutes before the first meal of the day", note: "Proton pump inhibitor (PPI). Suppresses gastric acid secretion at the secretory surface of gastric parietal cells, allowing inflamed esophageal, gastric, or duodenal mucosa to heal. Swallow whole; do not chew or crush." },
+      { name: "Buscopan (Hyoscine)", dose: "10–20 mg orally 3 times daily as needed for abdominal spasms", note: "Antispasmodic/anticholinergic drug. Relaxes visceral smooth muscles in the gastrointestinal, biliary, and urinary tracts to relieve cramping, colic, and stomach spasms. May cause dry mouth or blurred vision." },
+      { name: "ORS (Oral Rehydration Salts)", dose: "Dissolve 1 sachet in 1 Litre of clean drinking water; drink 200-400 mL after each loose stool or vomiting episode", note: "WHO-formulated oral rehydration salts containing glucose and essential electrolytes. Directly restores water and electrolyte balance lost during stomach upset, vomiting, or diarrhea. Do not boil the prepared solution." }
     ],
     precautions: ["⚠️ Severe right lower abdominal pain may indicate appendicitis – seek emergency care", "Avoid NSAIDs (aspirin, ibuprofen) on empty stomach", "Monitor for blood in stool"],
     diet: ["BRAT diet: Bananas, Rice, Applesauce, Toast", "Avoid spicy, oily, and acidic foods", "Small frequent meals", "Curd / yoghurt for gut health"],
@@ -961,9 +979,9 @@ const MEDICAL_KB = {
   "joint pain": {
     conditions: ["Arthritis (Osteo/Rheumatoid)", "Gout", "Injury / Sprain", "Lupus", "Viral Arthralgia"],
     medications: [
-      { name: "Ibuprofen", dose: "400 mg 3 times daily with food", note: "Anti-inflammatory relief" },
-      { name: "Diclofenac Gel", dose: "Apply locally 3–4 times daily", note: "For localized joint pain" },
-      { name: "Colchicine", dose: "0.5–1 mg twice daily (gout only)", note: "For acute gout flares" }
+      { name: "Ibuprofen", dose: "400 mg orally 3 times daily immediately after meals (Maximum 1200 mg/day)", note: "NSAID. Suppresses joint inflammation, swelling, and arthritic pain by blocking cyclooxygenase (COX) pathways. Take strictly with food or milk. Avoid if taking oral anticoagulants or if you have renal impairment." },
+      { name: "Diclofenac Gel", dose: "Apply 2–4 grams of 1% gel locally to affected joint and rub gently 3–4 times daily", note: "Topical non-steroidal anti-inflammatory gel. Provides targeted, localized relief from joint pain and inflammation (especially knee and hand osteoarthrosis) with highly minimal systemic absorption and low gastric side effects. Wash hands after application." },
+      { name: "Colchicine", dose: "0.5–1 mg orally twice daily during an acute gout flare-up, or as prescribed by your rheumatologist", note: "Anti-gout agent. Directly inhibits microtubule assembly in neutrophils, preventing their activation and migration to joints with uric acid crystals, reducing extreme gout inflammation. Avoid grapefruit juice." }
     ],
     precautions: ["Rest the affected joint", "Apply ice for 20 min every 2 hours (first 48h)", "Avoid repetitive strain", "Weight management is key for knee arthritis"],
     diet: ["Anti-inflammatory diet: omega-3 fatty acids (fish, flaxseed)", "Turmeric and ginger", "Cherries (for gout)", "Reduce red meat and alcohol"],
@@ -972,9 +990,9 @@ const MEDICAL_KB = {
   "skin rash": {
     conditions: ["Allergic Dermatitis", "Eczema", "Urticaria (Hives)", "Psoriasis", "Fungal Infection", "Drug Reaction"],
     medications: [
-      { name: "Cetirizine (Antihistamine)", dose: "10 mg once daily at night", note: "For allergic rash / urticaria" },
-      { name: "Hydrocortisone Cream 1%", dose: "Apply thin layer twice daily", note: "For localized inflammation" },
-      { name: "Clotrimazole Cream", dose: "Apply twice daily for 2–4 weeks", note: "For fungal rash" }
+      { name: "Cetirizine (Antihistamine)", dose: "10 mg orally once daily, preferably at bedtime to minimize daytime sedation", note: "Second-generation selective H1-receptor antagonist. Blocks histamine activity to relieve intense skin itching, hives (urticaria), and allergic dermatitis. May cause mild drowsiness in sensitive individuals." },
+      { name: "Hydrocortisone Cream 1%", dose: "Apply a thin film to the affected skin area twice daily for up to 7 consecutive days", note: "Mild topical corticosteroid. Directly suppresses inflammatory cytokines to reduce localized skin redness, swelling, and itching associated with eczema or contact dermatitis. Do not apply to open wounds, infected areas, or facial skin unless directed." },
+      { name: "Clotrimazole Cream", dose: "Apply a thin layer to the affected clean skin area twice daily for 2–4 consecutive weeks", note: "Broad-spectrum topical antifungal agent. Disrupts fungal cell membrane synthesis to treat ringworm, tinea, and cutaneous candidiasis. Continue application for 1 week after symptoms resolve to prevent recurrence." }
     ],
     precautions: ["Avoid scratching", "Identify and avoid triggers", "⚠️ Seek emergency care for rash with difficulty breathing (anaphylaxis)", "Do not use steroid cream on face without advice"],
     diet: ["Avoid known allergens", "Increase Vitamin C and E intake", "Stay well-hydrated", "Avoid processed foods"],
@@ -983,9 +1001,9 @@ const MEDICAL_KB = {
   "high blood pressure": {
     conditions: ["Hypertension (Primary)", "Secondary Hypertension", "White-coat Hypertension"],
     medications: [
-      { name: "Amlodipine", dose: "5 mg once daily (increase to 10mg)", note: "Calcium channel blocker" },
-      { name: "Losartan", dose: "50 mg once daily", note: "ARB – kidney-protective" },
-      { name: "Hydrochlorothiazide", dose: "12.5–25 mg once daily", note: "Diuretic" }
+      { name: "Amlodipine", dose: "5 mg orally once daily, taken at the same time each day (may increase to 10 mg under supervision)", note: "Dihydropyridine calcium channel blocker. Relaxes and dilates peripheral arterial smooth muscle cells, lowering vascular resistance and systemic blood pressure. Monitor for peripheral edema (ankle swelling)." },
+      { name: "Losartan", dose: "50 mg orally once daily (standard maintenance range is 25–100 mg/day)", note: "Angiotensin II receptor blocker (ARB). Prevents vasoconstriction and aldosterone release to lower blood pressure. Provides excellent long-term renal and cardiovascular protection in hypertensive patients. Do not use during pregnancy." },
+      { name: "Hydrochlorothiazide", dose: "12.5–25 mg orally once daily in the morning to avoid nocturnal urination", note: "Thiazide diuretic. Promotes renal excretion of sodium and water, reducing blood volume and blood pressure. Monitor blood potassium levels regularly as it can cause hypokalemia." }
     ],
     precautions: ["Monitor BP twice daily", "Do NOT stop medications abruptly", "⚠️ BP >180/120 is hypertensive crisis – seek emergency care", "Regular follow-ups required"],
     diet: ["DASH diet: low sodium (<2g/day)", "Increase potassium (bananas, spinach)", "Reduce alcohol", "Avoid processed/packaged foods", "Regular aerobic exercise"],
@@ -994,9 +1012,9 @@ const MEDICAL_KB = {
   diabetes: {
     conditions: ["Type 1 Diabetes", "Type 2 Diabetes", "Pre-diabetes", "Gestational Diabetes"],
     medications: [
-      { name: "Metformin", dose: "500 mg twice daily with meals (titrate up)", note: "First-line for Type 2" },
-      { name: "Glipizide", dose: "5 mg once daily before breakfast", note: "Sulphonylurea" },
-      { name: "Insulin", dose: "As prescribed by physician", note: "For Type 1 and uncontrolled Type 2" }
+      { name: "Metformin", dose: "500 mg orally twice daily with meals (titrate up slowly under medical guidance)", note: "Biguanide antihyperglycemic. Directly decreases hepatic glucose production, reduces intestinal absorption of glucose, and significantly enhances insulin sensitivity in peripheral tissues. Take with meals to minimize gastrointestinal side effects (nausea, abdominal discomfort)." },
+      { name: "Glipizide", dose: "5 mg orally once daily, strictly 30 minutes before your first main meal (breakfast)", note: "Second-generation sulfonylurea. Directly stimulates pancreatic beta cells to secrete endogenous insulin. Monitor closely for signs of hypoglycemia (tremors, sweating, confusion, fast heart rate) and always carry a fast-acting sugar source." },
+      { name: "Insulin", dose: "Dose must be individually titrated and prescribed by an endocrinologist based on daily blood glucose monitoring", note: "Exogenous hormone replacement. Crucial for Type 1 Diabetes and advanced Type 2 Diabetes to facilitate cellular glucose uptake and prevent severe diabetic ketoacidosis (DKA) or hyperosmolar hyperglycemic state (HHS). Learn proper subcutaneous injection techniques and site rotation." }
     ],
     precautions: ["Monitor blood sugar morning and 2 hours post-meal", "Never skip meals on medication", "Watch for hypoglycaemia symptoms (shaking, sweating, confusion)", "Regular HbA1c check every 3 months"],
     diet: ["Low glycaemic index foods", "Avoid sugar, white rice, maida", "High fibre: whole grains, vegetables, legumes", "Small frequent meals (5–6/day)", "Bitter gourd (karela), fenugreek – natural aids"],
@@ -1005,9 +1023,9 @@ const MEDICAL_KB = {
   "eye pain": {
     conditions: ["Conjunctivitis", "Dry Eye Syndrome", "Glaucoma", "Uveitis", "Digital Eye Strain"],
     medications: [
-      { name: "Artificial Tears Drops", dose: "1–2 drops 4 times daily", note: "For dry eyes and strain" },
-      { name: "Chloramphenicol Eye Drops", dose: "1 drop every 2–3 hours", note: "Bacterial conjunctivitis" },
-      { name: "Sodium Cromoglicate Eye Drops", dose: "1–2 drops 4 times daily", note: "Allergic conjunctivitis" }
+      { name: "Artificial Tears Drops", dose: "Instill 1–2 drops into the affected eye(s) up to 4–6 times daily as needed", note: "Sterile lubricant eye drops. Stabilizes the tear film and provides soothing relief from digital eye strain, dryness, burning, and ocular irritation. Remove contact lenses before instilling." },
+      { name: "Chloramphenicol Eye Drops", dose: "Instill 1 drop into the affected eye(s) every 2 hours for the first 48 hours, then reduce to 4 times daily for 5 additional days", note: "Broad-spectrum topical ophthalmic antibiotic. Inhibits bacterial protein synthesis to treat acute bacterial conjunctivitis (pink eye). Finish the full 7-day course even if symptoms resolve earlier to prevent bacterial resistance." },
+      { name: "Sodium Cromoglicate Eye Drops", dose: "Instill 1–2 drops into both eyes 4 times daily at regular intervals", note: "Ophthalmic mast cell stabilizer. Prevents the release of histamine and inflammatory mediators, treating allergic conjunctivitis and reducing ocular itching and redness. Best used preventatively during allergy season." }
     ],
     precautions: ["⚠️ Sudden vision loss / severe eye pain needs emergency care", "Do NOT rub eyes", "Follow 20-20-20 rule for digital strain", "Wear UV-protective sunglasses"],
     diet: ["Vitamin A: carrots, leafy greens", "Lutein: eggs, kale, spinach", "Omega-3 fatty acids", "Stay well-hydrated"],
@@ -1016,9 +1034,9 @@ const MEDICAL_KB = {
   "back pain": {
     conditions: ["Muscle Strain", "Disc Herniation", "Lumbar Spondylosis", "Kidney Issues", "Poor Posture"],
     medications: [
-      { name: "Ibuprofen / Diclofenac", dose: "400 mg 3 times daily with food", note: "Anti-inflammatory" },
-      { name: "Muscle Relaxant (Methocarbamol)", dose: "750 mg 3 times daily", note: "For muscle spasm" },
-      { name: "Diclofenac Topical Gel", dose: "Apply 3–4 times daily", note: "Local pain relief" }
+      { name: "Ibuprofen / Diclofenac", dose: "400 mg Ibuprofen or 50 mg Diclofenac orally 3 times daily immediately after food", note: "Oral NSAID. Decreases musculoskeletal pain and inflammatory responses in the lower back or lumbar spine. Always take with a full meal to protect gastric mucosa." },
+      { name: "Muscle Relaxant (Methocarbamol)", dose: "750 mg orally 3 times daily as needed for acute muscular spasms", note: "Centrally-acting skeletal muscle relaxant. Relieves severe muscle spasms and acute lumbar pain by inducing general central nervous system depression. May cause significant drowsiness, dizziness, or lightheadedness; avoid alcohol." },
+      { name: "Diclofenac Topical Gel", dose: "Apply 2–4 grams of 1% or 2% gel to the painful back area and rub in completely 3–4 times daily", note: "Targeted topical NSAID gel. Penetrates deep into muscular and joint tissues in the back to inhibit local prostaglandins, providing excellent pain relief with negligible systemic side effects. Do not apply to broken skin." }
     ],
     precautions: ["Avoid prolonged sitting", "Sleep on firm mattress", "⚠️ Back pain with numbness/weakness in legs – seek urgent care (possible nerve compression)", "Maintain correct posture"],
     diet: ["Calcium-rich foods: milk, yoghurt, ragi", "Vitamin D: sunlight, eggs, fish", "Anti-inflammatory: turmeric, ginger"],
@@ -4207,6 +4225,122 @@ window.downloadPrescriptionPDF = function(data) {
   printWindow.document.open();
   printWindow.document.write(html);
   printWindow.document.close();
+};
+
+window.downloadSlmPrescriptionPDF = function(conditionKey) {
+  const kb = MEDICAL_KB[conditionKey];
+  if (!kb) {
+    alert("Unable to resolve medication database for this condition.");
+    return;
+  }
+  
+  // Format medicines as expected by downloadPrescriptionPDF
+  const medicines = kb.medications.map(m => ({
+    name: m.name,
+    instructions: m.dose + " — " + m.note,
+    duration: "As needed / 5-7 Days"
+  }));
+
+  // Fetch current vitals from UI inputs if available, else default
+  const sysEl = document.getElementById("systolic");
+  const diaEl = document.getElementById("diastolic");
+  const bpEl = (sysEl && diaEl) ? sysEl.value + "/" + diaEl.value : "120/80";
+  const hrEl = document.getElementById("pulse") ? document.getElementById("pulse").value : "76";
+  const tempEl = document.getElementById("temp") ? document.getElementById("temp").value : "98.6";
+  const spo2El = document.getElementById("spo2") ? document.getElementById("spo2").value : "98";
+
+  // Check if vitals are empty/placeholder and supply defaults if so
+  const bpVal = (bpEl && bpEl !== "/") ? bpEl : "120/80";
+  const hrVal = hrEl || "76";
+  const tempVal = tempEl || "98.6";
+  const spo2Val = spo2El || "98";
+
+  // Derive condition name and dynamic diagnostic metrics
+  let conditionName = conditionKey.toUpperCase();
+  let metricName = "Clinical Indicator";
+  let metricValue = "Standard";
+  let stageText = "Stage 1 (Mild / Standard)";
+
+  if (conditionKey === "fever") {
+    conditionName = "Acute Febrile Systemic Illness";
+    metricName = "Systemic Inflammatory Response";
+    metricValue = tempVal + " °F";
+  } else if (conditionKey === "headache") {
+    conditionName = "Intracranial Vasospastic Cephalgia";
+    metricName = "Intracranial Tension Level";
+    metricValue = "Mild";
+  } else if (conditionKey === "cough") {
+    conditionName = "Acute Bronchial Hyperresponsiveness";
+    metricName = "Pulmonary Congestion Index";
+    metricValue = "Normal";
+  } else if (conditionKey === "chest pain") {
+    conditionName = "Myocardial Ischemia / Coronary Risk";
+    metricName = "Myocardial Injury Index";
+    metricValue = "Critical";
+    stageText = "Stage 3 (Severe / Critical Risk)";
+  } else if (conditionKey === "stomach pain") {
+    conditionName = "Acute Gastritis / Peptic Distress";
+    metricName = "Gastrointestinal Acid Scale";
+    metricValue = "Elevated";
+  } else if (conditionKey === "joint pain") {
+    conditionName = "Arthritic Joint Inflammation";
+    metricName = "Joint Mobility Coefficient";
+    metricValue = "Decreased";
+  } else if (conditionKey === "skin rash") {
+    conditionName = "Allergic Dermatitis / Pruritus";
+    metricName = "Dermal Hypersensitivity Index";
+    metricValue = "Active";
+  } else if (conditionKey === "high blood pressure") {
+    conditionName = "Primary Essential Hypertension";
+    metricName = "Systolic Tension Index";
+    metricValue = bpVal;
+    stageText = "Stage 2 (Moderate Risk)";
+  } else if (conditionKey === "diabetes") {
+    conditionName = "Chronic Glycemic Dysregulation";
+    metricName = "Blood Glucose Saturation";
+    metricValue = "Elevated";
+  } else if (conditionKey === "eye pain") {
+    conditionName = "Acute Ocular Strain / Conjunctivitis";
+    metricName = "Intraocular Pressure Coefficient";
+    metricValue = "Borderline";
+  } else if (conditionKey === "back pain") {
+    conditionName = "Lumbar Musculoskeletal Strain";
+    metricName = "Vertebral Loading Index";
+    metricValue = "Moderate";
+  }
+
+  // Allergy warning alert check
+  const p = getProfile();
+  let allergyWarning = "";
+  if (p.allergies) {
+    const allergyLower = p.allergies.toLowerCase();
+    const matchedMeds = kb.medications.filter(med => 
+      med.name.toLowerCase().includes(allergyLower) || 
+      (allergyLower.includes("nsaid") && (med.name.toLowerCase().includes("ibuprofen") || med.name.toLowerCase().includes("diclofenac") || med.name.toLowerCase().includes("aspirin"))) ||
+      (allergyLower.includes("penicillin") && med.name.toLowerCase().includes("amoxicillin"))
+    );
+    if (matchedMeds.length > 0) {
+      allergyWarning = `Contraindicated suggested medications detected: ${matchedMeds.map(m => m.name).join(", ")}. Documented allergy: "${p.allergies}".`;
+    }
+  }
+
+  // Construct print-ready Rx data
+  const rxData = {
+    healthId: currentHealthId || 'RAMAN-HID-170',
+    condition: conditionName,
+    stage: stageText,
+    metricName: metricName,
+    metricValue: metricValue,
+    vitals: { bp: bpVal, heartRate: hrVal, temp: tempVal, SpO2: spo2Val },
+    risks: allergyWarning ? ["Allergy Contraindication"] : [],
+    medicines: medicines,
+    diet: kb.diet || [],
+    precautions: kb.precautions || [],
+    urgencyWarning: allergyWarning || (conditionKey === "chest pain" ? "Treat all chest pain as cardiac emergency. Seek physical ER care immediately." : "")
+  };
+
+  // Call the main download prescription method
+  window.downloadPrescriptionPDF(rxData);
 };
 
 function initiateClinicalConsultation() {

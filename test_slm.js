@@ -35,6 +35,7 @@ const makeMockElement = () => {
     style: {},
     innerHTML: "",
     className: "",
+    value: "",
     scrollTop: 0,
     addEventListener() {},
     removeEventListener() {},
@@ -350,6 +351,40 @@ async function runTest(name, fn) {
     console.log("DEBUG FATIGUE:", fatigueResponse);
     const isTargetedFatigue = fatigueResponse.includes("weakness or fatigue is a common symptom");
     ok = assert(isTargetedFatigue, "Fallback for 'i feel exhausted' returns targeted hydration and sleep advice.") && ok;
+
+    return ok;
+  });
+
+  // ----------------------------------------------------
+  // Test 8: Descriptive Prescriptions & SLM PDF Direct Downloads
+  // ----------------------------------------------------
+  await runTest("Descriptive Prescriptions & SLM PDF Direct Downloads", async () => {
+    let ok = true;
+
+    // 1. Verify Metformin is highly descriptive
+    const metforminKb = MEDICAL_KB.diabetes.medications.find(m => m.name.toLowerCase().includes("metformin"));
+    ok = assert(metforminKb !== undefined, "Metformin resolved in diabetes database.") && ok;
+    ok = assert(metforminKb.note.includes("hepatic glucose production") && metforminKb.note.includes("insulin sensitivity"), "Metformin is highly descriptive and includes clinical pharmacological details.") && ok;
+
+    // 2. Verify compilation of downloadSlmPrescriptionPDF
+    // Mock the window.open flow for mock printWindow
+    let openCalled = false;
+    let writeHtml = "";
+    mockWindow.open = function() {
+      openCalled = true;
+      return {
+        document: {
+          open() {},
+          write(html) { writeHtml = html; },
+          close() {}
+        }
+      };
+    };
+
+    // Trigger SLM PDF download
+    window.downloadSlmPrescriptionPDF("diabetes");
+    ok = assert(openCalled, "downloadSlmPrescriptionPDF successfully opened print/PDF browser window.") && ok;
+    ok = assert(writeHtml.includes("Metformin") && writeHtml.includes("Glipizide") && writeHtml.includes("Insulin"), "A4 print layout populated with enriched diabetic pharmacotherapy prescription.") && ok;
 
     return ok;
   });
