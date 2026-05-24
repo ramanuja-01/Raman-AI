@@ -1110,3 +1110,46 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
   100% { filter: drop-shadow(0 0 10px var(--teal)); }
 }
 
+/* ===== HIGH-TECH REALISTIC HUMAN MAP SCANNER ===== */
+.human-silhouette {
+  fill: rgba(0, 229, 255, 0.05);
+  stroke: rgba(0, 229, 255, 0.35);
+  stroke-width: 1.2;
+  transition: all 0.5s ease-in-out;
+}
+.anatomical-map-svg:hover .human-silhouette {
+  fill: rgba(0, 229, 255, 0.08);
+  stroke: rgba(0, 229, 255, 0.55);
+  filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.3));
+}
+.map-grid-line {
+  stroke: rgba(0, 229, 255, 0.12);
+  stroke-width: 0.8;
+  stroke-dasharray: 2 4;
+}
+.map-grid-line.pulse {
+  animation: gridLinePulse 3s ease-in-out infinite alternate;
+}
+@keyframes gridLinePulse {
+  0% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+.map-scan-sweep {
+  fill: none;
+  stroke: url(#scanGradient);
+  stroke-width: 3;
+  opacity: 0.85;
+  animation: scanningSweep 4s linear infinite;
+}
+@keyframes scanningSweep {
+  0% { transform: translateY(-30px); opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(210px); opacity: 0; }
+}
+.map-crosshair {
+  stroke: rgba(0, 229, 255, 0.25);
+  stroke-width: 1;
+}
+
+
