@@ -5695,6 +5695,9 @@ function retrainModel() {
     if (cpu) cpu.style.width = "48%";
     if (neural) neural.style.width = "52%";
     
+    // Play telemetry scan sweep SFX
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+
     // Update dashboard metrics
     updateTrainingHubStats();
     
@@ -5943,6 +5946,10 @@ function compileRedFlags(conditionKey, vitals) {
         flags.unshift(`🚨 VITAL WARNING: Critically low blood oxygen level (SpO2: ${sVal}%) indicating respiratory distress!`);
       }
     }
+  }
+  
+  if (flags.some(f => f.startsWith("🚨 VITAL WARNING")) && window.BioTelemetrySFX) {
+    window.BioTelemetrySFX.playAlarm();
   }
   
   return flags;
@@ -6327,6 +6334,7 @@ function initAnatomicalScanner() {
       const label = this.getAttribute("data-label");
       activeScanZone.textContent = label;
       activeScanZone.style.color = "var(--primary)";
+      if (window.BioTelemetrySFX) window.BioTelemetrySFX.playClick();
     });
     
     // Mouse Leave -> Reset to last active target or default
@@ -6343,6 +6351,8 @@ function initAnatomicalScanner() {
     
     // Click -> Select symptom and trigger triage scan
     hotspot.addEventListener("click", function() {
+      if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+      
       // Clear previous active states across all hotspots
       hotspots.forEach(h => h.classList.remove("active"));
       
@@ -6455,5 +6465,126 @@ window.resetVoiceBtn = function(btn) {
   btn.classList.remove("speaking-active");
   btn.style.animation = "";
 };
+
+// ── Bio-Telemetry Web Audio SFX Engine ───────────────
+const BioTelemetrySFX = {
+  ctx: null,
+  enabled: true,
+
+  init() {
+    if (this.ctx) return;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      this.ctx = new AudioContext();
+    }
+  },
+
+  playClick() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(1500, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.04);
+
+      gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.04);
+    } catch(e){}
+  },
+
+  playScan() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1600, this.ctx.currentTime + 0.5);
+
+      filter.type = "lowpass";
+      filter.Q.value = 5;
+      filter.frequency.setValueAtTime(400, this.ctx.currentTime);
+      filter.frequency.exponentialRampToValueAtTime(2000, this.ctx.currentTime + 0.5);
+
+      gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.5);
+    } catch(e){}
+  },
+
+  playAlarm() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      // Symmetrical triple bio-beeps
+      for (let i = 0; i < 3; i++) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.type = "sine";
+        osc.frequency.setValueAtTime(980, t + i * 0.22);
+
+        gain.gain.setValueAtTime(0.0, t + i * 0.22);
+        gain.gain.linearRampToValueAtTime(0.1, t + i * 0.22 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.22 + 0.18);
+
+        osc.start(t + i * 0.22);
+        osc.stop(t + i * 0.22 + 0.18);
+      }
+    } catch(e){}
+  }
+};
+
+window.BioTelemetrySFX = BioTelemetrySFX;
+
+window.toggleBioTelemetryAudio = function() {
+  const btn = document.getElementById("btnAudioToggle");
+  if (!btn) return;
+  
+  BioTelemetrySFX.enabled = !BioTelemetrySFX.enabled;
+  
+  if (BioTelemetrySFX.enabled) {
+    btn.innerHTML = "<span>🔊</span> SOUND: ON";
+    btn.style.color = "var(--cyan)";
+    btn.style.borderColor = "var(--cyan)";
+    // Initialize audio context dynamically
+    BioTelemetrySFX.init();
+    BioTelemetrySFX.playClick();
+  } else {
+    btn.innerHTML = "<span>🔇</span> SOUND: OFF";
+    btn.style.color = "var(--text-muted)";
+    btn.style.borderColor = "var(--border)";
+  }
+};
+
 
 

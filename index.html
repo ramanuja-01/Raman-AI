@@ -161,10 +161,14 @@
             <span>BIO-MODE</span>
           </div>
           <!-- Language Toggle -->
-          <select id="langSelect" class="lang-select" onchange="window.currentLang = this.value">
+          <select id="langSelect" class="lang-select" onchange="window.currentLang = this.value" style="margin-right: 5px;">
             <option value="en">EN</option>
             <option value="or">ଓଡ଼ିଆ</option>
           </select>
+          <!-- Audio Synthesis Toggle -->
+          <button class="btn-session-mgr" id="btnAudioToggle" onclick="window.toggleBioTelemetryAudio()" style="margin-right: 5px; border-color: var(--cyan) !important; color: var(--cyan) !important;">
+            <span>🔊</span> SOUND: ON
+          </button>
           <!-- API Settings Button -->
           <button class="btn-session-mgr" id="btnApiSettings" onclick="openApiSettings()" style="margin-right: 5px;">
             <span>⚙️</span> API SETTINGS
