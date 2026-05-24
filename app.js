@@ -1027,10 +1027,12 @@ function closeSidebar() {
 
 // ── Tutorial Modal Toggle ──────────────────────────────────
 function openTutorial() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   document.getElementById('tutorialBackdrop').style.display = 'block';
   document.getElementById('tutorialModal').classList.add('open');
 }
 function closeTutorial() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   document.getElementById('tutorialBackdrop').style.display = 'none';
   document.getElementById('tutorialModal').classList.remove('open');
 }
@@ -1903,6 +1905,7 @@ document.getElementById("userInput").addEventListener("input", function () {
   this.style.height = "auto";
   this.style.height = Math.min(this.scrollHeight, 140) + "px";
   updateCharCount();
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playDataTick();
 });
 
 function updateCharCount() {
@@ -1914,6 +1917,7 @@ function updateCharCount() {
 
 document.querySelectorAll(".symptom-tag").forEach(btn => {
   btn.addEventListener("click", () => {
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playDataTick();
     const symptom = btn.dataset.symptom;
     document.getElementById("userInput").value = symptom;
     updateCharCount();
@@ -2026,6 +2030,7 @@ document.getElementById("fileInput").addEventListener("change", e => {
 
 let pendingFile = null;
 function openMediaModal(file) {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   pendingFile = file;
   const modal = document.getElementById("mediaModal");
   const wrap = document.getElementById("modalMediaWrap");
@@ -2043,6 +2048,7 @@ function openMediaModal(file) {
 document.getElementById("modalClose").addEventListener("click", closeMediaModal);
 document.getElementById("mediaModalBackdrop").addEventListener("click", closeMediaModal);
 function closeMediaModal() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   document.getElementById("mediaModal").style.display = "none";
   pendingFile = null;
 }
@@ -2120,6 +2126,7 @@ document.getElementById("cameraClose").addEventListener("click", closeCamera);
 document.getElementById("cameraBackdrop").addEventListener("click", closeCamera);
 
 async function openCamera() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   document.getElementById("cameraModal").style.display = "flex";
   await startCameraStream();
 }
@@ -2138,6 +2145,7 @@ async function startCameraStream() {
 }
 
 function closeCamera() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
   if (isRecording) stopRecording();
   document.getElementById("cameraModal").style.display = "none";
@@ -2283,6 +2291,7 @@ function saveToVault(name, type, summary, analysis, file = null) {
   
   renderVault();
   saveDetectedCondition(type);
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
 }
 
 function deleteVaultEntry(id) {
@@ -3531,6 +3540,7 @@ window._splashTimer = setTimeout(() => {
 // ═══════════════════════════════════════════════════════
 
 function toggleSessionPanel() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   const panel = document.getElementById('sessionPanel');
   const backdrop = document.getElementById('sessionPanelBackdrop');
   if (panel.classList.contains('open')) {
@@ -3543,6 +3553,7 @@ function toggleSessionPanel() {
 }
 
 function closeSessionPanel() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   document.getElementById('sessionPanel').classList.remove('open');
   document.getElementById('sessionPanelBackdrop').classList.remove('open');
   document.getElementById('spRestoreError').textContent = '';
@@ -3681,6 +3692,7 @@ function toggleProviderSettings() {
 }
 
 function openApiSettings() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   const backdrop = document.getElementById("apiSettingsBackdrop");
   const modal = document.getElementById("apiSettingsModal");
   if (backdrop) backdrop.style.display = "block";
@@ -3688,7 +3700,7 @@ function openApiSettings() {
     modal.style.display = "block";
     modal.classList.add("open");
   }
-
+  
   // Load provider
   const provider = localStorage.getItem("ramanai_llm_provider") || "local-slm";
   const providerSelect = document.getElementById("llmProvider");
@@ -3732,6 +3744,7 @@ function openApiSettings() {
 }
 
 function closeApiSettings() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   const backdrop = document.getElementById("apiSettingsBackdrop");
   const modal = document.getElementById("apiSettingsModal");
   if (backdrop) backdrop.style.display = "none";
@@ -3783,16 +3796,19 @@ function saveApiKey() {
     const alertMsg = isOr 
       ? "କନଫିଗରେସନ୍ ସଫଳତାର ସହ ସଂରକ୍ଷିତ ହେଲା! ରାମନ୍ ଲୋକାଲ୍ SLM ସକ୍ରିୟ ଅଛି।"
       : "Configuration saved! RAMAN Local SLM is the active engine.";
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
     alert(alertMsg);
   } else if (provider === "gemini") {
     const alertMsg = isOr
       ? "କନଫିଗରେସନ୍ ସଫଳତାର ସହ ସଂରକ୍ଷିତ ହେଲା! ଗୁଗଲ୍ ଜେମିନି API ସକ୍ରିୟ ଅଛି।"
       : "Configuration saved! Google Gemini API is the active engine.";
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
     alert(alertMsg);
   } else if (provider === "openai") {
     const alertMsg = isOr
       ? "କନଫିଗରେସନ୍ ସଫଳତାର ସହ ସଂରକ୍ଷିତ ହେଲା! କଷ୍ଟମ୍ API ଗେଟୱେ ସକ୍ରିୟ ଅଛି।"
       : "Configuration saved! Custom API Gateway is the active engine.";
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
     alert(alertMsg);
   }
 
@@ -3845,6 +3861,7 @@ function saveSimulatedToVault(name, type, summary, analysis, dataUrl) {
     
   renderVault();
   saveDetectedCondition(type);
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
   return id;
 }
 
@@ -5597,6 +5614,7 @@ ${profileCtx}`;
 // ==========================================
 
 function openTrainingHub() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   const backdrop = document.getElementById("trainingHubBackdrop");
   const modal = document.getElementById("trainingHubModal");
   if (!backdrop || !modal) return;
@@ -5616,6 +5634,7 @@ function openTrainingHub() {
 }
 
 function closeTrainingHub() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
   const backdrop = document.getElementById("trainingHubBackdrop");
   const modal = document.getElementById("trainingHubModal");
   if (backdrop) backdrop.style.display = "none";
@@ -5695,8 +5714,11 @@ function retrainModel() {
     if (cpu) cpu.style.width = "48%";
     if (neural) neural.style.width = "52%";
     
-    // Play telemetry scan sweep SFX
-    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+    // Play telemetry scan sweep and success chime SFX
+    if (window.BioTelemetrySFX) {
+      window.BioTelemetrySFX.playScan();
+      setTimeout(() => window.BioTelemetrySFX.playSuccess(), 450);
+    }
 
     // Update dashboard metrics
     updateTrainingHubStats();
@@ -6084,8 +6106,10 @@ window.exportSessionBackupJSON = async function() {
     URL.revokeObjectURL(url);
     
     console.log("Health vault and profile exported successfully.");
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
   } catch (err) {
     console.error("Failed to export health vault:", err);
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playError();
     alert("Failed to export backup: " + err.message);
   }
 };
@@ -6116,6 +6140,7 @@ window.importSessionBackupJSON = function(file) {
           );
           backup = JSON.parse(decryptedText);
         } catch (decErr) {
+          if (window.BioTelemetrySFX) window.BioTelemetrySFX.playError();
           alert("❌ DECRYPTION FAILED: Incorrect password or corrupted backup file.");
           return;
         }
@@ -6181,6 +6206,7 @@ window.importSessionBackupJSON = function(file) {
       renderVault();
       updateHidChip();
       closeSessionPanel();
+      if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
       
       // Add welcome/restore chat card
       addMessage('ai', `
@@ -6560,6 +6586,136 @@ const BioTelemetrySFX = {
         osc.start(t + i * 0.22);
         osc.stop(t + i * 0.22 + 0.18);
       }
+    } catch(e){}
+  },
+
+  playSlide() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(400, t);
+      osc1.frequency.exponentialRampToValueAtTime(200, t + 0.25);
+
+      osc2.type = "triangle";
+      osc2.frequency.setValueAtTime(150, t);
+      osc2.frequency.exponentialRampToValueAtTime(80, t + 0.25);
+
+      filter.type = "lowpass";
+      filter.Q.value = 3;
+      filter.frequency.setValueAtTime(1000, t);
+      filter.frequency.exponentialRampToValueAtTime(200, t + 0.25);
+
+      gain.gain.setValueAtTime(0.04, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+      osc1.start();
+      osc2.start();
+      osc1.stop(t + 0.25);
+      osc2.stop(t + 0.25);
+    } catch(e){}
+  },
+
+  playSuccess() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      // High-fidelity double chime: 600Hz and 900Hz
+      const osc1 = this.ctx.createOscillator();
+      const gain1 = this.ctx.createGain();
+      osc1.connect(gain1);
+      gain1.connect(this.ctx.destination);
+      osc1.type = "sine";
+      osc1.frequency.setValueAtTime(600, t);
+      gain1.gain.setValueAtTime(0.05, t);
+      gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc1.start(t);
+      osc1.stop(t + 0.12);
+
+      const osc2 = this.ctx.createOscillator();
+      const gain2 = this.ctx.createGain();
+      osc2.connect(gain2);
+      gain2.connect(this.ctx.destination);
+      osc2.type = "sine";
+      osc2.frequency.setValueAtTime(900, t + 0.08);
+      gain2.gain.setValueAtTime(0.0, t + 0.08);
+      gain2.gain.linearRampToValueAtTime(0.06, t + 0.09);
+      gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+      osc2.start(t + 0.08);
+      osc2.stop(t + 0.24);
+    } catch(e){}
+  },
+
+  playError() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const t = this.ctx.currentTime;
+      const osc1 = this.ctx.createOscillator();
+      const osc2 = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc1.type = "sawtooth";
+      osc1.frequency.setValueAtTime(180, t);
+      osc1.frequency.exponentialRampToValueAtTime(100, t + 0.25);
+
+      osc2.type = "sawtooth";
+      osc2.frequency.setValueAtTime(173, t); // Discordant frequency offset
+      osc2.frequency.exponentialRampToValueAtTime(95, t + 0.25);
+
+      gain.gain.setValueAtTime(0.04, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+
+      osc1.start();
+      osc2.start();
+      osc1.stop(t + 0.25);
+      osc2.stop(t + 0.25);
+    } catch(e){}
+  },
+
+  playDataTick() {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+
+      osc.type = "sine";
+      osc.frequency.setValueAtTime(2000, this.ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.015);
+
+      gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.015);
+
+      osc.start();
+      osc.stop(this.ctx.currentTime + 0.015);
     } catch(e){}
   }
 };
