@@ -4268,6 +4268,7 @@ window.downloadPrescriptionPDF = function(data) {
 };
 
 window.downloadSlmPrescriptionPDF = function(conditionKey) {
+  const slmStartTime = performance.now();
   const kb = MEDICAL_KB[conditionKey];
   if (!kb) {
     alert("Unable to resolve medication database for this condition.");
@@ -4368,7 +4369,8 @@ window.downloadSlmPrescriptionPDF = function(conditionKey) {
     medicines: medicines,
     diet: kb.diet || [],
     precautions: kb.precautions || [],
-    urgencyWarning: allergyWarning || (conditionKey === "chest pain" ? "Treat all chest pain as cardiac emergency. Seek physical ER care immediately." : "")
+    urgencyWarning: allergyWarning || (conditionKey === "chest pain" ? "Treat all chest pain as cardiac emergency. Seek physical ER care immediately." : ""),
+    latency: (performance.now() - slmStartTime).toFixed(3)
   };
 
   // Call the main download prescription method
@@ -4606,6 +4608,7 @@ function startConsultationLoader() {
 }
 
 function completeClinicalConsultation() {
+  const wizardStartTime = performance.now();
   const wizardDiv = document.getElementById("activeConsultationWizard");
   if (!wizardDiv) return;
   
@@ -4934,7 +4937,8 @@ function completeClinicalConsultation() {
     medicines: medicines,
     diet: diet,
     precautions: precautions,
-    urgencyWarning: urgencyWarning
+    urgencyWarning: urgencyWarning,
+    latency: (performance.now() - wizardStartTime).toFixed(3)
   };
 
   window._activeRxData = rxData;
