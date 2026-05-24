@@ -1225,6 +1225,22 @@ function detectCondition(text) {
   return null;
 }
 
+function getMedicineSearchQuery(fullName) {
+  if (!fullName) return "";
+  // Strip emojis and mechanical symbols
+  let name = fullName.replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]|🛡️|⚠️/g, "");
+  // Strip "(Safe Sub)"
+  name = name.replace(/\(Safe Sub\)/i, "");
+  // Trim
+  name = name.trim();
+  // Get generic part before "("
+  let genericPart = name.split("(")[0].trim();
+  if (!genericPart) {
+    genericPart = name;
+  }
+  return genericPart;
+}
+
 window.currentLang = 'en';
 
 const ODIA_DICT = {
@@ -2911,9 +2927,13 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
             if (med.includes("Amoxicillin")) { ind = "Bacterial Infection"; time = "Complete 5-day course, space 8 hrs apart"; }
             if (med.includes("Aspirin")) { ind = "Antiplatelet / Cardio-care"; time = "Take after a heavy meal"; }
             if (med.includes("Ibuprofen")) { ind = "NSAID Pain / Inflammation"; time = "Take strictly after meals; avoid if kidney/ulcer issues"; }
+            const searchQuery = getMedicineSearchQuery(med);
+            const onlineUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + " alternatives substitutes similar medicines")}`;
             return `<tr>
               <td>
-                <strong>${med.split(" (")[0]}</strong>
+                <a href="${onlineUrl}" target="_blank" class="medicine-lookup-link" title="Click to find similar medicines / online substitutes" style="font-weight:bold;">
+                  ${med.split(" (")[0]} <span class="medicine-lookup-badge">🔍 Similar Type</span>
+                </a>
                 ${med.includes("Brand:") ? `<br><small style="color:var(--cyan); font-size:0.7rem; font-weight:bold;">${med.match(/\(Brand: [^)]+\)/)?.[0] || ""}</small>` : ''}
               </td>
               <td>${ind}</td>
@@ -4412,17 +4432,23 @@ window.downloadPrescriptionPDF = function(data) {
             </tr>
           </thead>
           <tbody>
-            ${data.medicines.map((m, idx) => `
-              <tr>
-                <td>${idx + 1}</td>
-                <td>
-                  <strong>${m.name}</strong>
-                  ${m.snomed && m.snomed !== 'N/A' ? `<span class="clinical-code">SNOMED: ${m.snomed}</span>` : ''}
-                </td>
-                <td>${m.instructions}</td>
-                <td>${m.duration}</td>
-              </tr>
-            `).join('')}
+            ${data.medicines.map((m, idx) => {
+              const searchQuery = getMedicineSearchQuery(m.name);
+              const onlineUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + " alternatives substitutes similar medicines")}`;
+              return `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td>
+                    <a href="${onlineUrl}" target="_blank" style="color: #0284c7; text-decoration: none; border-bottom: 1px dashed rgba(2, 132, 199, 0.4); font-weight: bold;" title="Click to find similar medicines / online substitutes">
+                      ${m.name}
+                    </a>
+                    ${m.snomed && m.snomed !== 'N/A' ? `<span class="clinical-code">SNOMED: ${m.snomed}</span>` : ''}
+                  </td>
+                  <td>${m.instructions}</td>
+                  <td>${m.duration}</td>
+                </tr>
+              `;
+            }).join('')}
           </tbody>
         </table>
         
@@ -5299,13 +5325,21 @@ function completeClinicalConsultation() {
               </tr>
             </thead>
             <tbody>
-              ${medicines.map(m => `
-                <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
-                  <td style="padding:6px 0; font-weight:bold; color:var(--cyan);">${m.name}</td>
-                  <td style="padding:6px 0; color:var(--text-main);">${m.instructions}</td>
-                  <td style="padding:6px 0; text-align:right; color:var(--text-muted);">${m.duration}</td>
-                </tr>
-              `).join('')}
+              ${medicines.map(m => {
+                const searchQuery = getMedicineSearchQuery(m.name);
+                const onlineUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + " alternatives substitutes similar medicines")}`;
+                return `
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+                    <td style="padding:6px 0;">
+                      <a href="${onlineUrl}" target="_blank" class="medicine-lookup-link" title="Click to find similar medicines / online substitutes">
+                        ${m.name} <span class="medicine-lookup-badge">🔍 Similar Type</span>
+                      </a>
+                    </td>
+                    <td style="padding:6px 0; color:var(--text-main);">${m.instructions}</td>
+                    <td style="padding:6px 0; text-align:right; color:var(--text-muted);">${m.duration}</td>
+                  </tr>
+                `;
+              }).join('')}
             </tbody>
           </table>
         </div>

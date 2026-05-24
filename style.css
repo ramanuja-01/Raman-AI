@@ -807,6 +807,44 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
 }
 .doc-table tr:hover td { background: rgba(0,229,255,0.03); }
 
+/* Medicine Online Lookup Link */
+.medicine-lookup-link {
+  color: var(--cyan);
+  text-decoration: none;
+  border-bottom: 1px dashed rgba(0, 243, 255, 0.4);
+  padding-bottom: 1px;
+  transition: all 0.25s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+}
+.medicine-lookup-link:hover {
+  color: #ffffff;
+  border-bottom: 1px solid var(--accent);
+  text-shadow: 0 0 8px rgba(0, 243, 255, 0.6);
+}
+.medicine-lookup-badge {
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(0, 243, 255, 0.08);
+  border: 1px solid rgba(0, 243, 255, 0.25);
+  font-weight: normal;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--cyan);
+  transition: all 0.2s ease;
+  vertical-align: middle;
+}
+.medicine-lookup-link:hover .medicine-lookup-badge {
+  background: rgba(0, 243, 255, 0.2);
+  border-color: var(--cyan);
+  color: #ffffff;
+  box-shadow: 0 0 6px rgba(0, 243, 255, 0.4);
+}
+
 /* ===== SPLASH HEALTH ID INPUT ===== */
 .splash-hid-section {
   margin-top: 28px; width: 320px;
