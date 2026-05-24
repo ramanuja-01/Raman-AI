@@ -4231,7 +4231,7 @@ window.downloadPrescriptionPDF = function(data) {
         <div class="footer-sig-area">
           <div style="font-size:0.75rem; color:#64748b;">
             <p>Registered Laboratory Directive ID: <strong>LAB-SIM-${Date.now().toString().slice(-6)}</strong></p>
-            <p>Inference Processing Latency: <strong>5.4 milliseconds</strong></p>
+            <p>Inference Processing Latency: <strong>${data.latency || '0.250'} milliseconds</strong></p>
             <p>Bilingual Language Layer: <strong>English / Odia</strong></p>
           </div>
           
@@ -4239,7 +4239,7 @@ window.downloadPrescriptionPDF = function(data) {
             <div style="font-family: 'Cinzel', serif; font-size: 0.9rem; color: #0284c7; font-weight: bold; border: 2px solid #0284c7; padding: 4px; border-radius: 4px; display: inline-block; transform: rotate(-3deg); margin-bottom: 5px; opacity: 0.85;">
               RAMAN AI SLM
             </div>
-            <div class="sig-line">RAMAN AI Signature Authority</div>
+            <div class="sig-line">Ramanuja Pathy (Signature Authority)</div>
             <div style="font-size: 0.65rem; color:#64748b; margin-top:2px;">Electronically certified offline</div>
           </div>
         </div>
