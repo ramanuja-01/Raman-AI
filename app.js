@@ -1071,8 +1071,8 @@ const MEDICAL_KB = {
     icd11: "MG26",
     conditions: ["Viral Infection", "Bacterial Infection", "Flu (Influenza)", "Common Cold", "COVID-19"],
     medications: [
-      { name: "Paracetamol (Acetaminophen)", snomed: "387584000", dose: "500–1000 mg every 6–8 hours as needed (Maximum 4000 mg per 24 hours)", note: "First-line antipyretic & analgesic. Directly acts on the hypothalamus to reduce high body temperature. Take with a glass of water; can be administered with or without food. Avoid other acetaminophen-containing medications to prevent accidental hepatotoxicity." },
-      { name: "Ibuprofen", snomed: "386864001", dose: "400 mg every 8 hours with food (Maximum 1200 mg per 24 hours)", note: "Non-steroidal anti-inflammatory drug (NSAID). Relieves fever, body aches, and inflammatory responses by blocking prostaglandin synthesis. ALWAYS take with food, milk, or antacids to safeguard gastric mucosa. Do not use if history of peptic ulcers or severe kidney disease." }
+      { name: "Paracetamol 650mg (Brand: Calpol, Crocin)", snomed: "387584000", dose: "500–1000 mg every 6–8 hours as needed (Maximum 4000 mg per 24 hours)", note: "First-line antipyretic & analgesic. Directly acts on the hypothalamus to reduce high body temperature. Take with a glass of water; can be administered with or without food. Avoid other acetaminophen-containing medications to prevent accidental hepatotoxicity." },
+      { name: "Ibuprofen 400mg (Brand: Brufen, Advil)", snomed: "386864001", dose: "400 mg every 8 hours with food (Maximum 1200 mg per 24 hours)", note: "Non-steroidal anti-inflammatory drug (NSAID). Relieves fever, body aches, and inflammatory responses by blocking prostaglandin synthesis. ALWAYS take with food, milk, or antacids to safeguard gastric mucosa. Do not use if history of peptic ulcers or severe kidney disease." }
     ],
     precautions: ["Stay hydrated – drink 8–10 glasses of water/day", "Rest adequately", "Monitor temperature every 4 hours", "Seek urgent care if fever exceeds 104°F (40°C)"],
     diet: ["Warm soups and broths", "Fresh citrus fruits (Vitamin C)", "Ginger and tulsi tea", "Avoid cold foods and beverages"],
@@ -1082,9 +1082,9 @@ const MEDICAL_KB = {
     icd11: "MB4D",
     conditions: ["Tension Headache", "Migraine", "Dehydration", "Sinusitis", "Hypertension"],
     medications: [
-      { name: "Paracetamol", snomed: "387584000", dose: "500–1000 mg every 6 hours as needed (Maximum 4000 mg/day)", note: "First-line relief for mild-to-moderate tension headaches. Minimizes headache severity by inhibiting prostaglandin synthesis in the central nervous system. Safe for gastric lining, but avoid alcohol consumption during use." },
-      { name: "Ibuprofen", snomed: "386864001", dose: "400 mg every 8 hours with food", note: "Highly effective NSAID targeting vascular and muscular tension components of tension headaches. Take after meals to avoid gastrointestinal discomfort." },
-      { name: "Sumatriptan", snomed: "372834007", dose: "50 mg orally at the immediate onset of migraine attack; may repeat once after 2 hours if pain persists (Maximum 100 mg per 24 hours)", note: "Selective 5-HT1 receptor agonist. Specifically targets migraine attacks by constricting dilated cranial blood vessels and blocking inflammatory neuropeptide release. Take immediately at the first sign of aura or pain. Do not use if history of ischemic heart disease or uncontrolled hypertension." }
+      { name: "Paracetamol 650mg (Brand: Calpol, Crocin)", snomed: "387584000", dose: "500–1000 mg every 6 hours as needed (Maximum 4000 mg/day)", note: "First-line relief for mild-to-moderate tension headaches. Minimizes headache severity by inhibiting prostaglandin synthesis in the central nervous system. Safe for gastric lining, but avoid alcohol consumption during use." },
+      { name: "Ibuprofen 400mg (Brand: Brufen, Advil)", snomed: "386864001", dose: "400 mg every 8 hours with food", note: "Highly effective NSAID targeting vascular and muscular tension components of tension headaches. Take after meals to avoid gastrointestinal discomfort." },
+      { name: "Sumatriptan 50mg (Brand: Suminat, Imitrex)", snomed: "372834007", dose: "50 mg orally at the immediate onset of migraine attack; may repeat once after 2 hours if pain persists (Maximum 100 mg per 24 hours)", note: "Selective 5-HT1 receptor agonist. Specifically targets migraine attacks by constricting dilated cranial blood vessels and blocking inflammatory neuropeptide release. Take immediately at the first sign of aura or pain. Do not use if history of ischemic heart disease or uncontrolled hypertension." }
     ],
     precautions: ["Avoid screen time and bright lights", "Apply cold/warm compress on forehead", "Seek emergency care for sudden severe 'thunderclap' headache"],
     diet: ["Drink plenty of water", "Avoid caffeine excess", "Small regular meals", "Magnesium-rich foods (nuts, leafy greens)"],
@@ -1094,9 +1094,9 @@ const MEDICAL_KB = {
     icd11: "MD11",
     conditions: ["Common Cold", "Bronchitis", "Asthma", "GERD", "Pneumonia", "Allergic Rhinitis"],
     medications: [
-      { name: "Dextromethorphan", snomed: "387042006", dose: "10–20 mg every 4–6 hours as needed (Maximum 120 mg/day)", note: "Non-narcotic cough suppressant. Directly acts on the cough center in the medulla oblongata to inhibit dry, hacking, non-productive coughs. May cause mild drowsiness; avoid driving or operating heavy machinery during use." },
-      { name: "Guaifenesin", snomed: "387140008", dose: "200–400 mg every 4 hours as needed with a full glass of water (Maximum 2400 mg/day)", note: "Expectorant. Reduces the viscosity of tenacious respiratory secretions and thins mucus, making it easier to cough up and clear from bronchial pathways. Maintain high water intake to optimize expectorant efficiency." },
-      { name: "Salbutamol Inhaler", snomed: "372813000", dose: "1–2 inhalations (90–180 mcg) every 4–6 hours as needed for bronchospasm relief", note: "Short-acting beta-2 adrenergic receptor agonist (bronchodilator). Relaxes bronchial smooth muscles to rapidly relieve chest tightness, wheezing, and coughing. Shake well before use and rinse mouth with water after inhalation to prevent dry throat." }
+      { name: "Dextromethorphan Hydrobromide 10mg (Brand: Benadryl DR, Robitussin)", snomed: "387042006", dose: "10–20 mg every 4–6 hours as needed (Maximum 120 mg/day)", note: "Non-narcotic cough suppressant. Directly acts on the cough center in the medulla oblongata to inhibit dry, hacking, non-productive coughs. May cause mild drowsiness; avoid driving or operating heavy machinery during use." },
+      { name: "Guaifenesin 200mg (Brand: Mucinex, Robitussin Mucus)", snomed: "387140008", dose: "200–400 mg every 4 hours as needed with a full glass of water (Maximum 2400 mg/day)", note: "Expectorant. Reduces the viscosity of tenacious respiratory secretions and thins mucus, making it easier to cough up and clear from bronchial pathways. Maintain high water intake to optimize expectorant efficiency." },
+      { name: "Salbutamol Inhaler 100mcg (Brand: Asthalin, Ventolin)", snomed: "372813000", dose: "1–2 inhalations (90–180 mcg) every 4–6 hours as needed for bronchospasm relief", note: "Short-acting beta-2 adrenergic receptor agonist (bronchodilator). Relaxes bronchial smooth muscles to rapidly relieve chest tightness, wheezing, and coughing. Shake well before use and rinse mouth with water after inhalation to prevent dry throat." }
     ],
     precautions: ["Avoid cold air and smoke", "Stay hydrated", "Use steam inhalation", "Persistent cough >3 weeks needs investigation"],
     diet: ["Warm fluids – honey-lemon water", "Turmeric milk (Haldi doodh)", "Avoid dairy if producing mucus"],
@@ -1106,8 +1106,8 @@ const MEDICAL_KB = {
     icd11: "MD30",
     conditions: ["⚠️ Cardiac Emergency (Rule out immediately)", "Costochondritis", "GERD / Acid Reflux", "Muscle Strain", "Anxiety / Panic Attack"],
     medications: [
-      { name: "⚠️ EMERGENCY", snomed: "N/A", dose: "Call emergency medical services (108/911) immediately without delay", note: "CRITICAL NOTICE: Crushing or squeezing retrosternal chest pain radiating to the left arm, neck, or jaw, accompanied by diaphoresis (sweating), dyspnea (breathlessness), and dizziness, is a suspected acute myocardial infarction (heart attack). DO NOT take standard pain medications or wait; seek immediate ER assessment." },
-      { name: "Antacids (for GERD-related)", snomed: "372671000", dose: "10–20 mL of liquid antacid suspension or 1–2 chewable tablets as directed", note: "Neutralizes stomach acid to relieve esophageal reflux pain. Administer ONLY after a qualified emergency physician has physically evaluated your chest symptoms and fully ruled out cardiac conditions." }
+      { name: "⚠️ EMERGENCY EVALUATION (Aspirin 325mg chewable recommended)", snomed: "N/A", dose: "Call emergency medical services (108/911) immediately without delay", note: "CRITICAL NOTICE: Crushing or squeezing retrosternal chest pain radiating to the left arm, neck, or jaw, accompanied by diaphoresis (sweating), dyspnea (breathlessness), and dizziness, is a suspected acute myocardial infarction (heart attack). DO NOT take standard pain medications or wait; seek immediate ER assessment." },
+      { name: "Antacid Suspension (Brand: Digene, Gelusil)", snomed: "372671000", dose: "10–20 mL of liquid antacid suspension or 1–2 chewable tablets as directed", note: "Neutralizes stomach acid to relieve esophageal reflux pain. Administer ONLY after a qualified emergency physician has physically evaluated your chest symptoms and fully ruled out cardiac conditions." }
     ],
     precautions: ["⚠️ CRITICAL: Treat all chest pain as cardiac until proven otherwise", "Call emergency services (108) immediately", "Do NOT drive yourself to hospital", "Chew aspirin 325mg if cardiac event suspected and not allergic"],
     diet: ["Avoid spicy, fatty foods", "Eat smaller meals", "No alcohol or caffeine"],
@@ -1117,9 +1117,9 @@ const MEDICAL_KB = {
     icd11: "MD80",
     conditions: ["Gastritis", "Irritable Bowel Syndrome (IBS)", "Appendicitis", "Peptic Ulcer", "Food Poisoning", "Indigestion"],
     medications: [
-      { name: "Omeprazole (PPI)", snomed: "372679003", dose: "20 mg orally once daily, strictly 30–60 minutes before the first meal of the day", note: "Proton pump inhibitor (PPI). Suppresses gastric acid secretion at the secretory surface of gastric parietal cells, allowing inflamed esophageal, gastric, or duodenal mucosa to heal. Swallow whole; do not chew or crush." },
-      { name: "Buscopan (Hyoscine)", snomed: "387063004", dose: "10–20 mg orally 3 times daily as needed for abdominal spasms", note: "Antispasmodic/anticholinergic drug. Relaxes visceral smooth muscles in the gastrointestinal, biliary, and urinary tracts to relieve cramping, colic, and stomach spasms. May cause dry mouth or blurred vision." },
-      { name: "ORS (Oral Rehydration Salts)", snomed: "387213002", dose: "Dissolve 1 sachet in 1 Litre of clean drinking water; drink 200-400 mL after each loose stool or vomiting episode", note: "WHO-formulated oral rehydration salts containing glucose and essential electrolytes. Directly restores water and electrolyte balance lost during stomach upset, vomiting, or diarrhea. Do not boil the prepared solution." }
+      { name: "Omeprazole 20mg (Brand: Omez, Prilosec)", snomed: "372679003", dose: "20 mg orally once daily, strictly 30–60 minutes before the first meal of the day", note: "Proton pump inhibitor (PPI). Suppresses gastric acid secretion at the secretory surface of gastric parietal cells, allowing inflamed esophageal, gastric, or duodenal mucosa to heal. Swallow whole; do not chew or crush." },
+      { name: "Hyoscine Butylbromide 10mg (Brand: Buscopan)", snomed: "387063004", dose: "10–20 mg orally 3 times daily as needed for abdominal spasms", note: "Antispasmodic/anticholinergic drug. Relaxes visceral smooth muscles in the gastrointestinal, biliary, and urinary tracts to relieve cramping, colic, and stomach spasms. May cause dry mouth or blurred vision." },
+      { name: "ORS (Oral Rehydration Salts) (Brand: Electral, Walyte)", snomed: "387213002", dose: "Dissolve 1 sachet in 1 Litre of clean drinking water; drink 200-400 mL after each loose stool or vomiting episode", note: "WHO-formulated oral rehydration salts containing glucose and essential electrolytes. Directly restores water and electrolyte balance lost during stomach upset, vomiting, or diarrhea. Do not boil the prepared solution." }
     ],
     precautions: ["⚠️ Severe right lower abdominal pain may indicate appendicitis – seek emergency care", "Avoid NSAIDs (aspirin, ibuprofen) on empty stomach", "Monitor for blood in stool"],
     diet: ["BRAT diet: Bananas, Rice, Applesauce, Toast", "Avoid spicy, oily, and acidic foods", "Small frequent meals", "Curd / yoghurt for gut health"],
@@ -1129,9 +1129,9 @@ const MEDICAL_KB = {
     icd11: "ME82",
     conditions: ["Arthritis (Osteo/Rheumatoid)", "Gout", "Injury / Sprain", "Lupus", "Viral Arthralgia"],
     medications: [
-      { name: "Ibuprofen", snomed: "386864001", dose: "400 mg orally 3 times daily immediately after meals (Maximum 1200 mg/day)", note: "NSAID. Suppresses joint inflammation, swelling, and arthritic pain by blocking cyclooxygenase (COX) pathways. Take strictly with food or milk. Avoid if taking oral anticoagulants or if you have renal impairment." },
-      { name: "Diclofenac Gel", snomed: "372658000", dose: "Apply 2–4 grams of 1% gel locally to affected joint and rub gently 3–4 times daily", note: "Topical non-steroidal anti-inflammatory gel. Provides targeted, localized relief from joint pain and inflammation (especially knee and hand osteoarthrosis) with highly minimal systemic absorption and low gastric side effects. Wash hands after application." },
-      { name: "Colchicine", snomed: "372740003", dose: "0.5–1 mg orally twice daily during an acute gout flare-up, or as prescribed by your rheumatologist", note: "Anti-gout agent. Directly inhibits microtubule assembly in neutrophils, preventing their activation and migration to joints with uric acid crystals, reducing extreme gout inflammation. Avoid grapefruit juice." }
+      { name: "Ibuprofen 400mg (Brand: Brufen, Advil)", snomed: "386864001", dose: "400 mg orally 3 times daily immediately after meals (Maximum 1200 mg/day)", note: "NSAID. Suppresses joint inflammation, swelling, and arthritic pain by blocking cyclooxygenase (COX) pathways. Take strictly with food or milk. Avoid if taking oral anticoagulants or if you have renal impairment." },
+      { name: "Diclofenac Gel 1% (Brand: Voveran Gel, Voltaren)", snomed: "372658000", dose: "Apply 2–4 grams of 1% gel locally to affected joint and rub gently 3–4 times daily", note: "Topical non-steroidal anti-inflammatory gel. Provides targeted, localized relief from joint pain and inflammation (especially knee and hand osteoarthrosis) with highly minimal systemic absorption and low gastric side effects. Wash hands after application." },
+      { name: "Colchicine 0.5mg (Brand: Colgout, Colcrys)", snomed: "372740003", dose: "0.5–1 mg orally twice daily during an acute gout flare-up, or as prescribed by your rheumatologist", note: "Anti-gout agent. Directly inhibits microtubule assembly in neutrophils, preventing their activation and migration to joints with uric acid crystals, reducing extreme gout inflammation. Avoid grapefruit juice." }
     ],
     precautions: ["Rest the affected joint", "Apply ice for 20 min every 2 hours (first 48h)", "Avoid repetitive strain", "Weight management is key for knee arthritis"],
     diet: ["Anti-inflammatory diet: omega-3 fatty acids (fish, flaxseed)", "Turmeric and ginger", "Cherries (for gout)", "Reduce red meat and alcohol"],
@@ -1141,9 +1141,9 @@ const MEDICAL_KB = {
     icd11: "MC20",
     conditions: ["Allergic Dermatitis", "Eczema", "Urticaria (Hives)", "Psoriasis", "Fungal Infection", "Drug Reaction"],
     medications: [
-      { name: "Cetirizine (Antihistamine)", snomed: "372797003", dose: "10 mg orally once daily, preferably at bedtime to minimize daytime sedation", note: "Second-generation selective H1-receptor antagonist. Blocks histamine activity to relieve intense skin itching, hives (urticaria), and allergic dermatitis. May cause mild drowsiness in sensitive individuals." },
-      { name: "Hydrocortisone Cream 1%", snomed: "372633003", dose: "Apply a thin film to the affected skin area twice daily for up to 7 consecutive days", note: "Mild topical corticosteroid. Directly suppresses inflammatory cytokines to reduce localized skin redness, swelling, and itching associated with eczema or contact dermatitis. Do not apply to open wounds, infected areas, or facial skin unless directed." },
-      { name: "Clotrimazole Cream", snomed: "387332009", dose: "Apply a thin layer to the affected clean skin area twice daily for 2–4 consecutive weeks", note: "Broad-spectrum topical antifungal agent. Disrupts fungal cell membrane synthesis to treat ringworm, tinea, and cutaneous candidiasis. Continue application for 1 week after symptoms resolve to prevent recurrence." }
+      { name: "Cetirizine Hydrochloride 10mg (Brand: Okacet, Zyrtec)", snomed: "372797003", dose: "10 mg orally once daily, preferably at bedtime to minimize daytime sedation", note: "Second-generation selective H1-receptor antagonist. Blocks histamine activity to relieve intense skin itching, hives (urticaria), and allergic dermatitis. May cause mild drowsiness in sensitive individuals." },
+      { name: "Hydrocortisone Cream 1% (Brand: Cortizone-10, Hytone)", snomed: "372633003", dose: "Apply a thin film to the affected skin area twice daily for up to 7 consecutive days", note: "Mild topical corticosteroid. Directly suppresses inflammatory cytokines to reduce localized skin redness, swelling, and itching associated with eczema or contact dermatitis. Do not apply to open wounds, infected areas, or facial skin unless directed." },
+      { name: "Clotrimazole Cream 1% (Brand: Candid Cream, Lotrimin)", snomed: "387332009", dose: "Apply a thin layer to the affected clean skin area twice daily for 2–4 consecutive weeks", note: "Broad-spectrum topical antifungal agent. Disrupts fungal cell membrane synthesis to treat ringworm, tinea, and cutaneous candidiasis. Continue application for 1 week after symptoms resolve to prevent recurrence." }
     ],
     precautions: ["Avoid scratching", "Identify and avoid triggers", "⚠️ Seek emergency care for rash with difficulty breathing (anaphylaxis)", "Do not use steroid cream on face without advice"],
     diet: ["Avoid known allergens", "Increase Vitamin C and E intake", "Stay well-hydrated", "Avoid processed foods"],
@@ -1153,9 +1153,9 @@ const MEDICAL_KB = {
     icd11: "BA00",
     conditions: ["Hypertension (Primary)", "Secondary Hypertension", "White-coat Hypertension"],
     medications: [
-      { name: "Amlodipine", snomed: "372688001", dose: "5 mg orally once daily, taken at the same time each day (may increase to 10 mg under supervision)", note: "Dihydropyridine calcium channel blocker. Relaxes and dilates peripheral arterial smooth muscle cells, lowering vascular resistance and systemic blood pressure. Monitor for peripheral edema (ankle swelling)." },
-      { name: "Losartan", snomed: "372695000", dose: "50 mg orally once daily (standard maintenance range is 25–100 mg/day)", note: "Angiotensin II receptor blocker (ARB). Prevents vasoconstriction and aldosterone release to lower blood pressure. Provides excellent long-term renal and cardiovascular protection in hypertensive patients. Do not use during pregnancy." },
-      { name: "Hydrochlorothiazide", snomed: "372656001", dose: "12.5–25 mg orally once daily in the morning to avoid nocturnal urination", note: "Thiazide diuretic. Promotes renal excretion of sodium and water, reducing blood volume and blood pressure. Monitor blood potassium levels regularly as it can cause hypokalemia." }
+      { name: "Amlodipine 5mg (Brand: Amlokind, Norvasc)", snomed: "372688001", dose: "5 mg orally once daily, taken at the same time each day (may increase to 10 mg under supervision)", note: "Dihydropyridine calcium channel blocker. Relaxes and dilates peripheral arterial smooth muscle cells, lowering vascular resistance and systemic blood pressure. Monitor for peripheral edema (ankle swelling)." },
+      { name: "Losartan Potassium 50mg (Brand: Losacar, Cozaar)", snomed: "372695000", dose: "50 mg orally once daily (standard maintenance range is 25–100 mg/day)", note: "Angiotensin II receptor blocker (ARB). Prevents vasoconstriction and aldosterone release to lower blood pressure. Provides excellent long-term renal and cardiovascular protection in hypertensive patients. Do not use during pregnancy." },
+      { name: "Hydrochlorothiazide 12.5mg (Brand: Aquazide, Microzide)", snomed: "372656001", dose: "12.5–25 mg orally once daily in the morning to avoid nocturnal urination", note: "Thiazide diuretic. Promotes renal excretion of sodium and water, reducing blood volume and blood pressure. Monitor blood potassium levels regularly as it can cause hypokalemia." }
     ],
     precautions: ["Monitor BP twice daily", "Do NOT stop medications abruptly", "⚠️ BP >180/120 is hypertensive crisis – seek emergency care", "Regular follow-ups required"],
     diet: ["DASH diet: low sodium (<2g/day)", "Increase potassium (bananas, spinach)", "Reduce alcohol", "Avoid processed/packaged foods", "Regular aerobic exercise"],
@@ -1165,9 +1165,9 @@ const MEDICAL_KB = {
     icd11: "5A11",
     conditions: ["Type 1 Diabetes", "Type 2 Diabetes", "Pre-diabetes", "Gestational Diabetes"],
     medications: [
-      { name: "Metformin", snomed: "372567000", dose: "500 mg orally twice daily with meals (titrate up slowly under medical guidance)", note: "Biguanide antihyperglycemic. Directly decreases hepatic glucose production, reduces intestinal absorption of glucose, and significantly enhances insulin sensitivity in peripheral tissues. Take with meals to minimize gastrointestinal side effects (nausea, abdominal discomfort)." },
-      { name: "Glipizide", snomed: "372562006", dose: "5 mg orally once daily, strictly 30 minutes before your first main meal (breakfast)", note: "Second-generation sulfonylurea. Directly stimulates pancreatic beta cells to secrete endogenous insulin. Monitor closely for signs of hypoglycemia (tremors, sweating, confusion, fast heart rate) and always carry a fast-acting sugar source." },
-      { name: "Insulin", snomed: "372687006", dose: "Dose must be individually titrated and prescribed by an endocrinologist based on daily blood glucose monitoring", note: "Exogenous hormone replacement. Crucial for Type 1 Diabetes and advanced Type 2 Diabetes to facilitate cellular glucose uptake and prevent severe diabetic ketoacidosis (DKA) or hyperosmolar hyperglycemic state (HHS). Learn proper subcutaneous injection techniques and site rotation." }
+      { name: "Metformin Hydrochloride 500mg (Brand: Glycomet, Glucophage)", snomed: "372567000", dose: "500 mg orally twice daily with meals (titrate up slowly under medical guidance)", note: "Biguanide antihyperglycemic. Directly decreases hepatic glucose production, reduces intestinal absorption of glucose, and significantly enhances insulin sensitivity in peripheral tissues. Take with meals to minimize gastrointestinal side effects (nausea, abdominal discomfort)." },
+      { name: "Glipizide 5mg (Brand: Glynase, Glucotrol)", snomed: "372562006", dose: "5 mg orally once daily, strictly 30 minutes before your first main meal (breakfast)", note: "Second-generation sulfonylurea. Directly stimulates pancreatic beta cells to secrete endogenous insulin. Monitor closely for signs of hypoglycemia (tremors, sweating, confusion, fast heart rate) and always carry a fast-acting sugar source." },
+      { name: "Insulin (Human Isophane) (Brand: Mixtard, Humulin N)", snomed: "372687006", dose: "Dose must be individually titrated and prescribed by an endocrinologist based on daily blood glucose monitoring", note: "Exogenous hormone replacement. Crucial for Type 1 Diabetes and advanced Type 2 Diabetes to facilitate cellular glucose uptake and prevent severe diabetic ketoacidosis (DKA) or hyperosmolar hyperglycemic state (HHS). Learn proper subcutaneous injection techniques and site rotation." }
     ],
     precautions: ["Monitor blood sugar morning and 2 hours post-meal", "Never skip meals on medication", "Watch for hypoglycaemia symptoms (shaking, sweating, confusion)", "Regular HbA1c check every 3 months"],
     diet: ["Low glycaemic index foods", "Avoid sugar, white rice, maida", "High fibre: whole grains, vegetables, legumes", "Small frequent meals (5–6/day)", "Bitter gourd (karela), fenugreek – natural aids"],
@@ -1177,9 +1177,9 @@ const MEDICAL_KB = {
     icd11: "MC14",
     conditions: ["Conjunctivitis", "Dry Eye Syndrome", "Glaucoma", "Uveitis", "Digital Eye Strain"],
     medications: [
-      { name: "Artificial Tears Drops", snomed: "387132005", dose: "Instill 1–2 drops into the affected eye(s) up to 4–6 times daily as needed", note: "Sterile lubricant eye drops. Stabilizes the tear film and provides soothing relief from digital eye strain, dryness, burning, and ocular irritation. Remove contact lenses before instilling." },
-      { name: "Chloramphenicol Eye Drops", snomed: "372737004", dose: "Instill 1 drop into the affected eye(s) every 2 hours for the first 48 hours, then reduce to 4 times daily for 5 additional days", note: "Broad-spectrum topical ophthalmic antibiotic. Inhibits bacterial protein synthesis to treat acute bacterial conjunctivitis (pink eye). Finish the full 7-day course even if symptoms resolve earlier to prevent bacterial resistance." },
-      { name: "Sodium Cromoglicate Eye Drops", snomed: "372667008", dose: "Instill 1–2 drops into both eyes 4 times daily at regular intervals", note: "Ophthalmic mast cell stabilizer. Prevents the release of histamine and inflammatory mediators, treating allergic conjunctivitis and reducing ocular itching and redness. Best used preventatively during allergy season." }
+      { name: "Artificial Tears Lubricant Drops (Brand: Tear Drops, Refresh Tears)", snomed: "387132005", dose: "Instill 1–2 drops into the affected eye(s) up to 4–6 times daily as needed", note: "Sterile lubricant eye drops. Stabilizes the tear film and provides soothing relief from digital eye strain, dryness, burning, and ocular irritation. Remove contact lenses before instilling." },
+      { name: "Chloramphenicol Eye Drops 0.5% (Brand: Chloromycetin, Optrex)", snomed: "372737004", dose: "Instill 1 drop into the affected eye(s) every 2 hours for the first 48 hours, then reduce to 4 times daily for 5 additional days", note: "Broad-spectrum topical ophthalmic antibiotic. Inhibits bacterial protein synthesis to treat acute bacterial conjunctivitis (pink eye). Finish the full 7-day course even if symptoms resolve earlier to prevent bacterial resistance." },
+      { name: "Sodium Cromoglicate Eye Drops 2% (Brand: Cromal, Opticrom)", snomed: "372667008", dose: "Instill 1–2 drops into both eyes 4 times daily at regular intervals", note: "Ophthalmic mast cell stabilizer. Prevents the release of histamine and inflammatory mediators, treating allergic conjunctivitis and reducing ocular itching and redness. Best used preventatively during allergy season." }
     ],
     precautions: ["⚠️ Sudden vision loss / severe eye pain needs emergency care", "Do NOT rub eyes", "Follow 20-20-20 rule for digital strain", "Wear UV-protective sunglasses"],
     diet: ["Vitamin A: carrots, leafy greens", "Lutein: eggs, kale, spinach", "Omega-3 fatty acids", "Stay well-hydrated"],
@@ -1189,9 +1189,9 @@ const MEDICAL_KB = {
     icd11: "ME84",
     conditions: ["Muscle Strain", "Disc Herniation", "Lumbar Spondylosis", "Kidney Issues", "Poor Posture"],
     medications: [
-      { name: "Ibuprofen / Diclofenac", snomed: "386864001", dose: "400 mg Ibuprofen or 50 mg Diclofenac orally 3 times daily immediately after food", note: "Oral NSAID. Decreases musculoskeletal pain and inflammatory responses in the lower back or lumbar spine. Always take with a full meal to protect gastric mucosa." },
-      { name: "Muscle Relaxant (Methocarbamol)", snomed: "387002008", dose: "750 mg orally 3 times daily as needed for acute muscular spasms", note: "Centrally-acting skeletal muscle relaxant. Relieves severe muscle spasms and acute lumbar pain by inducing general central nervous system depression. May cause significant drowsiness, dizziness, or lightheadedness; avoid alcohol." },
-      { name: "Diclofenac Topical Gel", snomed: "372658000", dose: "Apply 2–4 grams of 1% or 2% gel to the painful back area and rub in completely 3–4 times daily", note: "Targeted topical NSAID gel. Penetrates deep into musculoskeletal and joint tissues in the back to inhibit local prostaglandins, providing excellent pain relief with negligible systemic side effects. Do not apply to broken skin." }
+      { name: "Ibuprofen 400mg / Diclofenac Potassium 50mg (Brand: Brufen / Voveran)", snomed: "386864001", dose: "400 mg Ibuprofen or 50 mg Diclofenac orally 3 times daily immediately after food", note: "Oral NSAID. Decreases musculoskeletal pain and inflammatory responses in the lower back or lumbar spine. Always take with a full meal to protect gastric mucosa." },
+      { name: "Methocarbamol 750mg (Brand: Robinax, Robaxin)", snomed: "387002008", dose: "750 mg orally 3 times daily as needed for acute muscular spasms", note: "Centrally-acting skeletal muscle relaxant. Relieves severe muscle spasms and acute lumbar pain by inducing general central nervous system depression. May cause significant drowsiness, dizziness, or lightheadedness; avoid alcohol." },
+      { name: "Diclofenac Sodium Topical Gel 1% (Brand: Voveran Gel, Voltaren)", snomed: "372658000", dose: "Apply 2–4 grams of 1% or 2% gel to the painful back area and rub in completely 3–4 times daily", note: "Targeted topical NSAID gel. Penetrates deep into musculoskeletal and joint tissues in the back to inhibit local prostaglandins, providing excellent pain relief with negligible systemic side effects. Do not apply to broken skin." }
     ],
     precautions: ["Avoid prolonged sitting", "Sleep on firm mattress", "⚠️ Back pain with numbness/weakness in legs – seek urgent care (possible nerve compression)", "Maintain correct posture"],
     diet: ["Calcium-rich foods: milk, yoghurt, ragi", "Vitamin D: sunlight, eggs, fish", "Anti-inflammatory: turmeric, ginger"],
@@ -2852,22 +2852,22 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
   } else if (docType === 'prescription') {
     const activeMeds = [];
     if (tunerParams) {
-      if (tunerParams.med_diabetes) activeMeds.push("Metformin 500mg (Diabetes)");
-      if (tunerParams.med_bp) activeMeds.push("Lisinopril 10mg (Hypertension)");
-      if (tunerParams.med_chol) activeMeds.push("Atorvastatin 20mg (Cholesterol)");
-      if (tunerParams.med_antibiotic) activeMeds.push("Amoxicillin 500mg (Antibiotic)");
-      if (tunerParams.med_aspirin) activeMeds.push("Aspirin 75mg (Blood Thinner)");
-      if (tunerParams.med_pain) activeMeds.push("Ibuprofen 400mg (NSAID Painkiller)");
+      if (tunerParams.med_diabetes) activeMeds.push("Metformin Hydrochloride 500mg (Brand: Glycomet, Glucophage)");
+      if (tunerParams.med_bp) activeMeds.push("Lisinopril 10mg (Brand: Listril, Zestril)");
+      if (tunerParams.med_chol) activeMeds.push("Atorvastatin Calcium 20mg (Brand: Lipvas, Lipitor)");
+      if (tunerParams.med_antibiotic) activeMeds.push("Amoxicillin Trihydrate 500mg (Brand: Mox, Amoxil)");
+      if (tunerParams.med_aspirin) activeMeds.push("Aspirin 75mg (Brand: Ecosprin, Colsprin)");
+      if (tunerParams.med_pain) activeMeds.push("Ibuprofen 400mg (Brand: Brufen, Advil)");
     } else {
-      if (/metformin|diabet|sugar/i.test(n)) activeMeds.push("Metformin 500mg (Diabetes)");
-      if (/lisinopril|amlodipine|bp/i.test(n)) activeMeds.push("Lisinopril 10mg (Hypertension)");
-      if (/atorva|statin|chol/i.test(n)) activeMeds.push("Atorvastatin 20mg (Cholesterol)");
-      if (/amoxi|antibio|penic/i.test(n)) activeMeds.push("Amoxicillin 500mg (Antibiotic)");
-      if (/aspirin|thinner/i.test(n)) activeMeds.push("Aspirin 75mg (Blood Thinner)");
-      if (/ibuprofen|pain/i.test(n)) activeMeds.push("Ibuprofen 400mg (NSAID Painkiller)");
+      if (/metformin|diabet|sugar/i.test(n)) activeMeds.push("Metformin Hydrochloride 500mg (Brand: Glycomet, Glucophage)");
+      if (/lisinopril|amlodipine|bp/i.test(n)) activeMeds.push("Lisinopril 10mg (Brand: Listril, Zestril)");
+      if (/atorva|statin|chol/i.test(n)) activeMeds.push("Atorvastatin Calcium 20mg (Brand: Lipvas, Lipitor)");
+      if (/amoxi|antibio|penic/i.test(n)) activeMeds.push("Amoxicillin Trihydrate 500mg (Brand: Mox, Amoxil)");
+      if (/aspirin|thinner/i.test(n)) activeMeds.push("Aspirin 75mg (Brand: Ecosprin, Colsprin)");
+      if (/ibuprofen|pain/i.test(n)) activeMeds.push("Ibuprofen 400mg (Brand: Brufen, Advil)");
       if (activeMeds.length === 0) {
-        activeMeds.push("Metformin 500mg (Diabetes)");
-        activeMeds.push("Atorvastatin 20mg (Cholesterol)");
+        activeMeds.push("Metformin Hydrochloride 500mg (Brand: Glycomet, Glucophage)");
+        activeMeds.push("Atorvastatin Calcium 20mg (Brand: Lipvas, Lipitor)");
       }
     }
 
@@ -2880,7 +2880,7 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
           allergyConflictHtml += `
             <div class="med-section warning" style="border:2px solid #ff0055; margin-bottom:12px; animation: pulseGlow 2s infinite;">
               <div class="med-section-title" style="color:#ff0055;">⚠️ SEVERE CONTRAINDICATION: PENICILLIN ALLERGY</div>
-              <p>You have a registered <strong>Penicillin Allergy</strong>. <strong>Amoxicillin</strong> belongs to the Penicillin drug family. Taking this medication could trigger anaphylaxis or severe hypersensitivity. <strong>Contact your prescribing physician immediately to request a non-penicillin alternative (such as Azithromycin)</strong>.</p>
+              <p>You have a registered <strong>Penicillin Allergy</strong>. <strong>Amoxicillin</strong> belongs to the Penicillin drug family. Taking this medication could trigger anaphylaxis or severe hypersensitivity. <strong>Contact your prescribing physician immediately to request a non-penicillin alternative (such as Azithromycin 500mg (Brand: Azithral, Zithromax))</strong>.</p>
             </div>
           `;
         }
@@ -2888,7 +2888,7 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
           allergyConflictHtml += `
             <div class="med-section warning" style="border:2px solid #ff0055; margin-bottom:12px; animation: pulseGlow 2s infinite;">
               <div class="med-section-title" style="color:#ff0055;">⚠️ CONTRAINDICATION: NSAID ALLERGY</div>
-              <p>Your allergy profile lists: <strong>${allergies}</strong>. You are prescribed <strong>Aspirin/Ibuprofen</strong>, which are NSAIDs. Taking these may lead to bronchospasms, hives, or gastric irritation. Ask your doctor for paracetamol-based analgesics.</p>
+              <p>Your allergy profile lists: <strong>${allergies}</strong>. You are prescribed <strong>Aspirin/Ibuprofen</strong>, which are NSAIDs. Taking these may lead to bronchospasms, hives, or gastric irritation. Ask your doctor for paracetamol-based analgesics, such as Paracetamol 650mg (Brand: Calpol, Crocin).</p>
             </div>
           `;
         }
@@ -2911,7 +2911,14 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
             if (med.includes("Amoxicillin")) { ind = "Bacterial Infection"; time = "Complete 5-day course, space 8 hrs apart"; }
             if (med.includes("Aspirin")) { ind = "Antiplatelet / Cardio-care"; time = "Take after a heavy meal"; }
             if (med.includes("Ibuprofen")) { ind = "NSAID Pain / Inflammation"; time = "Take strictly after meals; avoid if kidney/ulcer issues"; }
-            return `<tr><td><strong>${med.split(" (")[0]}</strong></td><td>${ind}</td><td>${time}</td></tr>`;
+            return `<tr>
+              <td>
+                <strong>${med.split(" (")[0]}</strong>
+                ${med.includes("Brand:") ? `<br><small style="color:var(--cyan); font-size:0.7rem; font-weight:bold;">${med.match(/\(Brand: [^)]+\)/)?.[0] || ""}</small>` : ''}
+              </td>
+              <td>${ind}</td>
+              <td>${time}</td>
+            </tr>`;
           }).join('')}
         </table>
       </div>
@@ -5073,17 +5080,17 @@ function completeClinicalConsultation() {
       let reason = "";
 
       if (medNameLower.includes("amoxicillin")) {
-        subName = "Azithromycin 500mg";
+        subName = "Azithromycin 500mg (Brand: Azithral, Zithromax)";
         subDose = "1 tablet daily before food";
         subNote = "Safe alternative for active Penicillin allergy";
         reason = "Penicillin Allergy Safe-Substitution";
       } else if (medNameLower.includes("ibuprofen") || medNameLower.includes("diclofenac") || medNameLower.includes("aspirin")) {
-        subName = "Paracetamol (Acetaminophen) 650mg";
+        subName = "Paracetamol 650mg (Brand: Calpol, Crocin)";
         subDose = "1 tablet every 6-8 hours after food";
         subNote = "Safe alternative for active NSAID allergy";
         reason = "NSAID Allergy Safe-Substitution";
       } else {
-        subName = "Paracetamol 500mg";
+        subName = "Paracetamol 500mg (Brand: Calpol, Crocin)";
         subDose = "1 tablet after meals as needed";
         subNote = "Substituted to avoid allergen exposure";
         reason = "Allergen Avoidance Safe-Substitution";
