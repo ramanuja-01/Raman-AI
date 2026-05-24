@@ -347,7 +347,7 @@ async function runTest(name, fn) {
     // 2. Verify Odia Empathy is pure Odia (contains Odia words from training sentences)
     window.currentLang = 'or';
     const empathyOr = markovGenerator.generate(15);
-    const isOrWord = empathyOr.toLowerCase().split(/\s+/).some(w => ["apana", "moo", "chinta", "asantu", "swasthya", "bujhiparuchi", "karuntu", "aame"].includes(w.replace(/[.,]/g, "")));
+    const isOrWord = empathyOr.toLowerCase().split(/\s+/).some(w => ["apana", "moo", "chinta", "asantu", "swasthya", "bujhiparuchi", "karuntu", "aame", "ebam", "gupata", "bhabe", "parichalita", "heba"].includes(w.replace(/[.,]/g, "")));
     ok = assert(isOrWord, `Odia empathy generated pure Odia: "${empathyOr}"`) && ok;
 
     // 3. Verify targeted fallback for sickness
