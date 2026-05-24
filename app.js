@@ -3068,6 +3068,15 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
   }
 
   const containerIdAttr = tunerParams && tunerParams.id ? `data-id="${tunerParams.id}"` : '';
+  
+  // Dynamic bilingual step labels
+  const isOr = window.currentLang === 'or';
+  const labelClassification = isOr ? "🔍 STEP 1: DOCUMENT CLASSIFICATION / ଦସ୍ତାବେଜ ଚିହ୍ନଟ" : "🔍 STEP 1: DOCUMENT CLASSIFICATION";
+  const labelExtracted = isOr ? "📋 STEP 2: EXTRACTED KEY INFORMATION / ମୁଖ୍ୟ ତଥ୍ୟ ସଂଗ୍ରହ" : "📋 STEP 2: EXTRACTED KEY INFORMATION";
+  const labelAnalysis = isOr ? "🔬 STEP 3: STRUCTURED CLINICAL ANALYSIS / ବିଶ୍ଳେଷଣାତ୍ମକ ବିବରଣୀ" : "🔬 STEP 3: STRUCTURED CLINICAL ANALYSIS";
+  const labelGuidance = isOr ? "💡 STEP 4: PHARMACOTHERAPY & LIFESTYLE GUIDANCE / ଚିକିତ୍ସା ପରାମର୍ଶ" : "💡 STEP 4: PHARMACOTHERAPY & LIFESTYLE GUIDANCE";
+  const labelNextSteps = isOr ? "🚨 STEP 5: POSSIBLE NEXT STEPS / ସମ୍ଭାବ୍ୟ ପରବର୍ତ୍ତୀ ପଦକ୍ଷେପ" : "🚨 STEP 5: POSSIBLE NEXT STEPS";
+
   const resultHtml = `
     <div class="slm-diagnostic-hub" ${containerIdAttr} data-file-name="${file.name.replace(/"/g, '&quot;')}" data-doc-type="${docType}" style="position:relative; width:100%;">
       
@@ -3083,29 +3092,61 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
         <div style="font-size:0.95rem; font-weight:bold; color:${stageColors[activeStage]}; font-family:var(--font-title);">${stageTitles[activeStage]}</div>
       </div>
 
-      <!-- Main Pathology Details -->
-      <div class="med-section info">
-        ${pathologyHtml}
+      <!-- Step 1: Identification of Document Type -->
+      <div class="med-section info" style="margin-bottom:10px;">
+        <div class="med-section-title" style="color:var(--accent); font-size:0.8rem;">${labelClassification}</div>
+        <ul style="padding-left:14px; margin:0; font-size:0.78rem;">
+          <li><strong>Document Class / ଶ୍ରେଣୀ:</strong> ${b.label} (${docType.toUpperCase()})</li>
+          <li><strong>Identified File / ଫାଇଲ୍ ନାମ:</strong> <code>${file.name}</code></li>
+          <li><strong>Simulation Target / ଚିକିତ୍ସା କ୍ଷେତ୍ର:</strong> ${detectedCondition}</li>
+        </ul>
+      </div>
+
+      <!-- Step 2: Extracted Information -->
+      <div class="med-section info" style="margin-bottom:10px;">
+        <div class="med-section-title" style="color:var(--accent); font-size:0.8rem;">${labelExtracted}</div>
+        <ul style="padding-left:14px; margin:0; font-size:0.78rem;">
+          <li><strong>Patient Details / ରୋଗୀ ବିବରଣୀ:</strong> Name: ${profile.name || 'Unknown'}, Age: ${profile.age || 'Unknown'}, Gender: ${profile.gender || 'Unknown'}</li>
+          <li><strong>Allergies / ଆଲର୍ଜି:</strong> ${profile.allergies || 'None Documented'}</li>
+          <li><strong>Clinical Metric / ପ୍ରାଥମିକ ମାପକ:</strong> ${keyMetricName} resolved at <strong style="color:var(--teal);">${activeMetricVal}${keyMetricUnit}</strong> (Stage ${activeStage}/4)</li>
+          <li><strong>Abnormal Values / ଅସ୍ୱାଭାବିକ ଚିହ୍ନଟ:</strong> ${activeStage >= 3 ? '<span style="color:var(--red-warn); font-weight:bold;">🚨 Yes - High risk abnormalities flagged.</span>' : '<span style="color:var(--accent); font-weight:bold;">⚠️ Moderate/Typical range variance.</span>'}</li>
+        </ul>
+      </div>
+
+      <!-- Step 3: Structured Clinical Analysis -->
+      <div class="med-section info" style="margin-bottom:10px;">
+        <div class="med-section-title" style="color:var(--cyan); font-size:0.8rem;">${labelAnalysis}</div>
+        <div style="font-size:0.78rem;">
+          ${pathologyHtml}
+        </div>
       </div>
 
       <!-- Live SLM Tuner Interface -->
       ${tunerHtml}
 
-      <!-- Therapeutic Suggestions & Guidelines -->
-      <div class="med-section info" style="margin-top:12px;">
-        <div class="med-section-title">💡 TREATMENT & THERAPEUTIC SUGGESTIONS</div>
-        ${therapeuticSuggestions}
+      <!-- Step 4: Lifestyle, Diet & Pharmacotherapy Guidance -->
+      <div class="med-section info" style="margin-top:12px; margin-bottom:10px;">
+        <div class="med-section-title" style="color:var(--teal); font-size:0.8rem;">${labelGuidance}</div>
+        <div style="font-size:0.78rem; line-height:1.4;">
+          <p style="margin-bottom:4px; font-weight:bold; color:var(--text-muted);">Generic Treatment Recommendations (No Brand Bias):</p>
+          ${therapeuticSuggestions}
+        </div>
       </div>
 
-      <!-- Clinical Action Recommendation -->
-      <div class="med-section warning" style="border-color:${stageColors[activeStage]}; background:rgba(${activeStage === 4 ? '255,0,85' : activeStage === 3 ? '255,102,0' : '255,204,0'}, 0.05); margin-top:12px;">
-        <div class="med-section-title" style="color:${stageColors[activeStage]};">📋 RECOMMENDED CLINICAL ACTION</div>
-        <p>${medicalAction}</p>
+      <!-- Step 5: Possible Next Steps (Highlighted Section) -->
+      <div class="med-section warning" style="border-left:4px solid ${stageColors[activeStage]}; background:rgba(${activeStage === 4 ? '255,0,85' : activeStage === 3 ? '255,102,0' : '255,204,0'}, 0.05); margin-top:12px; border-radius:4px; padding:10px;">
+        <div class="med-section-title" style="color:${stageColors[activeStage]}; font-size:0.8rem; font-weight:bold;">${labelNextSteps}</div>
+        <div style="font-size:0.8rem; line-height:1.4;">
+          <p>${medicalAction}</p>
+          <p style="font-size:0.75rem; margin-top:5px; border-top:1px dashed rgba(255,255,255,0.1); padding-top:5px; font-weight:bold; color:var(--cyan);">
+            🏥 Suggested Follow-up: Consult a primary care physician or a Pulmonologist/Cardiologist depending on severity status for real physical examination.
+          </p>
+        </div>
       </div>
 
-      <!-- Final Medical Disclaimer -->
-      <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 8px; font-style: italic; line-height: 1.2;">
-        ⚡ Disclaimer: RAMAN AI local SLM provides non-diagnostic statistical triage. Findings must be validated by a certified healthcare professional.
+      <!-- Mandatory Legal Disclaimer -->
+      <div style="font-size: 0.65rem; color: var(--text-muted); margin-top: 8px; font-style: italic; line-height: 1.3; border-top:1px solid rgba(255,255,255,0.08); padding-top:6px;">
+        ⚠️ <strong>MANDATORY DISCLAIMER / ଆଇନଗତ ଚେତାବନୀ:</strong> This is informational only, not a substitute for professional medical advice. / ଏହା କେବଳ ସୂଚନା ଉଦ୍ଦେଶ୍ୟରେ ଦିଆଯାଇଛି, ଏହା ବ୍ୟକ୍ତିଗତ ଚିକିତ୍ସା ପରାମର୍ଶର ବିକଳ୍ପ ନୁହେଁ।
       </div>
     </div>
   `;
@@ -3118,31 +3159,82 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
   const old = document.getElementById('btnAnalyze');
   const fresh = old.cloneNode(true);
   old.parentNode.replaceChild(fresh, old);
-  fresh.addEventListener('click', () => {
+  fresh.addEventListener('click', async () => {
     if (!pendingFile) return;
     const analysis  = document.getElementById('modalAnalysis');
     const manualType = document.getElementById('docTypeSelect').value;
     analysis.innerHTML = `<div class="modal-analyzing"><div class="modal-spin"></div> Analyzing with RAMAN AI…</div>`;
+    
+    const profile  = getProfile();
+    const docType  = detectDocType(pendingFile, manualType);
+    const b        = VAULT_BADGE[docType] || VAULT_BADGE.general;
+    
+    // Check if active provider is Gemini
+    const provider = localStorage.getItem("ramanai_provider") || "slm";
+    const geminiKey = localStorage.getItem("ramanai_gemini_api_key");
+    const geminiModel = localStorage.getItem("ramanai_gemini_model") || "gemini-1.5-flash";
+    
+    let result = "";
+    
+    if (provider === "gemini" && geminiKey) {
+      // Call Gemini for high-fidelity online document analysis!
+      const isOr = window.currentLang === 'or';
+      const prompt = `You are RAMAN AI, a state-of-the-art medical intelligence system.
+Analyze the following uploaded medical document using your advanced clinical knowledge database.
+Follow these exact steps:
+
+Step 1: Identify the type of document. (The system detected this as: ${b.label} (${docType.toUpperCase()}) named "${pendingFile.name}").
+Step 2: Extract key medical information:
+  - Patient details (Patient Profile: Name: ${profile.name || 'Unknown'}, Age: ${profile.age || 'Unknown'}, Gender: ${profile.gender || 'Unknown'}, Blood Group: ${profile.blood || 'Unknown'}, Allergies: ${profile.allergies || 'None'}).
+  - Extract vital signs, test values, or imaging findings from the document details.
+  - Extract medications prescribed (drug name, dosage, frequency) if applicable.
+  - Flag abnormal values or critical results.
+Step 3: Provide structured analysis:
+  - Summarize findings in simple language.
+  - Highlight abnormal results and possible conditions.
+  - Suggest follow-up tests or doctor consultation if needed.
+Step 4: Suggest medication or lifestyle guidance:
+  - Recommend standard medications (use generic names only, absolute no brand bias, e.g. Paracetamol, Ibuprofen, Metformin, Lisinopril, Cetirizine, Clotrimazole, etc. with proper compositions).
+  - Suggest diet, exercise, or monitoring routines.
+  - Always include the mandatory legal clinical disclaimer: “This is informational only, not a substitute for professional medical advice.”
+Step 5: Output format:
+  - Clear HTML structures matching modern medical sandboxes. Use CSS class names like "med-section info", "med-section warning", etc.
+  - Clear bullet points for findings.
+  - Highlighted section for “Possible Next Steps”.
+  - Output MUST be fully bilingual (English + Odia) since the user's current session preference is Odia (${isOr ? 'ACTIVE' : 'INACTIVE'}).
+
+Return ONLY the complete HTML markup directly. Do not wrap in markdown code blocks.`;
+      try {
+        result = await generateGeminiResponse(prompt, profile, geminiKey, geminiModel);
+        if (result.includes("```html")) {
+          result = result.split("```html")[1].split("```")[0].trim();
+        } else if (result.includes("```")) {
+          result = result.split("```")[1].split("```")[0].trim();
+        }
+      } catch (err) {
+        console.error("Gemini Doc Analysis failed, falling back to local SLM:", err);
+        result = analyzeDocument(pendingFile, docType, profile);
+      }
+    } else {
+      // Fallback to offline local SLM
+      result = analyzeDocument(pendingFile, docType, profile);
+    }
+    
+    const summary  = `${b.icon} ${b.label} – ${pendingFile.name}`;
+    analysis.innerHTML = result;
+    saveToVault(pendingFile.name, docType, summary, result, pendingFile);
+    
     setTimeout(() => {
-      const profile  = getProfile();
-      const docType  = detectDocType(pendingFile, manualType);
-      const result   = analyzeDocument(pendingFile, docType, profile);
-      const b        = VAULT_BADGE[docType] || VAULT_BADGE.general;
-      const summary  = `${b.icon} ${b.label} – ${pendingFile.name}`;
-      analysis.innerHTML = result;
-      saveToVault(pendingFile.name, docType, summary, result, pendingFile);
-      setTimeout(() => {
-        const url    = URL.createObjectURL(pendingFile);
-        const isVid  = pendingFile.type.startsWith('video/');
-        const thumb  = isVid
-          ? `<div class="chat-media-thumb">🎥 <em>${pendingFile.name}</em></div>`
-          : `<img src="${url}" style="max-width:220px;border-radius:8px;display:block;margin-bottom:8px;"/>` ;
-        addMessage('user', `${thumb}<p>${b.icon} Uploaded <strong>${b.label}</strong>: ${pendingFile.name}</p>`, true);
-        addMessage('ai',   result, true);
-        closeMediaModal();
-        document.getElementById('docTypeSelect').value = 'auto';
-      }, 600);
-    }, 1800);
+      const url    = URL.createObjectURL(pendingFile);
+      const isVid  = pendingFile.type.startsWith('video/');
+      const thumb  = isVid
+        ? `<div class="chat-media-thumb">🎥 <em>${pendingFile.name}</em></div>`
+        : `<img src="${url}" style="max-width:220px;border-radius:8px;display:block;margin-bottom:8px;"/>` ;
+      addMessage('user', `${thumb}<p>${b.icon} Uploaded <strong>${b.label}</strong>: ${pendingFile.name}</p>`, true);
+      addMessage('ai',   result, true);
+      closeMediaModal();
+      document.getElementById('docTypeSelect').value = 'auto';
+    }, 600);
   });
 })();
 
