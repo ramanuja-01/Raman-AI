@@ -2928,11 +2928,11 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
             if (med.includes("Aspirin")) { ind = "Antiplatelet / Cardio-care"; time = "Take after a heavy meal"; }
             if (med.includes("Ibuprofen")) { ind = "NSAID Pain / Inflammation"; time = "Take strictly after meals; avoid if kidney/ulcer issues"; }
             const searchQuery = getMedicineSearchQuery(med);
-            const onlineUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + " alternatives substitutes similar medicines")}`;
+            const onlineUrl = `https://www.1mg.com/search/all?name=${encodeURIComponent(searchQuery)}`;
             return `<tr>
               <td>
-                <a href="${onlineUrl}" target="_blank" class="medicine-lookup-link" title="Click to find similar medicines / online substitutes" style="font-weight:bold;">
-                  ${med.split(" (")[0]} <span class="medicine-lookup-badge">🔍 Similar Type</span>
+                <a href="${onlineUrl}" target="_blank" class="medicine-lookup-link" title="Click to purchase or browse similar type medicines on Tata 1mg" style="font-weight:bold;">
+                  ${med.split(" (")[0]} <span class="medicine-lookup-badge">🛒 Buy on 1mg</span>
                 </a>
                 ${med.includes("Brand:") ? `<br><small style="color:var(--cyan); font-size:0.7rem; font-weight:bold;">${med.match(/\(Brand: [^)]+\)/)?.[0] || ""}</small>` : ''}
               </td>
@@ -4434,13 +4434,13 @@ window.downloadPrescriptionPDF = function(data) {
           <tbody>
             ${data.medicines.map((m, idx) => {
               const searchQuery = getMedicineSearchQuery(m.name);
-              const onlineUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + " alternatives substitutes similar medicines")}`;
+              const onlineUrl = `https://www.1mg.com/search/all?name=${encodeURIComponent(searchQuery)}`;
               return `
                 <tr>
                   <td>${idx + 1}</td>
                   <td>
-                    <a href="${onlineUrl}" target="_blank" style="color: #0284c7; text-decoration: none; border-bottom: 1px dashed rgba(2, 132, 199, 0.4); font-weight: bold;" title="Click to find similar medicines / online substitutes">
-                      ${m.name}
+                    <a href="${onlineUrl}" target="_blank" style="color: #0284c7; text-decoration: none; border-bottom: 1px dashed rgba(2, 132, 199, 0.4); font-weight: bold;" title="Click to purchase or browse similar type medicines on Tata 1mg">
+                      ${m.name} <span style="font-size:0.65rem; padding:1px 4px; border-radius:3px; background:#e0f2fe; color:#0369a1; font-weight:normal; border:1px solid #bae6fd; margin-left:4px;">🛒 Buy</span>
                     </a>
                     ${m.snomed && m.snomed !== 'N/A' ? `<span class="clinical-code">SNOMED: ${m.snomed}</span>` : ''}
                   </td>
@@ -5327,12 +5327,12 @@ function completeClinicalConsultation() {
             <tbody>
               ${medicines.map(m => {
                 const searchQuery = getMedicineSearchQuery(m.name);
-                const onlineUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery + " alternatives substitutes similar medicines")}`;
+                const onlineUrl = `https://www.1mg.com/search/all?name=${encodeURIComponent(searchQuery)}`;
                 return `
                   <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
                     <td style="padding:6px 0;">
-                      <a href="${onlineUrl}" target="_blank" class="medicine-lookup-link" title="Click to find similar medicines / online substitutes">
-                        ${m.name} <span class="medicine-lookup-badge">🔍 Similar Type</span>
+                      <a href="${onlineUrl}" target="_blank" class="medicine-lookup-link" title="Click to purchase or browse similar type medicines on Tata 1mg">
+                        ${m.name} <span class="medicine-lookup-badge">🛒 Buy on 1mg</span>
                       </a>
                     </td>
                     <td style="padding:6px 0; color:var(--text-main);">${m.instructions}</td>
