@@ -1431,6 +1431,16 @@ function buildProfileContext(profile) {
   if (profile.gender) ctx += `, ${profile.gender}`;
   if (profile.blood) ctx += ` (Blood: ${profile.blood})`;
   if (profile.allergies) ctx += ` | ⚠️ Allergies: ${profile.allergies}`;
+  
+  let vitalsArr = [];
+  if (profile.bp) vitalsArr.push(`BP: ${profile.bp}`);
+  if (profile.heartRate) vitalsArr.push(`HR: ${profile.heartRate} bpm`);
+  if (profile.temp) vitalsArr.push(`Temp: ${profile.temp}°F`);
+  if (profile.SpO2) vitalsArr.push(`SpO2: ${profile.SpO2}%`);
+  if (vitalsArr.length > 0) {
+    ctx += `<br><span style="font-size:0.8rem; color:var(--accent);">📊 Vitals: ${vitalsArr.join(' | ')}</span>`;
+  }
+  
   return `<p>${ctx}</p>`;
 }
 
@@ -1538,19 +1548,27 @@ function updateProfileCompleteness(skipGreeting = false) {
 }
 
 // Attach listeners to profile inputs
-['patientName', 'patientAge', 'patientGender', 'patientBlood', 'patientAllergies'].forEach(id => {
+['patientName', 'patientAge', 'patientGender', 'patientBlood', 'patientAllergies', 'patientBP', 'patientHR', 'patientTemp', 'patientSpO2'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('input', () => { updateProfileCompleteness(false); saveProfile(); });
 });
 
 // ── Chat Functions ──────────────────────────────────────
 function getProfile() {
+  const bpEl = document.getElementById("patientBP");
+  const hrEl = document.getElementById("patientHR");
+  const tempEl = document.getElementById("patientTemp");
+  const spo2El = document.getElementById("patientSpO2");
   return {
     name: document.getElementById("patientName").value.trim(),
     age:  document.getElementById("patientAge").value.trim(),
     gender: document.getElementById("patientGender").value,
     blood: document.getElementById("patientBlood").value,
-    allergies: document.getElementById("patientAllergies").value.trim()
+    allergies: document.getElementById("patientAllergies").value.trim(),
+    bp: bpEl ? bpEl.value.trim() : "",
+    heartRate: hrEl ? hrEl.value.trim() : "",
+    temp: tempEl ? tempEl.value.trim() : "",
+    SpO2: spo2El ? spo2El.value.trim() : ""
   };
 }
 
@@ -2024,6 +2042,10 @@ function loadProfile() {
     if (p.gender)   document.getElementById('patientGender').value = p.gender;
     if (p.blood)    document.getElementById('patientBlood').value  = p.blood;
     if (p.allergies) document.getElementById('patientAllergies').value = p.allergies;
+    if (p.bp && document.getElementById('patientBP')) document.getElementById('patientBP').value = p.bp;
+    if (p.heartRate && document.getElementById('patientHR')) document.getElementById('patientHR').value = p.heartRate;
+    if (p.temp && document.getElementById('patientTemp')) document.getElementById('patientTemp').value = p.temp;
+    if (p.SpO2 && document.getElementById('patientSpO2')) document.getElementById('patientSpO2').value = p.SpO2;
     if (p.pain) {
       const slider = document.getElementById('painSlider');
       slider.value = p.pain;
@@ -2032,11 +2054,19 @@ function loadProfile() {
     updateProfileCompleteness();
     if (p.name) {
       setTimeout(() => {
+        let vitalsArr = [];
+        if (p.bp) vitalsArr.push(`BP: ${p.bp}`);
+        if (p.heartRate) vitalsArr.push(`HR: ${p.heartRate} bpm`);
+        if (p.temp) vitalsArr.push(`Temp: ${p.temp}°F`);
+        if (p.SpO2) vitalsArr.push(`SpO2: ${p.SpO2}%`);
+        const vitalsLine = vitalsArr.length > 0 ? `<br><span style="font-size:0.8rem; color:var(--accent);">📊 Vitals: ${vitalsArr.join(' | ')}</span>` : '';
+
         addMessage('ai',
           `<p>👋 Welcome back, <strong>${p.name}</strong>! Your health profile has been restored.</p>
            <div class="med-section info"><div class="med-section-title">🧠 PROFILE LOADED</div>
            <p>Age: <strong>${p.age || '—'}</strong> &nbsp;|&nbsp; Gender: <strong>${p.gender || '—'}</strong> &nbsp;|&nbsp; Blood: <strong>${p.blood || '—'}</strong></p>
            ${p.allergies ? `<p>⚠️ Known allergies: <strong>${p.allergies}</strong></p>` : ''}
+           ${vitalsLine}
            <p>You have <strong>${vaultData.length}</strong> document(s) in your Medical Vault. How can I help you today?</p></div>`,
           true);
       }, 600);
@@ -4113,24 +4143,34 @@ window.downloadPrescriptionPDF = function(data) {
         </table>
         
         <!-- Patient Vitals -->
-        <div class="vitals-grid">
+        ${(data.vitals.bp || data.vitals.heartRate || data.vitals.temp || data.vitals.SpO2) ? `
+        <div class="vitals-grid" style="grid-template-columns: repeat(${[data.vitals.bp, data.vitals.heartRate, data.vitals.temp, data.vitals.SpO2].filter(Boolean).length}, 1fr); margin-bottom: 25px;">
+          ${data.vitals.bp ? `
           <div class="vital-box">
             <div class="v-name">Blood Pressure</div>
-            <div class="v-val">${data.vitals.bp || '120/80'} mmHg</div>
+            <div class="v-val">${data.vitals.bp} mmHg</div>
           </div>
+          ` : ''}
+          ${data.vitals.heartRate ? `
           <div class="vital-box">
             <div class="v-name">Heart Rate</div>
-            <div class="v-val">${data.vitals.heartRate || '76'} bpm</div>
+            <div class="v-val">${data.vitals.heartRate} bpm</div>
           </div>
+          ` : ''}
+          ${data.vitals.temp ? `
           <div class="vital-box">
             <div class="v-name">Temperature</div>
-            <div class="v-val">${data.vitals.temp || '98.6'} &deg;F</div>
+            <div class="v-val">${data.vitals.temp} &deg;F</div>
           </div>
+          ` : ''}
+          ${data.vitals.SpO2 ? `
           <div class="vital-box">
             <div class="v-name">Oxygen SpO2</div>
-            <div class="v-val">${data.vitals.SpO2 || '98'} %</div>
+            <div class="v-val">${data.vitals.SpO2} %</div>
           </div>
+          ` : ''}
         </div>
+        ` : ''}
         
         <!-- Diagnosed Condition -->
         <div class="section-title">Clinical Assessment</div>
@@ -4241,19 +4281,12 @@ window.downloadSlmPrescriptionPDF = function(conditionKey) {
     duration: "As needed / 5-7 Days"
   }));
 
-  // Fetch current vitals from UI inputs if available, else default
-  const sysEl = document.getElementById("systolic");
-  const diaEl = document.getElementById("diastolic");
-  const bpEl = (sysEl && diaEl) ? sysEl.value + "/" + diaEl.value : "120/80";
-  const hrEl = document.getElementById("pulse") ? document.getElementById("pulse").value : "76";
-  const tempEl = document.getElementById("temp") ? document.getElementById("temp").value : "98.6";
-  const spo2El = document.getElementById("spo2") ? document.getElementById("spo2").value : "98";
-
-  // Check if vitals are empty/placeholder and supply defaults if so
-  const bpVal = (bpEl && bpEl !== "/") ? bpEl : "120/80";
-  const hrVal = hrEl || "76";
-  const tempVal = tempEl || "98.6";
-  const spo2Val = spo2El || "98";
+  // Fetch optional vitals from patient profile left panel
+  const p = getProfile();
+  const bpVal = p.bp || "";
+  const hrVal = p.heartRate || "";
+  const tempVal = p.temp || "";
+  const spo2Val = p.SpO2 || "";
 
   // Derive condition name and dynamic diagnostic metrics
   let conditionName = conditionKey.toUpperCase();
@@ -4264,7 +4297,7 @@ window.downloadSlmPrescriptionPDF = function(conditionKey) {
   if (conditionKey === "fever") {
     conditionName = "Acute Febrile Systemic Illness";
     metricName = "Systemic Inflammatory Response";
-    metricValue = tempVal + " °F";
+    metricValue = tempVal ? tempVal + " °F" : "N/A";
   } else if (conditionKey === "headache") {
     conditionName = "Intracranial Vasospastic Cephalgia";
     metricName = "Intracranial Tension Level";
@@ -4310,7 +4343,6 @@ window.downloadSlmPrescriptionPDF = function(conditionKey) {
   }
 
   // Allergy warning alert check
-  const p = getProfile();
   let allergyWarning = "";
   if (p.allergies) {
     const allergyLower = p.allergies.toLowerCase();
@@ -4577,10 +4609,10 @@ function completeClinicalConsultation() {
   const wizardDiv = document.getElementById("activeConsultationWizard");
   if (!wizardDiv) return;
   
-  const bp = activeConsultation.vitals.bp || "120/80";
-  const hr = parseInt(activeConsultation.vitals.heartRate) || 76;
-  const temp = parseFloat(activeConsultation.vitals.temp) || 98.6;
-  const spo2 = parseInt(activeConsultation.vitals.SpO2) || 98;
+  const bp = activeConsultation.vitals.bp || "";
+  const hr = activeConsultation.vitals.heartRate || "";
+  const temp = activeConsultation.vitals.temp || "";
+  const spo2 = activeConsultation.vitals.SpO2 || "";
   const symptoms = activeConsultation.selectedSymptoms || [];
   const duration = activeConsultation.duration || "1-3 Days";
   const risks = activeConsultation.risks || [];
@@ -4700,28 +4732,30 @@ function completeClinicalConsultation() {
   let stageLevel = 1;
   let severityReason = "Standard mild acute manifestations.";
 
-  const bpParts = bp.split("/").map(Number);
-  const sysBP = bpParts[0] || 120;
-  const diaBP = bpParts[1] || 80;
+  const bpParts = bp ? bp.split("/").map(Number) : [];
+  const sysBP = bpParts[0] || 0;
+  const diaBP = bpParts[1] || 0;
+
+  const hrVal = hr ? Number(hr) : 0;
+  const tempVal = temp ? Number(temp) : 0;
+  const spo2Val = spo2 ? Number(spo2) : 0;
 
   if (
-    spo2 < 93 || 
-    temp > 103 || 
-    hr > 120 || hr < 48 || 
+    (spo2 && spo2Val < 93) || 
+    (temp && tempVal > 103) || 
+    (hr && (hrVal > 120 || hrVal < 48)) || 
     category === "chest pain" || 
     symptoms.includes("Chest Pain") ||
-    sysBP > 165 || 
-    diaBP > 102
+    (bp && (sysBP > 165 || diaBP > 102))
   ) {
     stageText = "Stage 3 (Severe / Critical Risk)";
     stageLevel = 3;
     severityReason = "Critical metabolic or physiological deregulation detected. Urgent specialist review needed.";
   } else if (
-    spo2 < 95 || 
-    temp > 100.5 || 
-    hr > 100 || hr < 60 || 
-    sysBP > 140 || 
-    diaBP > 90 ||
+    (spo2 && spo2Val < 95) || 
+    (temp && tempVal > 100.5) || 
+    (hr && (hrVal > 100 || hrVal < 60)) || 
+    (bp && (sysBP > 140 || diaBP > 90)) ||
     duration === "More than 2 weeks"
   ) {
     stageText = "Stage 2 (Moderate / Developing)";
@@ -4829,11 +4863,11 @@ function completeClinicalConsultation() {
 
   // Urgency & Critical warnings compilation
   let urgencyWarning = "";
-  if (spo2 < 93) {
+  if (spo2 && spo2Val < 93) {
     urgencyWarning = `⚠️ CRITICAL OXYGEN SATURATION LEVEL: Measured oxygen levels are at ${spo2}%, which is below safe physiological limits. Immediate clinical oxygenation therapy is highly recommended.`;
-  } else if (temp > 103) {
+  } else if (temp && tempVal > 103) {
     urgencyWarning = `⚠️ CORE HYPERPYREXIA ALERT: Body temperature of ${temp}°F represents a critical febrile state. Apply cold sponge baths and seek immediate clinical evaluation.`;
-  } else if (sysBP > 165 || diaBP > 102) {
+  } else if (bp && (sysBP > 165 || diaBP > 102)) {
     urgencyWarning = `⚠️ HYPERTENSIVE EMERGENCY THRESHOLD: Measured blood pressure of ${bp} mmHg carries severe acute cerebrovascular and cardiovascular risks. Seek emergency hospital triaging immediately.`;
   } else if (category === "chest pain" || symptoms.includes("Chest Pain")) {
     urgencyWarning = `⚠️ CARDIOVASCULAR TRIAGE DIRECTIVE: Crushing chest tightness radiating to the left arm/jaw requires immediate clinical evaluation to exclude Myocardial Infarction. Chew one chewable Aspirin 325mg (if not allergic) and seek emergency medical aid immediately.`;
@@ -4939,10 +4973,17 @@ function completeClinicalConsultation() {
             <span style="color:var(--text-muted); font-size:0.75rem;">SEVERITY LEVEL / ସ୍ତର:</span><br>
             <strong style="color:var(--red-warn);">${stageText}</strong>
           </div>
+          ${(bp || hr || temp || spo2) ? `
           <div style="grid-column: span 2;">
             <span style="color:var(--text-muted); font-size:0.75rem;">VITALS CAPTURED / ଜୀବନ ସୂଚକ:</span><br>
-            <strong>BP: ${bp} | HR: ${hr} bpm | Temp: ${temp}°F | SpO2: ${spo2}%</strong>
+            <strong>${[
+              bp ? `BP: ${bp}` : '',
+              hr ? `HR: ${hr} bpm` : '',
+              temp ? `Temp: ${temp}°F` : '',
+              spo2 ? `SpO2: ${spo2}%` : ''
+            ].filter(Boolean).join(' | ')}</strong>
           </div>
+          ` : ''}
           <div style="grid-column: span 2; border-top: 1px dashed rgba(0, 229, 255, 0.15); padding-top: 5px;">
             <span style="color:var(--text-muted); font-size:0.75rem;">PRIMARY METRIC / ମୁଖ୍ୟ ମାପକ:</span><br>
             <span>${metricName}: <strong style="color:var(--teal);">${metricValue}</strong></span>

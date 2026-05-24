@@ -381,10 +381,33 @@ async function runTest(name, fn) {
       };
     };
 
-    // Trigger SLM PDF download
+    // 3. Trigger SLM PDF download (when no vitals are provided in profile)
+    global.getProfile = () => ({
+      name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None",
+      bp: "", heartRate: "", temp: "", SpO2: ""
+    });
     window.downloadSlmPrescriptionPDF("diabetes");
     ok = assert(openCalled, "downloadSlmPrescriptionPDF successfully opened print/PDF browser window.") && ok;
-    ok = assert(writeHtml.includes("Metformin") && writeHtml.includes("Glipizide") && writeHtml.includes("Insulin"), "A4 print layout populated with enriched diabetic pharmacotherapy prescription.") && ok;
+    ok = assert(!writeHtml.includes("class=\"vitals-grid\""), "Vitals grid is entirely omitted from the PDF print layout when no vitals are provided.") && ok;
+
+    // 4. Trigger SLM PDF download (when BP and Temp are provided in profile)
+    global.getProfile = () => ({
+      name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None",
+      bp: "128/82", heartRate: "", temp: "100.4", SpO2: ""
+    });
+    window.downloadSlmPrescriptionPDF("diabetes");
+    ok = assert(writeHtml.includes("class=\"vitals-grid\""), "Vitals grid is present in the PDF when some vitals are provided.") && ok;
+    ok = assert(writeHtml.includes("128/82 mmHg") && writeHtml.includes("100.4 &deg;F"), "PDF accurately displays exactly the provided vitals (BP & Temp).") && ok;
+    ok = assert(!writeHtml.includes("bpm") && !writeHtml.includes("Oxygen SpO2"), "Omitted vitals (HR & SpO2) are completely absent from the printed PDF.") && ok;
+
+    // 5. Verify buildProfileContext dynamic formatting
+    const profileNoVitals = { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" };
+    const htmlNoVitals = buildProfileContext(profileNoVitals);
+    ok = assert(!htmlNoVitals.includes("Vitals:"), "buildProfileContext does not print Vitals line when no vitals are provided.") && ok;
+
+    const profileSomeVitals = { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None", bp: "125/80", temp: "99.1" };
+    const htmlSomeVitals = buildProfileContext(profileSomeVitals);
+    ok = assert(htmlSomeVitals.includes("BP: 125/80") && htmlSomeVitals.includes("Temp: 99.1°F"), "buildProfileContext correctly appends provided vitals to chat bubble profile header.") && ok;
 
     return ok;
   });
