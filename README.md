@@ -1,6 +1,12 @@
 # <img src="favicon.svg" width="48" height="48" valign="middle" style="filter: drop-shadow(0 0 10px #00f3ff);"/> RAMAN AI – Medical Intelligence System
 ### *Experiment No. 170: Offline Client-Side Diagnostic Sandbox*
 
+<div align="center">
+
+[![Built by Ramanuja Pathy](https://img.shields.io/badge/Engine%20%26%20UI%20Designed%20by-Ramanuja%20Pathy-00f3ff?style=for-the-badge&logo=stethoscope&logoColor=white)](https://github.com/ramanujapathy)
+
+</div>
+
 ---
 
 > [!WARNING]
@@ -146,3 +152,21 @@ Since RAMAN AI is 100% serverless and client-side, running the application is ex
    * Click **💬 START HUMAN-LIKE CLINICAL CONSULTATION** inside the welcome message to trigger the local SLM intake wizard.
    * Toggle your profile allergies inside the left-hand Patient Profile box and observe the automatic safe pharmacotherapy drug substitutions.
    * Inspect generated lab files instantly inside the secure health vault on the side panel.
+
+---
+
+## 👨‍💻 Developer Credit
+
+<div align="center">
+
+| Role | Name |
+| :---: | :---: |
+| **Engine & UI Architect** | **Ramanuja Pathy** |
+
+> *"This entire offline clinical inference pipeline — the Naive Bayes SLM engine, TF-IDF vectorizer, Trie phrase matcher, Bigram Markov Chain synthesizer, neon glassmorphic UI, AES-GCM encrypted backup vault, Canvas recovery diary, and Bayesian explainability panel — was conceived, designed, engineered, and built end-to-end by **Ramanuja Pathy**."*
+
+</div>
+
+---
+
+*RAMAN AI · Experiment No. 170 · Built with ❤️ by Ramanuja Pathy*

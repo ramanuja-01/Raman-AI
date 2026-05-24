@@ -299,6 +299,56 @@ class NaiveBayesSymptomClassifier {
 
     return confidenceList;
   }
+
+  explain(text) {
+    const tokens = this.tokenize(text);
+    const vocabSize = this.vocabulary.size;
+    const details = {};
+    const trieMatches = this.trie.search(text);
+    const trieWeight = {};
+    for (const match of trieMatches) {
+      const termIdf = this.idf[match.word] || 1.0;
+      trieWeight[match.category] = (trieWeight[match.category] || 0) + (1.5 * termIdf);
+    }
+
+    for (const condition of Object.keys(this.classCounts)) {
+      const prior = Math.log(this.classCounts[condition] / this.docCounts);
+      let logProb = prior;
+      const matchedTokens = [];
+
+      for (const token of tokens) {
+        if (!this.vocabulary.has(token)) continue;
+
+        const count = this.wordCounts[condition][token] || 0;
+        const termIdf = this.idf[token] || 1.0;
+        const prob = (count + 1) / (this.classTotals[condition] + vocabSize);
+        const termContrib = termIdf * Math.log(prob);
+        logProb += termContrib;
+
+        matchedTokens.push({
+          token: token,
+          count: count,
+          idf: termIdf.toFixed(2),
+          probability: prob.toFixed(4),
+          contribution: termContrib.toFixed(2)
+        });
+      }
+
+      let trieBoost = 0;
+      if (trieWeight[condition]) {
+        logProb += trieWeight[condition];
+        trieBoost = trieWeight[condition];
+      }
+
+      details[condition] = {
+        prior: prior.toFixed(2),
+        logProb: logProb.toFixed(2),
+        matchedTokens: matchedTokens,
+        trieBoost: trieBoost.toFixed(2)
+      };
+    }
+    return details;
+  }
 }
 
 // Markov Chain transition engine to synthesize conversational empathy filler text (Bigram transition state)
@@ -557,6 +607,83 @@ const markovGenerator = new MarkovTextGenerator();
 markovGenerator.train(MARKOV_TRAINING_SENTENCES_EN, 'en');
 markovGenerator.train(MARKOV_TRAINING_SENTENCES_OR, 'or');
 
+function renderExplainabilityPanel(text) {
+  const details = slmClassifier.explain(text);
+  const classifications = slmClassifier.classify(text);
+  const bestMatch = classifications[0];
+  const condition = bestMatch.confidence > 25 ? bestMatch.condition : null;
+  if (!condition) return "";
+  
+  const bestDetail = details[condition];
+  if (!bestDetail) return "";
+  
+  const tokenRows = bestDetail.matchedTokens.map(t => `
+    <tr style="border-bottom:1px solid rgba(255,255,255,0.05);">
+      <td style="padding:6px; color:var(--cyan); text-align:left;">${t.token}</td>
+      <td style="padding:6px; text-align:center;">${t.count}</td>
+      <td style="padding:6px; text-align:center; color:var(--teal);">${t.idf}</td>
+      <td style="padding:6px; text-align:center;">${t.probability}</td>
+      <td style="padding:6px; text-align:right; color:#ff4d6d; font-weight:bold;">${t.contribution}</td>
+    </tr>
+  `).join("");
+
+  const otherScores = classifications.slice(0, 3).map(c => `
+    <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:4px;">
+      <span style="color:var(--text-muted);">${c.condition.toUpperCase()}</span>
+      <span style="font-family:'Orbitron',sans-serif; color:${c.condition === condition ? 'var(--teal)' : 'var(--text-main)'}; font-weight:bold;">${c.confidence}%</span>
+    </div>
+  `).join("");
+
+  return `
+    <details class="clinician-only-block" style="margin-top:15px; margin-bottom:15px; background:rgba(0,0,0,0.25); border:1px solid rgba(0,255,179,0.15); border-radius:8px; padding:12px; font-size:0.8rem; color:var(--text-main); text-align:left; box-shadow:0 0 10px rgba(0,255,179,0.05);">
+      <summary style="font-weight:bold; color:var(--teal); cursor:pointer; list-style:none; outline:none; display:flex; justify-content:space-between; align-items:center; font-family:var(--font-head); font-size:0.85rem; letter-spacing:0.5px;">
+        <span>🔬 CLINICAL EXPLAINABILITY PANEL (CLINICIAN ONLY)</span>
+        <span style="font-size:0.7rem; color:var(--text-muted);">[Click to Expand]</span>
+      </summary>
+      <div style="margin-top:10px; border-top:1px dashed rgba(0, 255, 179, 0.15); padding-top:10px;">
+        <p style="font-size:0.75rem; color:var(--text-muted); margin-bottom:10px; line-height:1.4;">
+          <strong>Naive Bayes Posterior Weights:</strong> Below is the offline pathopharmacology mapping and Laplace-smoothed TF-IDF scaling computed 100% locally on your device.
+        </p>
+        
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px; margin-bottom:12px;">
+          <div style="background:rgba(255,255,255,0.02); padding:6px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
+            <span style="font-size:0.68rem; color:var(--text-muted); display:block; text-transform:uppercase;">Diagnostic Log-Prior</span>
+            <strong style="color:var(--text-main); font-family:'Orbitron',sans-serif; font-size:0.95rem;">${bestDetail.prior}</strong>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); padding:6px; border-radius:4px; border:1px solid rgba(255,255,255,0.05);">
+            <span style="font-size:0.68rem; color:var(--text-muted); display:block; text-transform:uppercase;">Trie Keyword Boost</span>
+            <strong style="color:var(--teal); font-family:'Orbitron',sans-serif; font-size:0.95rem;">+${bestDetail.trieBoost}</strong>
+          </div>
+        </div>
+
+        <h5 style="margin:10px 0 5px 0; color:var(--cyan); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px;">Matched Token Contributions</h5>
+        <div style="overflow-x:auto;">
+          <table style="width:100%; border-collapse:collapse; font-size:0.72rem; text-align:left; margin-bottom:12px; min-width:250px;">
+            <thead>
+              <tr style="border-bottom:1px solid rgba(0,255,179,0.25); color:var(--text-muted);">
+                <th style="padding:4px; text-align:left;">Token (N-gram)</th>
+                <th style="padding:4px; text-align:center;">Freq</th>
+                <th style="padding:4px; text-align:center;">IDF</th>
+                <th style="padding:4px; text-align:center;">Smooth Prob</th>
+                <th style="padding:4px; text-align:right;">Contrib (Log)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${tokenRows || `<tr><td colspan="5" style="text-align:center; padding:10px; color:var(--text-muted);">No tokens matched vocabulary. Used default class priors.</td></tr>`}
+            </tbody>
+          </table>
+        </div>
+
+        <h5 style="margin:10px 0 5px 0; color:var(--cyan); font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px;">Confidence Distribution</h5>
+        <div style="background:rgba(255,255,255,0.02); padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.05);">
+          ${otherScores}
+        </div>
+      </div>
+    </details>
+  `;
+}
+window.renderExplainabilityPanel = renderExplainabilityPanel;
+
 // Define generateSlmResponse
 async function generateSlmResponse(text, profile) {
   const startTime = performance.now();
@@ -759,6 +886,19 @@ async function generateSlmResponse(text, profile) {
     if (painAlertHtml) html += painAlertHtml;
     if (allergyAlertHtml) html += allergyAlertHtml;
 
+    // Direct chatbot Red Flags compiler
+    const vitalsObj = { bp: profile.bp || "", heartRate: profile.heartRate || "", temp: profile.temp || "", SpO2: profile.SpO2 || "" };
+    const redFlags = compileRedFlags(condition, vitalsObj);
+    if (redFlags.length > 0) {
+      html += `
+        <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 77, 109, 0.08); padding:12px; border-radius:6px; margin-bottom:15px; font-size:0.85rem; box-shadow:0 0 10px rgba(255, 77, 109, 0.15);">
+          <strong style="color:var(--red-warn); font-family:var(--font-head);"><span style="animation: pulseGlow 1.5s infinite;">⚠️ CRITICAL MEDICAL RED FLAGS (EMERGENCY WARNING)</span></strong>
+          <ul style="margin:5px 0 0 0; padding-left:18px; line-height:1.4; color:var(--text-main); text-align:left;">
+            ${redFlags.map(flag => `<li style="margin-bottom:4px;">${flag}</li>`).join("")}
+          </ul>
+        </div>`;
+    }
+
     // Target Category Confidence Badge
     html += `
       <div class="slm-confidence-bar" style="background:rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius:8px; padding:8px 12px; margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
@@ -818,6 +958,8 @@ async function generateSlmResponse(text, profile) {
           </div>
         </div>
       </div>
+
+      ${renderExplainabilityPanel(text)}
 
       <div class="hid-card" style="margin-top: 15px;">
         <div class="hid-card-header">🎉 YOUR HEALTH ID IS READY</div>
@@ -924,119 +1066,130 @@ function initParticles() {
 // ── Medical Knowledge Base ─────────────────────────────
 const MEDICAL_KB = {
   fever: {
+    icd11: "MG26",
     conditions: ["Viral Infection", "Bacterial Infection", "Flu (Influenza)", "Common Cold", "COVID-19"],
     medications: [
-      { name: "Paracetamol (Acetaminophen)", dose: "500–1000 mg every 6–8 hours as needed (Maximum 4000 mg per 24 hours)", note: "First-line antipyretic & analgesic. Directly acts on the hypothalamus to reduce high body temperature. Take with a glass of water; can be administered with or without food. Avoid other acetaminophen-containing medications to prevent accidental hepatotoxicity." },
-      { name: "Ibuprofen", dose: "400 mg every 8 hours with food (Maximum 1200 mg per 24 hours)", note: "Non-steroidal anti-inflammatory drug (NSAID). Relieves fever, body aches, and inflammatory responses by blocking prostaglandin synthesis. ALWAYS take with food, milk, or antacids to safeguard gastric mucosa. Do not use if history of peptic ulcers or severe kidney disease." }
+      { name: "Paracetamol (Acetaminophen)", snomed: "387584000", dose: "500–1000 mg every 6–8 hours as needed (Maximum 4000 mg per 24 hours)", note: "First-line antipyretic & analgesic. Directly acts on the hypothalamus to reduce high body temperature. Take with a glass of water; can be administered with or without food. Avoid other acetaminophen-containing medications to prevent accidental hepatotoxicity." },
+      { name: "Ibuprofen", snomed: "386864001", dose: "400 mg every 8 hours with food (Maximum 1200 mg per 24 hours)", note: "Non-steroidal anti-inflammatory drug (NSAID). Relieves fever, body aches, and inflammatory responses by blocking prostaglandin synthesis. ALWAYS take with food, milk, or antacids to safeguard gastric mucosa. Do not use if history of peptic ulcers or severe kidney disease." }
     ],
     precautions: ["Stay hydrated – drink 8–10 glasses of water/day", "Rest adequately", "Monitor temperature every 4 hours", "Seek urgent care if fever exceeds 104°F (40°C)"],
     diet: ["Warm soups and broths", "Fresh citrus fruits (Vitamin C)", "Ginger and tulsi tea", "Avoid cold foods and beverages"],
     specialist: "General Physician / Internist"
   },
   headache: {
+    icd11: "MB4D",
     conditions: ["Tension Headache", "Migraine", "Dehydration", "Sinusitis", "Hypertension"],
     medications: [
-      { name: "Paracetamol", dose: "500–1000 mg every 6 hours as needed (Maximum 4000 mg/day)", note: "First-line relief for mild-to-moderate tension headaches. Minimizes headache severity by inhibiting prostaglandin synthesis in the central nervous system. Safe for gastric lining, but avoid alcohol consumption during use." },
-      { name: "Ibuprofen", dose: "400 mg every 8 hours with food", note: "Highly effective NSAID targeting vascular and muscular tension components of tension headaches. Take after meals to avoid gastrointestinal discomfort." },
-      { name: "Sumatriptan", dose: "50 mg orally at the immediate onset of migraine attack; may repeat once after 2 hours if pain persists (Maximum 100 mg per 24 hours)", note: "Selective 5-HT1 receptor agonist. Specifically targets migraine attacks by constricting dilated cranial blood vessels and blocking inflammatory neuropeptide release. Take immediately at the first sign of aura or pain. Do not use if history of ischemic heart disease or uncontrolled hypertension." }
+      { name: "Paracetamol", snomed: "387584000", dose: "500–1000 mg every 6 hours as needed (Maximum 4000 mg/day)", note: "First-line relief for mild-to-moderate tension headaches. Minimizes headache severity by inhibiting prostaglandin synthesis in the central nervous system. Safe for gastric lining, but avoid alcohol consumption during use." },
+      { name: "Ibuprofen", snomed: "386864001", dose: "400 mg every 8 hours with food", note: "Highly effective NSAID targeting vascular and muscular tension components of tension headaches. Take after meals to avoid gastrointestinal discomfort." },
+      { name: "Sumatriptan", snomed: "372834007", dose: "50 mg orally at the immediate onset of migraine attack; may repeat once after 2 hours if pain persists (Maximum 100 mg per 24 hours)", note: "Selective 5-HT1 receptor agonist. Specifically targets migraine attacks by constricting dilated cranial blood vessels and blocking inflammatory neuropeptide release. Take immediately at the first sign of aura or pain. Do not use if history of ischemic heart disease or uncontrolled hypertension." }
     ],
     precautions: ["Avoid screen time and bright lights", "Apply cold/warm compress on forehead", "Seek emergency care for sudden severe 'thunderclap' headache"],
     diet: ["Drink plenty of water", "Avoid caffeine excess", "Small regular meals", "Magnesium-rich foods (nuts, leafy greens)"],
     specialist: "Neurologist (for chronic/recurring headaches)"
   },
   cough: {
+    icd11: "MD11",
     conditions: ["Common Cold", "Bronchitis", "Asthma", "GERD", "Pneumonia", "Allergic Rhinitis"],
     medications: [
-      { name: "Dextromethorphan", dose: "10–20 mg every 4–6 hours as needed (Maximum 120 mg/day)", note: "Non-narcotic cough suppressant. Directly acts on the cough center in the medulla oblongata to inhibit dry, hacking, non-productive coughs. May cause mild drowsiness; avoid driving or operating heavy machinery during use." },
-      { name: "Guaifenesin", dose: "200–400 mg every 4 hours as needed with a full glass of water (Maximum 2400 mg/day)", note: "Expectorant. Reduces the viscosity of tenacious respiratory secretions and thins mucus, making it easier to cough up and clear from bronchial pathways. Maintain high water intake to optimize expectorant efficiency." },
-      { name: "Salbutamol Inhaler", dose: "1–2 inhalations (90–180 mcg) every 4–6 hours as needed for bronchospasm relief", note: "Short-acting beta-2 adrenergic receptor agonist (bronchodilator). Relaxes bronchial smooth muscles to rapidly relieve chest tightness, wheezing, and coughing. Shake well before use and rinse mouth with water after inhalation to prevent dry throat." }
+      { name: "Dextromethorphan", snomed: "387042006", dose: "10–20 mg every 4–6 hours as needed (Maximum 120 mg/day)", note: "Non-narcotic cough suppressant. Directly acts on the cough center in the medulla oblongata to inhibit dry, hacking, non-productive coughs. May cause mild drowsiness; avoid driving or operating heavy machinery during use." },
+      { name: "Guaifenesin", snomed: "387140008", dose: "200–400 mg every 4 hours as needed with a full glass of water (Maximum 2400 mg/day)", note: "Expectorant. Reduces the viscosity of tenacious respiratory secretions and thins mucus, making it easier to cough up and clear from bronchial pathways. Maintain high water intake to optimize expectorant efficiency." },
+      { name: "Salbutamol Inhaler", snomed: "372813000", dose: "1–2 inhalations (90–180 mcg) every 4–6 hours as needed for bronchospasm relief", note: "Short-acting beta-2 adrenergic receptor agonist (bronchodilator). Relaxes bronchial smooth muscles to rapidly relieve chest tightness, wheezing, and coughing. Shake well before use and rinse mouth with water after inhalation to prevent dry throat." }
     ],
     precautions: ["Avoid cold air and smoke", "Stay hydrated", "Use steam inhalation", "Persistent cough >3 weeks needs investigation"],
     diet: ["Warm fluids – honey-lemon water", "Turmeric milk (Haldi doodh)", "Avoid dairy if producing mucus"],
     specialist: "Pulmonologist / ENT"
   },
   "chest pain": {
+    icd11: "MD30",
     conditions: ["⚠️ Cardiac Emergency (Rule out immediately)", "Costochondritis", "GERD / Acid Reflux", "Muscle Strain", "Anxiety / Panic Attack"],
     medications: [
-      { name: "⚠️ EMERGENCY", dose: "Call emergency medical services (108/911) immediately without delay", note: "CRITICAL NOTICE: Crushing or squeezing retrosternal chest pain radiating to the left arm, neck, or jaw, accompanied by diaphoresis (sweating), dyspnea (breathlessness), and dizziness, is a suspected acute myocardial infarction (heart attack). DO NOT take standard pain medications or wait; seek immediate ER assessment." },
-      { name: "Antacids (for GERD-related)", dose: "10–20 mL of liquid antacid suspension or 1–2 chewable tablets as directed", note: "Neutralizes stomach acid to relieve esophageal reflux pain. Administer ONLY after a qualified emergency physician has physically evaluated your chest symptoms and fully ruled out cardiac conditions." }
+      { name: "⚠️ EMERGENCY", snomed: "N/A", dose: "Call emergency medical services (108/911) immediately without delay", note: "CRITICAL NOTICE: Crushing or squeezing retrosternal chest pain radiating to the left arm, neck, or jaw, accompanied by diaphoresis (sweating), dyspnea (breathlessness), and dizziness, is a suspected acute myocardial infarction (heart attack). DO NOT take standard pain medications or wait; seek immediate ER assessment." },
+      { name: "Antacids (for GERD-related)", snomed: "372671000", dose: "10–20 mL of liquid antacid suspension or 1–2 chewable tablets as directed", note: "Neutralizes stomach acid to relieve esophageal reflux pain. Administer ONLY after a qualified emergency physician has physically evaluated your chest symptoms and fully ruled out cardiac conditions." }
     ],
     precautions: ["⚠️ CRITICAL: Treat all chest pain as cardiac until proven otherwise", "Call emergency services (108) immediately", "Do NOT drive yourself to hospital", "Chew aspirin 325mg if cardiac event suspected and not allergic"],
     diet: ["Avoid spicy, fatty foods", "Eat smaller meals", "No alcohol or caffeine"],
     specialist: "⚠️ Emergency Room / Cardiologist – IMMEDIATELY"
   },
   "stomach pain": {
+    icd11: "MD80",
     conditions: ["Gastritis", "Irritable Bowel Syndrome (IBS)", "Appendicitis", "Peptic Ulcer", "Food Poisoning", "Indigestion"],
     medications: [
-      { name: "Omeprazole (PPI)", dose: "20 mg orally once daily, strictly 30–60 minutes before the first meal of the day", note: "Proton pump inhibitor (PPI). Suppresses gastric acid secretion at the secretory surface of gastric parietal cells, allowing inflamed esophageal, gastric, or duodenal mucosa to heal. Swallow whole; do not chew or crush." },
-      { name: "Buscopan (Hyoscine)", dose: "10–20 mg orally 3 times daily as needed for abdominal spasms", note: "Antispasmodic/anticholinergic drug. Relaxes visceral smooth muscles in the gastrointestinal, biliary, and urinary tracts to relieve cramping, colic, and stomach spasms. May cause dry mouth or blurred vision." },
-      { name: "ORS (Oral Rehydration Salts)", dose: "Dissolve 1 sachet in 1 Litre of clean drinking water; drink 200-400 mL after each loose stool or vomiting episode", note: "WHO-formulated oral rehydration salts containing glucose and essential electrolytes. Directly restores water and electrolyte balance lost during stomach upset, vomiting, or diarrhea. Do not boil the prepared solution." }
+      { name: "Omeprazole (PPI)", snomed: "372679003", dose: "20 mg orally once daily, strictly 30–60 minutes before the first meal of the day", note: "Proton pump inhibitor (PPI). Suppresses gastric acid secretion at the secretory surface of gastric parietal cells, allowing inflamed esophageal, gastric, or duodenal mucosa to heal. Swallow whole; do not chew or crush." },
+      { name: "Buscopan (Hyoscine)", snomed: "387063004", dose: "10–20 mg orally 3 times daily as needed for abdominal spasms", note: "Antispasmodic/anticholinergic drug. Relaxes visceral smooth muscles in the gastrointestinal, biliary, and urinary tracts to relieve cramping, colic, and stomach spasms. May cause dry mouth or blurred vision." },
+      { name: "ORS (Oral Rehydration Salts)", snomed: "387213002", dose: "Dissolve 1 sachet in 1 Litre of clean drinking water; drink 200-400 mL after each loose stool or vomiting episode", note: "WHO-formulated oral rehydration salts containing glucose and essential electrolytes. Directly restores water and electrolyte balance lost during stomach upset, vomiting, or diarrhea. Do not boil the prepared solution." }
     ],
     precautions: ["⚠️ Severe right lower abdominal pain may indicate appendicitis – seek emergency care", "Avoid NSAIDs (aspirin, ibuprofen) on empty stomach", "Monitor for blood in stool"],
     diet: ["BRAT diet: Bananas, Rice, Applesauce, Toast", "Avoid spicy, oily, and acidic foods", "Small frequent meals", "Curd / yoghurt for gut health"],
     specialist: "Gastroenterologist"
   },
   "joint pain": {
+    icd11: "ME82",
     conditions: ["Arthritis (Osteo/Rheumatoid)", "Gout", "Injury / Sprain", "Lupus", "Viral Arthralgia"],
     medications: [
-      { name: "Ibuprofen", dose: "400 mg orally 3 times daily immediately after meals (Maximum 1200 mg/day)", note: "NSAID. Suppresses joint inflammation, swelling, and arthritic pain by blocking cyclooxygenase (COX) pathways. Take strictly with food or milk. Avoid if taking oral anticoagulants or if you have renal impairment." },
-      { name: "Diclofenac Gel", dose: "Apply 2–4 grams of 1% gel locally to affected joint and rub gently 3–4 times daily", note: "Topical non-steroidal anti-inflammatory gel. Provides targeted, localized relief from joint pain and inflammation (especially knee and hand osteoarthrosis) with highly minimal systemic absorption and low gastric side effects. Wash hands after application." },
-      { name: "Colchicine", dose: "0.5–1 mg orally twice daily during an acute gout flare-up, or as prescribed by your rheumatologist", note: "Anti-gout agent. Directly inhibits microtubule assembly in neutrophils, preventing their activation and migration to joints with uric acid crystals, reducing extreme gout inflammation. Avoid grapefruit juice." }
+      { name: "Ibuprofen", snomed: "386864001", dose: "400 mg orally 3 times daily immediately after meals (Maximum 1200 mg/day)", note: "NSAID. Suppresses joint inflammation, swelling, and arthritic pain by blocking cyclooxygenase (COX) pathways. Take strictly with food or milk. Avoid if taking oral anticoagulants or if you have renal impairment." },
+      { name: "Diclofenac Gel", snomed: "372658000", dose: "Apply 2–4 grams of 1% gel locally to affected joint and rub gently 3–4 times daily", note: "Topical non-steroidal anti-inflammatory gel. Provides targeted, localized relief from joint pain and inflammation (especially knee and hand osteoarthrosis) with highly minimal systemic absorption and low gastric side effects. Wash hands after application." },
+      { name: "Colchicine", snomed: "372740003", dose: "0.5–1 mg orally twice daily during an acute gout flare-up, or as prescribed by your rheumatologist", note: "Anti-gout agent. Directly inhibits microtubule assembly in neutrophils, preventing their activation and migration to joints with uric acid crystals, reducing extreme gout inflammation. Avoid grapefruit juice." }
     ],
     precautions: ["Rest the affected joint", "Apply ice for 20 min every 2 hours (first 48h)", "Avoid repetitive strain", "Weight management is key for knee arthritis"],
     diet: ["Anti-inflammatory diet: omega-3 fatty acids (fish, flaxseed)", "Turmeric and ginger", "Cherries (for gout)", "Reduce red meat and alcohol"],
     specialist: "Rheumatologist / Orthopaedic Surgeon"
   },
   "skin rash": {
+    icd11: "MC20",
     conditions: ["Allergic Dermatitis", "Eczema", "Urticaria (Hives)", "Psoriasis", "Fungal Infection", "Drug Reaction"],
     medications: [
-      { name: "Cetirizine (Antihistamine)", dose: "10 mg orally once daily, preferably at bedtime to minimize daytime sedation", note: "Second-generation selective H1-receptor antagonist. Blocks histamine activity to relieve intense skin itching, hives (urticaria), and allergic dermatitis. May cause mild drowsiness in sensitive individuals." },
-      { name: "Hydrocortisone Cream 1%", dose: "Apply a thin film to the affected skin area twice daily for up to 7 consecutive days", note: "Mild topical corticosteroid. Directly suppresses inflammatory cytokines to reduce localized skin redness, swelling, and itching associated with eczema or contact dermatitis. Do not apply to open wounds, infected areas, or facial skin unless directed." },
-      { name: "Clotrimazole Cream", dose: "Apply a thin layer to the affected clean skin area twice daily for 2–4 consecutive weeks", note: "Broad-spectrum topical antifungal agent. Disrupts fungal cell membrane synthesis to treat ringworm, tinea, and cutaneous candidiasis. Continue application for 1 week after symptoms resolve to prevent recurrence." }
+      { name: "Cetirizine (Antihistamine)", snomed: "372797003", dose: "10 mg orally once daily, preferably at bedtime to minimize daytime sedation", note: "Second-generation selective H1-receptor antagonist. Blocks histamine activity to relieve intense skin itching, hives (urticaria), and allergic dermatitis. May cause mild drowsiness in sensitive individuals." },
+      { name: "Hydrocortisone Cream 1%", snomed: "372633003", dose: "Apply a thin film to the affected skin area twice daily for up to 7 consecutive days", note: "Mild topical corticosteroid. Directly suppresses inflammatory cytokines to reduce localized skin redness, swelling, and itching associated with eczema or contact dermatitis. Do not apply to open wounds, infected areas, or facial skin unless directed." },
+      { name: "Clotrimazole Cream", snomed: "387332009", dose: "Apply a thin layer to the affected clean skin area twice daily for 2–4 consecutive weeks", note: "Broad-spectrum topical antifungal agent. Disrupts fungal cell membrane synthesis to treat ringworm, tinea, and cutaneous candidiasis. Continue application for 1 week after symptoms resolve to prevent recurrence." }
     ],
     precautions: ["Avoid scratching", "Identify and avoid triggers", "⚠️ Seek emergency care for rash with difficulty breathing (anaphylaxis)", "Do not use steroid cream on face without advice"],
     diet: ["Avoid known allergens", "Increase Vitamin C and E intake", "Stay well-hydrated", "Avoid processed foods"],
     specialist: "Dermatologist / Allergist"
   },
   "high blood pressure": {
+    icd11: "BA00",
     conditions: ["Hypertension (Primary)", "Secondary Hypertension", "White-coat Hypertension"],
     medications: [
-      { name: "Amlodipine", dose: "5 mg orally once daily, taken at the same time each day (may increase to 10 mg under supervision)", note: "Dihydropyridine calcium channel blocker. Relaxes and dilates peripheral arterial smooth muscle cells, lowering vascular resistance and systemic blood pressure. Monitor for peripheral edema (ankle swelling)." },
-      { name: "Losartan", dose: "50 mg orally once daily (standard maintenance range is 25–100 mg/day)", note: "Angiotensin II receptor blocker (ARB). Prevents vasoconstriction and aldosterone release to lower blood pressure. Provides excellent long-term renal and cardiovascular protection in hypertensive patients. Do not use during pregnancy." },
-      { name: "Hydrochlorothiazide", dose: "12.5–25 mg orally once daily in the morning to avoid nocturnal urination", note: "Thiazide diuretic. Promotes renal excretion of sodium and water, reducing blood volume and blood pressure. Monitor blood potassium levels regularly as it can cause hypokalemia." }
+      { name: "Amlodipine", snomed: "372688001", dose: "5 mg orally once daily, taken at the same time each day (may increase to 10 mg under supervision)", note: "Dihydropyridine calcium channel blocker. Relaxes and dilates peripheral arterial smooth muscle cells, lowering vascular resistance and systemic blood pressure. Monitor for peripheral edema (ankle swelling)." },
+      { name: "Losartan", snomed: "372695000", dose: "50 mg orally once daily (standard maintenance range is 25–100 mg/day)", note: "Angiotensin II receptor blocker (ARB). Prevents vasoconstriction and aldosterone release to lower blood pressure. Provides excellent long-term renal and cardiovascular protection in hypertensive patients. Do not use during pregnancy." },
+      { name: "Hydrochlorothiazide", snomed: "372656001", dose: "12.5–25 mg orally once daily in the morning to avoid nocturnal urination", note: "Thiazide diuretic. Promotes renal excretion of sodium and water, reducing blood volume and blood pressure. Monitor blood potassium levels regularly as it can cause hypokalemia." }
     ],
     precautions: ["Monitor BP twice daily", "Do NOT stop medications abruptly", "⚠️ BP >180/120 is hypertensive crisis – seek emergency care", "Regular follow-ups required"],
     diet: ["DASH diet: low sodium (<2g/day)", "Increase potassium (bananas, spinach)", "Reduce alcohol", "Avoid processed/packaged foods", "Regular aerobic exercise"],
     specialist: "Cardiologist / Internist"
   },
   diabetes: {
+    icd11: "5A11",
     conditions: ["Type 1 Diabetes", "Type 2 Diabetes", "Pre-diabetes", "Gestational Diabetes"],
     medications: [
-      { name: "Metformin", dose: "500 mg orally twice daily with meals (titrate up slowly under medical guidance)", note: "Biguanide antihyperglycemic. Directly decreases hepatic glucose production, reduces intestinal absorption of glucose, and significantly enhances insulin sensitivity in peripheral tissues. Take with meals to minimize gastrointestinal side effects (nausea, abdominal discomfort)." },
-      { name: "Glipizide", dose: "5 mg orally once daily, strictly 30 minutes before your first main meal (breakfast)", note: "Second-generation sulfonylurea. Directly stimulates pancreatic beta cells to secrete endogenous insulin. Monitor closely for signs of hypoglycemia (tremors, sweating, confusion, fast heart rate) and always carry a fast-acting sugar source." },
-      { name: "Insulin", dose: "Dose must be individually titrated and prescribed by an endocrinologist based on daily blood glucose monitoring", note: "Exogenous hormone replacement. Crucial for Type 1 Diabetes and advanced Type 2 Diabetes to facilitate cellular glucose uptake and prevent severe diabetic ketoacidosis (DKA) or hyperosmolar hyperglycemic state (HHS). Learn proper subcutaneous injection techniques and site rotation." }
+      { name: "Metformin", snomed: "372567000", dose: "500 mg orally twice daily with meals (titrate up slowly under medical guidance)", note: "Biguanide antihyperglycemic. Directly decreases hepatic glucose production, reduces intestinal absorption of glucose, and significantly enhances insulin sensitivity in peripheral tissues. Take with meals to minimize gastrointestinal side effects (nausea, abdominal discomfort)." },
+      { name: "Glipizide", snomed: "372562006", dose: "5 mg orally once daily, strictly 30 minutes before your first main meal (breakfast)", note: "Second-generation sulfonylurea. Directly stimulates pancreatic beta cells to secrete endogenous insulin. Monitor closely for signs of hypoglycemia (tremors, sweating, confusion, fast heart rate) and always carry a fast-acting sugar source." },
+      { name: "Insulin", snomed: "372687006", dose: "Dose must be individually titrated and prescribed by an endocrinologist based on daily blood glucose monitoring", note: "Exogenous hormone replacement. Crucial for Type 1 Diabetes and advanced Type 2 Diabetes to facilitate cellular glucose uptake and prevent severe diabetic ketoacidosis (DKA) or hyperosmolar hyperglycemic state (HHS). Learn proper subcutaneous injection techniques and site rotation." }
     ],
     precautions: ["Monitor blood sugar morning and 2 hours post-meal", "Never skip meals on medication", "Watch for hypoglycaemia symptoms (shaking, sweating, confusion)", "Regular HbA1c check every 3 months"],
     diet: ["Low glycaemic index foods", "Avoid sugar, white rice, maida", "High fibre: whole grains, vegetables, legumes", "Small frequent meals (5–6/day)", "Bitter gourd (karela), fenugreek – natural aids"],
     specialist: "Endocrinologist / Diabetologist"
   },
   "eye pain": {
+    icd11: "MC14",
     conditions: ["Conjunctivitis", "Dry Eye Syndrome", "Glaucoma", "Uveitis", "Digital Eye Strain"],
     medications: [
-      { name: "Artificial Tears Drops", dose: "Instill 1–2 drops into the affected eye(s) up to 4–6 times daily as needed", note: "Sterile lubricant eye drops. Stabilizes the tear film and provides soothing relief from digital eye strain, dryness, burning, and ocular irritation. Remove contact lenses before instilling." },
-      { name: "Chloramphenicol Eye Drops", dose: "Instill 1 drop into the affected eye(s) every 2 hours for the first 48 hours, then reduce to 4 times daily for 5 additional days", note: "Broad-spectrum topical ophthalmic antibiotic. Inhibits bacterial protein synthesis to treat acute bacterial conjunctivitis (pink eye). Finish the full 7-day course even if symptoms resolve earlier to prevent bacterial resistance." },
-      { name: "Sodium Cromoglicate Eye Drops", dose: "Instill 1–2 drops into both eyes 4 times daily at regular intervals", note: "Ophthalmic mast cell stabilizer. Prevents the release of histamine and inflammatory mediators, treating allergic conjunctivitis and reducing ocular itching and redness. Best used preventatively during allergy season." }
+      { name: "Artificial Tears Drops", snomed: "387132005", dose: "Instill 1–2 drops into the affected eye(s) up to 4–6 times daily as needed", note: "Sterile lubricant eye drops. Stabilizes the tear film and provides soothing relief from digital eye strain, dryness, burning, and ocular irritation. Remove contact lenses before instilling." },
+      { name: "Chloramphenicol Eye Drops", snomed: "372737004", dose: "Instill 1 drop into the affected eye(s) every 2 hours for the first 48 hours, then reduce to 4 times daily for 5 additional days", note: "Broad-spectrum topical ophthalmic antibiotic. Inhibits bacterial protein synthesis to treat acute bacterial conjunctivitis (pink eye). Finish the full 7-day course even if symptoms resolve earlier to prevent bacterial resistance." },
+      { name: "Sodium Cromoglicate Eye Drops", snomed: "372667008", dose: "Instill 1–2 drops into both eyes 4 times daily at regular intervals", note: "Ophthalmic mast cell stabilizer. Prevents the release of histamine and inflammatory mediators, treating allergic conjunctivitis and reducing ocular itching and redness. Best used preventatively during allergy season." }
     ],
     precautions: ["⚠️ Sudden vision loss / severe eye pain needs emergency care", "Do NOT rub eyes", "Follow 20-20-20 rule for digital strain", "Wear UV-protective sunglasses"],
     diet: ["Vitamin A: carrots, leafy greens", "Lutein: eggs, kale, spinach", "Omega-3 fatty acids", "Stay well-hydrated"],
     specialist: "Ophthalmologist"
   },
   "back pain": {
+    icd11: "ME84",
     conditions: ["Muscle Strain", "Disc Herniation", "Lumbar Spondylosis", "Kidney Issues", "Poor Posture"],
     medications: [
-      { name: "Ibuprofen / Diclofenac", dose: "400 mg Ibuprofen or 50 mg Diclofenac orally 3 times daily immediately after food", note: "Oral NSAID. Decreases musculoskeletal pain and inflammatory responses in the lower back or lumbar spine. Always take with a full meal to protect gastric mucosa." },
-      { name: "Muscle Relaxant (Methocarbamol)", dose: "750 mg orally 3 times daily as needed for acute muscular spasms", note: "Centrally-acting skeletal muscle relaxant. Relieves severe muscle spasms and acute lumbar pain by inducing general central nervous system depression. May cause significant drowsiness, dizziness, or lightheadedness; avoid alcohol." },
-      { name: "Diclofenac Topical Gel", dose: "Apply 2–4 grams of 1% or 2% gel to the painful back area and rub in completely 3–4 times daily", note: "Targeted topical NSAID gel. Penetrates deep into muscular and joint tissues in the back to inhibit local prostaglandins, providing excellent pain relief with negligible systemic side effects. Do not apply to broken skin." }
+      { name: "Ibuprofen / Diclofenac", snomed: "386864001", dose: "400 mg Ibuprofen or 50 mg Diclofenac orally 3 times daily immediately after food", note: "Oral NSAID. Decreases musculoskeletal pain and inflammatory responses in the lower back or lumbar spine. Always take with a full meal to protect gastric mucosa." },
+      { name: "Muscle Relaxant (Methocarbamol)", snomed: "387002008", dose: "750 mg orally 3 times daily as needed for acute muscular spasms", note: "Centrally-acting skeletal muscle relaxant. Relieves severe muscle spasms and acute lumbar pain by inducing general central nervous system depression. May cause significant drowsiness, dizziness, or lightheadedness; avoid alcohol." },
+      { name: "Diclofenac Topical Gel", snomed: "372658000", dose: "Apply 2–4 grams of 1% or 2% gel to the painful back area and rub in completely 3–4 times daily", note: "Targeted topical NSAID gel. Penetrates deep into musculoskeletal and joint tissues in the back to inhibit local prostaglandins, providing excellent pain relief with negligible systemic side effects. Do not apply to broken skin." }
     ],
     precautions: ["Avoid prolonged sitting", "Sleep on firm mattress", "⚠️ Back pain with numbness/weakness in legs – seek urgent care (possible nerve compression)", "Maintain correct posture"],
     diet: ["Calcium-rich foods: milk, yoghurt, ragi", "Vitamin D: sunlight, eggs, fish", "Anti-inflammatory: turmeric, ginger"],
@@ -3807,6 +3960,28 @@ window.downloadPrescriptionPDF = function(data) {
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600&family=Inter:wght@400;500;700&family=Orbitron:wght@700&display=swap');
         
+        /* Interactive Patient vs Clinician view styles */
+        .patient-term { display: none; }
+        .clinician-term { display: inline; }
+        .clinical-code {
+          display: inline-block;
+          background: #f1f5f9;
+          color: #475569;
+          font-size: 0.7rem;
+          padding: 2px 6px;
+          border-radius: 4px;
+          margin-left: 6px;
+          font-family: 'Orbitron', sans-serif;
+        }
+        .patient-only { display: none; }
+        .clinician-only { display: block; }
+        
+        .prescription-container.patient-view .patient-term { display: inline !important; }
+        .prescription-container.patient-view .clinician-term { display: none !important; }
+        .prescription-container.patient-view .clinical-code { display: none !important; }
+        .prescription-container.patient-view .clinician-only { display: none !important; }
+        .prescription-container.patient-view .patient-only { display: block !important; }
+        
         * {
           box-sizing: border-box;
           margin: 0;
@@ -4103,6 +4278,7 @@ window.downloadPrescriptionPDF = function(data) {
     <body>
       <div class="btn-print-box no-print">
         <button class="print-btn" onclick="window.print()">🖨️ PRINT / SAVE AS PDF</button>
+        <button class="toggle-btn" onclick="toggleView()" style="background:#0f172a; color:#38bdf8; border:1px solid #38bdf8; padding:10px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:0.9rem; margin-left:10px; transition:all 0.2s; font-family:'Inter', sans-serif;">🔄 TOGGLE PATIENT VIEW</button>
       </div>
       
       <div class="prescription-container">
@@ -4175,8 +4351,14 @@ window.downloadPrescriptionPDF = function(data) {
         <!-- Diagnosed Condition -->
         <div class="section-title">Clinical Assessment</div>
         <div class="diagnosis-box">
-          <h3>${data.condition} (${data.stage})</h3>
-          <p><strong>Primary Assessment Marker:</strong> ${data.metricName} resolved at <strong>${data.metricValue}</strong>. Confidence level: 96% based on local Naive Bayes offline training.</p>
+          <h3>
+            <span class="clinician-term">${data.condition}</span>
+            <span class="patient-term">${data.conditionPatient || data.condition}</span>
+            <span class="clinical-code">ICD-11: ${data.icd11 || 'N/A'}</span>
+            <span style="font-size:0.8rem; color:#64748b;">(${data.stage})</span>
+          </h3>
+          <p class="clinician-only"><strong>Primary Assessment Marker:</strong> ${data.metricName} resolved at <strong>${data.metricValue}</strong>. Confidence level: 96% based on local Naive Bayes offline training.</p>
+          <p class="patient-only"><strong>Diagnostic Measurement:</strong> Your symptom marker is <strong>${data.metricValue}</strong>. (Processed securely on your device using client-side AI).</p>
           <p><strong>Risk Factors Identified:</strong> ${data.risks.length > 0 ? data.risks.join(', ') : 'None active'}</p>
         </div>
         
@@ -4196,7 +4378,10 @@ window.downloadPrescriptionPDF = function(data) {
             ${data.medicines.map((m, idx) => `
               <tr>
                 <td>${idx + 1}</td>
-                <td><strong>${m.name}</strong></td>
+                <td>
+                  <strong>${m.name}</strong>
+                  ${m.snomed && m.snomed !== 'N/A' ? `<span class="clinical-code">SNOMED: ${m.snomed}</span>` : ''}
+                </td>
                 <td>${m.instructions}</td>
                 <td>${m.duration}</td>
               </tr>
@@ -4220,8 +4405,15 @@ window.downloadPrescriptionPDF = function(data) {
           </div>
         </div>
         
-        <!-- Emergency Guidelines -->
-        ${data.urgencyWarning ? `
+        <!-- Emergency / Red Flags Panel -->
+        ${data.redFlags && data.redFlags.length > 0 ? `
+          <div class="warning-notice" style="background:#fff1f2; border:2px solid #fda4af; border-left:6px solid #e11d48; padding:16px; border-radius:8px; font-size:0.85rem; color:#9f1239; margin-bottom:30px; box-shadow:0 0 15px rgba(225, 29, 72, 0.15);">
+            <strong style="font-size: 0.9rem; text-transform: uppercase;">⚠️ CRITICAL EMERGENCY RED FLAGS (IMMEDIATE MEDICAL CARE INSTRUCTIONS)</strong>
+            <ul style="margin-top: 8px; padding-left: 20px; line-height: 1.5; text-align: left;">
+              ${data.redFlags.map(flag => `<li>${flag}</li>`).join('')}
+            </ul>
+          </div>
+        ` : data.urgencyWarning ? `
           <div class="warning-notice">
             <strong>🚨 EMERGENCY VIRTUAL ALERT:</strong> ${data.urgencyWarning}
           </div>
@@ -4251,6 +4443,33 @@ window.downloadPrescriptionPDF = function(data) {
       </div>
       
       <script>
+        let viewMode = 'clinician';
+        function toggleView() {
+          const container = document.querySelector('.prescription-container');
+          const toggleBtn = document.querySelector('.toggle-btn');
+          if (viewMode === 'clinician') {
+            viewMode = 'patient';
+            container.classList.add('patient-view');
+            toggleBtn.innerHTML = "🔄 TOGGLE CLINICIAN VIEW";
+            
+            document.querySelectorAll('.clinician-term').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.patient-term').forEach(el => el.style.display = 'inline');
+            document.querySelectorAll('.clinical-code').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.clinician-only').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.patient-only').forEach(el => el.style.display = 'block');
+          } else {
+            viewMode = 'clinician';
+            container.classList.remove('patient-view');
+            toggleBtn.innerHTML = "🔄 TOGGLE PATIENT VIEW";
+            
+            document.querySelectorAll('.clinician-term').forEach(el => el.style.display = 'inline');
+            document.querySelectorAll('.patient-term').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.clinical-code').forEach(el => el.style.display = 'inline-block');
+            document.querySelectorAll('.clinician-only').forEach(el => el.style.display = 'block');
+            document.querySelectorAll('.patient-only').forEach(el => el.style.display = 'none');
+          }
+        }
+        
         // Auto open print dialog
         window.onload = function() {
           setTimeout(function() {
@@ -4278,6 +4497,7 @@ window.downloadSlmPrescriptionPDF = function(conditionKey) {
   // Format medicines as expected by downloadPrescriptionPDF
   const medicines = kb.medications.map(m => ({
     name: m.name,
+    snomed: m.snomed || "N/A",
     instructions: m.dose + " — " + m.note,
     duration: "As needed / 5-7 Days"
   }));
@@ -4357,19 +4577,28 @@ window.downloadSlmPrescriptionPDF = function(conditionKey) {
     }
   }
 
+  // Vitals for red flags compilation
+  const vitalsObj = { bp: bpVal, heartRate: hrVal, temp: tempVal, SpO2: spo2Val };
+  const redFlags = compileRedFlags(conditionKey, vitalsObj);
+
   // Construct print-ready Rx data
   const rxData = {
     healthId: currentHealthId || 'RAMAN-HID-170',
+    conditionKey: conditionKey,
+    conditionClinician: conditionName,
+    conditionPatient: translateToPatientTerms(conditionKey),
+    icd11: kb.icd11 || "N/A",
     condition: conditionName,
     stage: stageText,
     metricName: metricName,
     metricValue: metricValue,
-    vitals: { bp: bpVal, heartRate: hrVal, temp: tempVal, SpO2: spo2Val },
+    vitals: vitalsObj,
     risks: allergyWarning ? ["Allergy Contraindication"] : [],
     medicines: medicines,
     diet: kb.diet || [],
     precautions: kb.precautions || [],
     urgencyWarning: allergyWarning || (conditionKey === "chest pain" ? "Treat all chest pain as cardiac emergency. Seek physical ER care immediately." : ""),
+    redFlags: redFlags,
     latency: (performance.now() - slmStartTime).toFixed(3)
   };
 
@@ -4925,19 +5154,39 @@ function completeClinicalConsultation() {
   const documentAnalysisHtml = analyzeDocument({ name: vaultDocTitle }, vaultDocType, p, tunerParams);
   const savedDocId = saveSimulatedToVault(vaultDocTitle, vaultDocType, summary, documentAnalysisHtml, dataUrl);
 
+  // Compile Red Flags
+  const vitalsObj = { bp, heartRate: hr.toString(), temp: temp.toString(), SpO2: spo2.toString() };
+  const redFlags = compileRedFlags(category, vitalsObj);
+  let redFlagsHtml = "";
+  if (redFlags.length > 0) {
+    redFlagsHtml = `
+      <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 77, 109, 0.08); padding:12px; border-radius:6px; margin-bottom:15px; font-size:0.85rem; box-shadow:0 0 10px rgba(255, 77, 109, 0.15);">
+        <strong style="color:var(--red-warn); font-family:var(--font-head);"><span style="animation: pulseGlow 1.5s infinite;">⚠️ CRITICAL MEDICAL RED FLAGS (EMERGENCY WARNING)</span></strong>
+        <ul style="margin:5px 0 0 0; padding-left:18px; line-height:1.4; color:var(--text-main); text-align:left;">
+          ${redFlags.map(flag => `<li style="margin-bottom:4px;">${flag}</li>`).join("")}
+        </ul>
+      </div>
+    `;
+  }
+
   // Compile final print-ready Rx data
   const rxData = {
     healthId: currentHealthId || 'RAMAN-HID-170',
+    conditionKey: category,
+    conditionClinician: conditionName,
+    conditionPatient: translateToPatientTerms(category),
+    icd11: kb.icd11 || "N/A",
     condition: conditionName,
     stage: stageText,
     metricName: metricName,
     metricValue: metricValue,
-    vitals: { bp, heartRate: hr.toString(), temp: temp.toString(), SpO2: spo2.toString() },
+    vitals: vitalsObj,
     risks: risks,
     medicines: medicines,
     diet: diet,
     precautions: precautions,
     urgencyWarning: urgencyWarning,
+    redFlags: redFlags,
     latency: (performance.now() - wizardStartTime).toFixed(3)
   };
 
@@ -4961,7 +5210,7 @@ function completeClinicalConsultation() {
         <div class="med-section info" style="border-left:4px solid var(--teal); margin-bottom:15px;">
           <div class="med-section-title" style="color:var(--teal); font-family:var(--font-head); font-size:0.95rem; margin-bottom:5px;">📋 CLINICAL ASSESSMENT & TRIAGE REPORT</div>
           <p style="font-size:0.85rem; line-height:1.4; font-style:italic; color:var(--text-muted); margin-bottom:8px;">
-            "${empathyFiller}"
+            "\u0022${empathyFiller}\u0022"
           </p>
           <p style="font-size:0.88rem; line-height:1.4;">
             Active intake mapping has successfully concluded for <strong>${p.name || 'Patient'}</strong>. The RAMAN Simple Language Model (SLM) has formulated clinical findings and compiled the diagnostic outcome.
@@ -5000,11 +5249,7 @@ function completeClinicalConsultation() {
 
         ${allergyWarningHtml}
 
-        ${urgencyWarning ? `
-          <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 77, 109, 0.08); padding:10px; border-radius:4px; margin-bottom:15px; font-size:0.85rem;">
-            <strong>🚨 CRITICAL CLINICAL NOTICE / ଜରୁରୀ ସୂଚନା:</strong><br>${urgencyWarning}
-          </div>
-        ` : ''}
+        ${redFlagsHtml}
 
         <div class="med-section info" style="margin-bottom:15px;">
           <div class="med-section-title" style="color:var(--cyan); font-size:0.85rem; margin-bottom:5px;">💊 RECOMMENDED PHARMACOTHERAPY / ଔଷଧ ନିର୍ଦ୍ଦେଶାବଳୀ</div>
@@ -5042,6 +5287,8 @@ function completeClinicalConsultation() {
             </ul>
           </div>
         </div>
+
+        ${renderExplainabilityPanel(activeConsultation.selectedSymptoms.join(' '))}
 
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:15px;">
           <button id="btnDownloadPrescription" style="background:var(--teal); border:none; padding:10px 18px; border-radius:6px; font-weight:bold; color:#0f172a; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 0 12px rgba(0,255,179,0.3); transition:all 0.3s; width:100%; font-family:var(--font-head);">
@@ -5577,3 +5824,475 @@ function runSandboxInference(text) {
 
   listEl.innerHTML = html + diagnosticTraceHtml;
 }
+
+// ── CLINICAL CODES & EMERGENCIES HELPERS ────────────────
+function translateToPatientTerms(conditionKey) {
+  const mapping = {
+    "fever": "Fever & General Infection Triage",
+    "headache": "Headache & Muscular Tension Triage",
+    "cough": "Cough & Airway Clearance Support",
+    "chest pain": "Chest Discomfort & Emergency Safety Triage",
+    "stomach pain": "Stomach & Digestive System Recovery",
+    "joint pain": "Joint Care & Movement Relief",
+    "skin rash": "Skin Soothing & Allergen Relief",
+    "high blood pressure": "Blood Pressure Management Guidelines",
+    "diabetes": "Blood Sugar & Glycemic Control Guidelines",
+    "eye pain": "Ocular Comfort & Eye Strain Triage",
+    "back pain": "Back & Spinal Musculoskeletal Support"
+  };
+  return mapping[conditionKey] || "General Symptoms Assessment";
+}
+window.translateToPatientTerms = translateToPatientTerms;
+
+function compileRedFlags(conditionKey, vitals) {
+  const flagsMap = {
+    fever: [
+      "Fever exceeding 104°F (40°C) or persistent fever > 72 hours",
+      "Stiff neck, severe headache, confusion, or difficulty waking up",
+      "Difficulty breathing or persistent chest pain"
+    ],
+    headache: [
+      "Sudden, severe headache ('thunderclap' onset)",
+      "Headache accompanied by fever, stiff neck, confusion, or seizures",
+      "New headache after a head injury or with weakness/numbness in limbs"
+    ],
+    cough: [
+      "Coughing up blood (hemoptysis)",
+      "Shortness of breath, wheezing, or difficulty speaking in full sentences",
+      "Oxygen saturation (SpO2) dropping below 93%"
+    ],
+    "chest pain": [
+      "Pressure, tightness, or squeezing pain radiating to left arm, neck, jaw, or back",
+      "Chest pain accompanied by sweating, shortness of breath, nausea, or lightheadedness",
+      "Pain that does not resolve with rest or worsens rapidly"
+    ],
+    "stomach pain": [
+      "Severe, sudden abdominal pain localized to the right lower quadrant (suspected appendicitis)",
+      "Persistent vomiting, inability to keep fluids down, or signs of extreme dehydration",
+      "Blood in vomit (hematemesis) or black, tarry stools (melena)"
+    ],
+    "joint pain": [
+      "Joint pain with high fever, severe redness, swelling, and warmth (suspected septic arthritis)",
+      "Inability to bear weight or complete loss of function in the affected limb",
+      "Rapidly progressive joint inflammation after trauma"
+    ],
+    "skin rash": [
+      "Rash spreading rapidly across the body or accompanied by high fever",
+      "Presence of skin peeling, blistering, or painful mucosal lesions (Stevens-Johnson syndrome risk)",
+      "Rash accompanied by facial/tongue swelling or difficulty breathing (anaphylaxis)"
+    ],
+    "high blood pressure": [
+      "Blood pressure exceeding 180 mmHg systolic or 120 mmHg diastolic (hypertensive crisis)",
+      "Severe headache, blurred vision, chest pain, or sudden confusion",
+      "Shortness of breath or numbness/weakness in limbs"
+    ],
+    diabetes: [
+      "Extreme thirst, frequent urination, rapid weight loss, with fruit-smelling breath (suspected DKA)",
+      "Blood sugar reading below 70 mg/dL with sweating, tremors, confusion, or loss of consciousness (hypoglycemia)",
+      "Non-healing foot ulcers, severe localized infection, or sudden vision loss"
+    ],
+    "eye pain": [
+      "Sudden, severe eye pain with headache, nausea, or halos around lights (suspected acute glaucoma)",
+      "Sudden partial or complete loss of vision",
+      "Severe sensitivity to light (photophobia) or penetrating eye injury"
+    ],
+    "back pain": [
+      "Back pain with loss of bowel or bladder control (saddle anesthesia / Cauda Equina risk)",
+      "Unexplained fever, severe night pain, or history of recent cancer",
+      "Progressive weakness, numbness, or tingling radiating down both legs"
+    ]
+  };
+  
+  const flags = [...(flagsMap[conditionKey] || [])];
+  
+  if (vitals) {
+    if (vitals.bp) {
+      const parts = vitals.bp.split("/").map(Number);
+      if (parts[0] > 180 || parts[1] > 120) {
+        flags.unshift("🚨 VITAL WARNING: Systolic BP > 180 mmHg or Diastolic BP > 120 mmHg indicates hypertensive crisis!");
+      }
+    }
+    if (vitals.heartRate) {
+      const hrVal = Number(vitals.heartRate);
+      if (hrVal > 120 || hrVal < 45) {
+        flags.unshift(`🚨 VITAL WARNING: Extreme heart rate (${hrVal} bpm) detected! Normal range is 60-100 bpm.`);
+      }
+    }
+    if (vitals.temp) {
+      const tVal = Number(vitals.temp);
+      if (tVal > 103.5) {
+        flags.unshift(`🚨 VITAL WARNING: High fever temperature (${tVal}°F) representing core hyperpyrexia risk!`);
+      }
+    }
+    if (vitals.SpO2) {
+      const sVal = Number(vitals.SpO2);
+      if (sVal < 92) {
+        flags.unshift(`🚨 VITAL WARNING: Critically low blood oxygen level (SpO2: ${sVal}%) indicating respiratory distress!`);
+      }
+    }
+  }
+  
+  return flags;
+}
+window.compileRedFlags = compileRedFlags;
+
+// ── WEB CRYPTO AES-GCM BACKUP IMPLEMENTATIONS ──────────
+async function deriveEncryptionKey(password, salt) {
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    enc.encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    {
+      name: "PBKDF2",
+      salt: salt,
+      iterations: 100000,
+      hash: "SHA-256"
+    },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptBackup(text, password) {
+  const enc = new TextEncoder();
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveEncryptionKey(password, salt);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv: iv },
+    key,
+    enc.encode(text)
+  );
+  const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
+  const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
+  const ciphertextBase64 = btoa(String.fromCharCode(...new Uint8Array(ciphertext)));
+  return { saltHex, ivHex, ciphertextBase64 };
+}
+
+async function decryptBackup(saltHex, ivHex, ciphertextBase64, password) {
+  const dec = new TextDecoder();
+  const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+  const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+  const ciphertext = new Uint8Array(atob(ciphertextBase64).split('').map(c => c.charCodeAt(0)));
+  const key = await deriveEncryptionKey(password, salt);
+  try {
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: iv },
+      key,
+      ciphertext
+    );
+    return dec.decode(plaintext);
+  } catch (err) {
+    throw new Error("Incorrect password or corrupted file.");
+  }
+}
+
+// ── SESSION BACKUP & PORTABILITY SERIALIZATION ─────────
+window.exportSessionBackupJSON = async function() {
+  try {
+    const p = getProfile();
+    p.pain = document.getElementById('painSlider').value;
+    
+    // Read all files from IndexedDB
+    const files = await new Promise((resolve) => {
+      if (!db) {
+        resolve([]);
+        return;
+      }
+      const transaction = db.transaction([dbStoreName], "readonly");
+      const store = transaction.objectStore(dbStoreName);
+      const request = store.getAll();
+      request.onsuccess = e => resolve(e.target.result || []);
+      request.onerror = () => resolve([]);
+    });
+
+    const diaryHistory = JSON.parse(localStorage.getItem('ramanai_diary_history') || '[]');
+    
+    const backupPayload = {
+      ramanai_backup: true,
+      version: "1.1",
+      exportDate: new Date().toISOString(),
+      currentHealthId: currentHealthId || "NO-SESSION",
+      profile: p,
+      detectedConditions: [...detectedConditions],
+      vaultData: vaultData,
+      chatHistory: chatHistory,
+      files: files,
+      diaryHistory: diaryHistory
+    };
+    
+    const jsonStr = JSON.stringify(backupPayload, null, 2);
+    
+    // Check if user wants password protection
+    const password = prompt("⚠️ SECURE YOUR HEALTH VAULT:\nEnter a password to encrypt your local backup (Leave blank for standard download):");
+    
+    let finalBlobPayload;
+    let fileName = `raman_health_vault_backup_${currentHealthId || 'fresh'}.json`;
+    
+    if (password !== null && password.trim() !== "") {
+      const encrypted = await encryptBackup(jsonStr, password);
+      const encryptedPayload = {
+        ramanai_backup: true,
+        ramanai_encrypted: true,
+        version: "1.1",
+        exportDate: new Date().toISOString(),
+        currentHealthId: currentHealthId || "NO-SESSION",
+        encryption: encrypted
+      };
+      finalBlobPayload = JSON.stringify(encryptedPayload, null, 2);
+      fileName = `raman_health_vault_backup_ENCRYPTED_${currentHealthId || 'fresh'}.json`;
+    } else {
+      finalBlobPayload = jsonStr;
+    }
+    
+    const blob = new Blob([finalBlobPayload], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    console.log("Health vault and profile exported successfully.");
+  } catch (err) {
+    console.error("Failed to export health vault:", err);
+    alert("Failed to export backup: " + err.message);
+  }
+};
+
+window.importSessionBackupJSON = function(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async function(e) {
+    try {
+      let rawJson = e.target.result;
+      let backup = JSON.parse(rawJson);
+      if (!backup.ramanai_backup) {
+        alert("Invalid backup file: Missing RAMAN AI signature.");
+        return;
+      }
+      
+      // Decrypt if password protected
+      if (backup.ramanai_encrypted) {
+        const password = prompt("📥 PASSWORD REQUIRED:\nThis health backup is password-protected. Please enter the password to decrypt:");
+        if (password === null) return;
+        
+        try {
+          const decryptedText = await decryptBackup(
+            backup.encryption.saltHex,
+            backup.encryption.ivHex,
+            backup.encryption.ciphertextBase64,
+            password
+          );
+          backup = JSON.parse(decryptedText);
+        } catch (decErr) {
+          alert("❌ DECRYPTION FAILED: Incorrect password or corrupted backup file.");
+          return;
+        }
+      }
+      
+      currentHealthId = backup.currentHealthId || generateHealthId();
+      sessionCreatedDate = backup.profile.created || new Date().toISOString();
+      
+      // Restore profile DOM values
+      const p = backup.profile || {};
+      if (document.getElementById('patientName')) document.getElementById('patientName').value = p.name || '';
+      if (document.getElementById('patientAge')) document.getElementById('patientAge').value = p.age || '';
+      if (document.getElementById('patientGender')) document.getElementById('patientGender').value = p.gender || 'Not specified';
+      if (document.getElementById('patientBlood')) document.getElementById('patientBlood').value = p.blood || 'Unknown';
+      if (document.getElementById('patientAllergies')) document.getElementById('patientAllergies').value = p.allergies || '';
+      if (document.getElementById('patientBP')) document.getElementById('patientBP').value = p.bp || '';
+      if (document.getElementById('patientHR')) document.getElementById('patientHR').value = p.heartRate || '';
+      if (document.getElementById('patientTemp')) document.getElementById('patientTemp').value = p.temp || '';
+      if (document.getElementById('patientSpO2')) document.getElementById('patientSpO2').value = p.SpO2 || '';
+      
+      if (p.pain && document.getElementById('painSlider')) {
+        const sl = document.getElementById('painSlider');
+        sl.value = p.pain;
+        sl.dispatchEvent(new Event('input'));
+      }
+      updateProfileCompleteness();
+      
+      // Restore IndexedDB files
+      if (backup.files && backup.files.length) {
+        for (const f of backup.files) {
+          await storeSimulatedFileInDB(f.id, f.name, f.type, f.dataUrl);
+        }
+      }
+      
+      // Restore memory states
+      detectedConditions = new Set(backup.detectedConditions || []);
+      vaultData = backup.vaultData || [];
+      chatHistory = backup.chatHistory || [];
+      
+      // Restore diary history
+      if (backup.diaryHistory) {
+        localStorage.setItem('ramanai_diary_history', JSON.stringify(backup.diaryHistory));
+        window.renderDiaryChart();
+      }
+      
+      // Save session inside localStorage
+      localStorage.setItem('ramanai_conditions', JSON.stringify([...detectedConditions]));
+      localStorage.setItem('ramanai_vault', JSON.stringify(vaultData));
+      localStorage.setItem('ramanai_current_hid', currentHealthId);
+      
+      const session = {
+        id: currentHealthId,
+        created: sessionCreatedDate,
+        lastSeen: new Date().toISOString(),
+        profile: p,
+        conditions: [...detectedConditions],
+        vault: vaultData.map(v => ({ id: v.id, name: v.name, type: v.type, date: v.date, summary: v.summary })),
+        messages: chatHistory
+      };
+      localStorage.setItem('ramanai_hid_' + currentHealthId, JSON.stringify(session));
+      
+      // Refresh UI components
+      renderVault();
+      updateHidChip();
+      closeSessionPanel();
+      
+      // Add welcome/restore chat card
+      addMessage('ai', `
+        <div class="restore-summary" style="border-left:4px solid var(--accent); background:rgba(0, 255, 179, 0.05); padding:15px; border-radius:8px; margin-bottom:15px;">
+          <div class="restore-header" style="color:var(--accent); font-weight:bold; font-family:var(--font-head);">📥 HEALTH VAULT RESTORED — ${currentHealthId}</div>
+          <p style="margin-top:10px; font-size:0.88rem;">Your secure self-sovereign health vault and patient profile have been successfully restored from your JSON backup file!</p>
+          <div class="restore-grid" style="display:grid; grid-template-columns:repeat(2, 1fr); gap:8px; font-size:0.8rem; margin-top:10px;">
+            <div class="restore-cell" style="background:rgba(255,255,255,0.02); padding:5px; border-radius:4px;"><span class="rc-label" style="color:var(--text-muted); font-size:0.7rem; display:block;">PATIENT</span><span class="rc-value" style="font-weight:bold; color:var(--text-main);">${p.name || '—'}</span></div>
+            <div class="restore-cell" style="background:rgba(255,255,255,0.02); padding:5px; border-radius:4px;"><span class="rc-label" style="color:var(--text-muted); font-size:0.7rem; display:block;">AGE</span><span class="rc-value" style="font-weight:bold; color:var(--text-main);">${p.age || '—'} Yrs</span></div>
+            <div class="restore-cell" style="background:rgba(255,255,255,0.02); padding:5px; border-radius:4px;"><span class="rc-label" style="color:var(--text-muted); font-size:0.7rem; display:block;">BLOOD GROUP</span><span class="rc-value" style="font-weight:bold; color:var(--text-main);">${p.blood || '—'}</span></div>
+            <div class="restore-cell" style="background:rgba(255,255,255,0.02); padding:5px; border-radius:4px;"><span class="rc-label" style="color:var(--text-muted); font-size:0.7rem; display:block;">VAULT FILES</span><span class="rc-value" style="font-weight:bold; color:var(--teal);">${backup.files ? backup.files.length : 0} restored</span></div>
+          </div>
+        </div>`, true);
+      
+    } catch (err) {
+      console.error("Failed to parse or restore backup JSON:", err);
+      alert("Failed to restore backup: " + err.message);
+    }
+  };
+  reader.readAsText(file);
+};
+
+// ── SYMPTOM & RECOVERY DIARY HANDLERS ──────────────────
+window.logDiaryEntry = function() {
+  const cond = document.getElementById('diaryCondition').value;
+  const sevVal = parseInt(document.getElementById('diarySeverity').value || "5");
+  if (sevVal < 1 || sevVal > 10) {
+    alert("Please enter a severity value between 1 and 10.");
+    return;
+  }
+  
+  const history = JSON.parse(localStorage.getItem('ramanai_diary_history') || '[]');
+  history.push({
+    date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+    condition: cond,
+    severity: sevVal
+  });
+  localStorage.setItem('ramanai_diary_history', JSON.stringify(history));
+  document.getElementById('diarySeverity').value = "5"; // Reset to standard mid-value
+  window.renderDiaryChart();
+};
+
+window.clearDiaryEntries = function() {
+  if (confirm("Are you sure you want to clear your local recovery diary history?")) {
+    localStorage.removeItem('ramanai_diary_history');
+    window.renderDiaryChart();
+  }
+};
+
+window.renderDiaryChart = function() {
+  const canvas = document.getElementById('diaryCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0, 0, w, h);
+  
+  const history = JSON.parse(localStorage.getItem('ramanai_diary_history') || '[]');
+  const countEl = document.getElementById('diaryTrendCount');
+  if (countEl) {
+    countEl.textContent = `${history.length} log${history.length !== 1 ? 's' : ''}`;
+  }
+  
+  if (history.length === 0) {
+    ctx.fillStyle = "rgba(255,255,255,0.25)";
+    ctx.font = "10px Inter, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("No recovery diary entries recorded.", w / 2, h / 2);
+    return;
+  }
+  
+  // Plotting recovery sparkline
+  ctx.lineWidth = 2.5;
+  ctx.shadowBlur = 0;
+  
+  // Create gradient
+  const gradient = ctx.createLinearGradient(0, 0, w, 0);
+  gradient.addColorStop(0, '#00e5ff');
+  gradient.addColorStop(1, '#00ffb3');
+  ctx.strokeStyle = gradient;
+  
+  const points = history.slice(-8); // Show last 8 entries for spacing on sparkline
+  const numPoints = points.length;
+  const paddingX = 20;
+  const paddingY = 15;
+  
+  // Draw helper gridlines for scale reference (severity 1, 5, 10)
+  ctx.strokeStyle = "rgba(255,255,255,0.03)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  [1, 5, 10].forEach(level => {
+    const y = h - paddingY - ((level - 1) / 9) * (h - 2 * paddingY);
+    ctx.moveTo(0, y);
+    ctx.lineTo(w, y);
+  });
+  ctx.stroke();
+  
+  // Reset stroke styles for trendline
+  ctx.strokeStyle = gradient;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  for (let i = 0; i < numPoints; i++) {
+    const x = paddingX + (i / Math.max(1, numPoints - 1)) * (w - 2 * paddingX);
+    const severity = points[i].severity;
+    const y = h - paddingY - ((severity - 1) / 9) * (h - 2 * paddingY);
+    
+    if (i === 0) {
+      ctx.moveTo(x, y);
+    } else {
+      ctx.lineTo(x, y);
+    }
+  }
+  ctx.stroke();
+  
+  // Draw glowing dots at each data point
+  for (let i = 0; i < numPoints; i++) {
+    const x = paddingX + (i / Math.max(1, numPoints - 1)) * (w - 2 * paddingX);
+    const severity = points[i].severity;
+    const y = h - paddingY - ((severity - 1) / 9) * (h - 2 * paddingY);
+    
+    ctx.fillStyle = i === numPoints - 1 ? '#00ffb3' : '#00e5ff';
+    ctx.shadowBlur = 6;
+    ctx.shadowColor = ctx.fillStyle;
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.shadowBlur = 0; // Reset shadow
+  }
+};
+
+// Initial load handler for recovery chart
+setTimeout(() => {
+  window.renderDiaryChart();
+}, 200);

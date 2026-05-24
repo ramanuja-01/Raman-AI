@@ -46,6 +46,21 @@ const makeMockElement = () => {
     querySelectorAll() { return []; },
     parentNode: {
       replaceChild() {}
+    },
+    getContext() {
+      return {
+        clearRect() {},
+        beginPath() {},
+        moveTo() {},
+        lineTo() {},
+        stroke() {},
+        arc() {},
+        fill() {},
+        fillText() {},
+        createLinearGradient() {
+          return { addColorStop() {} };
+        }
+      };
     }
   };
   return el;
@@ -92,6 +107,8 @@ global.indexedDB = mockIndexedDB;
 global.document = mockDocument;
 global.window = mockWindow;
 global.performance = { now() { return Date.now(); } };
+global.prompt = (msg, def) => def || "";
+global.alert = (msg) => console.log("ALERT:", msg);
 global.MutationObserver = class {
   constructor() {}
   observe() {}
@@ -408,6 +425,152 @@ async function runTest(name, fn) {
     const profileSomeVitals = { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None", bp: "125/80", temp: "99.1" };
     const htmlSomeVitals = buildProfileContext(profileSomeVitals);
     ok = assert(htmlSomeVitals.includes("BP: 125/80") && htmlSomeVitals.includes("Temp: 99.1°F"), "buildProfileContext correctly appends provided vitals to chat bubble profile header.") && ok;
+
+    return ok;
+  });
+
+  // ----------------------------------------------------
+  // Test 9: Clinical Standardization & Vault Backup Portability
+  // ----------------------------------------------------
+  await runTest("Clinical Standardization & Vault Backup Portability", async () => {
+    let ok = true;
+
+    // 1. Verify ICD-11 & SNOMED codes exist in MEDICAL_KB
+    for (const [key, category] of Object.entries(MEDICAL_KB)) {
+      ok = assert(typeof category.icd11 === "string" && category.icd11.length > 0, `ICD-11 code present for condition: ${key} (${category.icd11})`) && ok;
+      for (const med of category.medications) {
+        ok = assert(typeof med.snomed === "string" && med.snomed.length > 0, `SNOMED code present for medication: ${med.name} (${med.snomed})`) && ok;
+      }
+    }
+
+    // 2. Verify translateToPatientTerms maps technical terms
+    const technicalSample = "fever";
+    const patientTerm = translateToPatientTerms(technicalSample);
+    ok = assert(patientTerm === "Fever & General Infection Triage", `translateToPatientTerms correctly mapped technical term 'fever' to: '${patientTerm}'`) && ok;
+
+    // 3. Verify Session serialization (exportSessionBackupJSON)
+    let aClickCalled = false;
+    let backupJson = "";
+    
+    global.getProfile = () => ({
+      name: "Ramanuja Pathy", age: 28, gender: "Male", blood: "O+", allergies: "NSAID", bp: "120/80", heartRate: "70", temp: "98.6", SpO2: "98"
+    });
+    
+    const mockAnchor = {
+      href: "",
+      download: "",
+      click() { aClickCalled = true; }
+    };
+    
+    // Backup document methods
+    const oldCreateElement = global.document.createElement;
+    global.document.createElement = function(tag) {
+      if (tag === "a") return mockAnchor;
+      return makeMockElement();
+    };
+    
+    // Backup URL / Blob
+    global.URL = {
+      createObjectURL() { return "blob:mock-url"; },
+      revokeObjectURL() {}
+    };
+    
+    global.Blob = class Blob {
+      constructor(parts, options) {
+        backupJson = parts[0];
+        this.options = options;
+      }
+    };
+    
+    global.db = null; // Bypasses file export gracefully
+    
+    // Run the backup export
+    await window.exportSessionBackupJSON();
+    
+    ok = assert(aClickCalled, "exportSessionBackupJSON successfully created a download anchor and clicked it.") && ok;
+    ok = assert(backupJson.length > 0, "exportSessionBackupJSON successfully produced serialized backup payload.") && ok;
+    
+    const parsedBackup = JSON.parse(backupJson);
+    ok = assert(parsedBackup.ramanai_backup === true, "Backup contains RAMAN AI signature.") && ok;
+    ok = assert(parsedBackup.profile.name === "Ramanuja Pathy", "Backup accurately contains the patient profile data.") && ok;
+    
+    // Restore document methods
+    global.document.createElement = oldCreateElement;
+    
+    return ok;
+  });
+
+  // ----------------------------------------------------
+  // Test 10: AES-GCM Encryption, Clinician Explainability & Recovery Diary
+  // ----------------------------------------------------
+  await runTest("AES-GCM Encryption, Clinician Explainability & Recovery Diary", async () => {
+    let ok = true;
+
+    // 1. Verify explain(text) output structure
+    const sampleText = "I have a severe headache and fever";
+    const explanation = slmClassifier.explain(sampleText);
+    ok = assert(explanation !== undefined, "Symptom explainability model successfully returned match data.") && ok;
+    
+    const feverEx = explanation.fever;
+    ok = assert(feverEx !== undefined, "Fever explanation block found.") && ok;
+    ok = assert(typeof feverEx.prior === "string", `Priors log probability parsed: ${feverEx.prior}`) && ok;
+    ok = assert(Array.isArray(feverEx.matchedTokens), `Matched tokens list length: ${feverEx.matchedTokens.length}`) && ok;
+    
+    if (feverEx.matchedTokens.length > 0) {
+      const firstTok = feverEx.matchedTokens[0];
+      ok = assert(typeof firstTok.token === "string" && typeof firstTok.contribution === "string", "Matched token parameters structured correctly.") && ok;
+    }
+
+    // 2. Verify AES-GCM Encrypted Backup Round-trip
+    const testPayload = JSON.stringify({ ramanai_backup: true, secretMessage: "Ramanuja Pathy Secret Vault 170" });
+    const password = "SafeSecuredPassword170!";
+    
+    // Encrypt
+    const encrypted = await encryptBackup(testPayload, password);
+    ok = assert(encrypted !== undefined && encrypted.saltHex !== undefined, "Web Crypto AES-GCM successfully encrypted backup payload.") && ok;
+    ok = assert(encrypted.ciphertextBase64.length > 0, "Base64 ciphertext generated successfully.") && ok;
+    
+    // Decrypt
+    const decrypted = await decryptBackup(encrypted.saltHex, encrypted.ivHex, encrypted.ciphertextBase64, password);
+    ok = assert(decrypted === testPayload, "🛡️ Web Crypto successfully decrypted ciphertext round-trip.") && ok;
+
+    // Decrypt Failure Case
+    let decryptFailed = false;
+    try {
+      await decryptBackup(encrypted.saltHex, encrypted.ivHex, encrypted.ciphertextBase64, "WrongPassword!");
+    } catch (err) {
+      decryptFailed = true;
+    }
+    ok = assert(decryptFailed, "🛡️ Web Crypto decryption successfully rejected incorrect password.") && ok;
+
+    // 3. Verify Recovery Diary Storage handlers
+    // Clear history
+    localStorage.removeItem('ramanai_diary_history');
+    
+    // Mock the DOM elements required for diary
+    const condSelect = makeMockElement();
+    condSelect.value = "fever";
+    const sevInput = makeMockElement();
+    sevInput.value = "8";
+    
+    const oldGetElement = global.document.getElementById.bind(global.document);
+    global.document.getElementById = function(id) {
+      if (id === "diaryCondition") return condSelect;
+      if (id === "diarySeverity") return sevInput;
+      if (id === "diaryCanvas") return makeMockElement(); // Mock canvas returns 2D context
+      return oldGetElement(id);
+    };
+
+    // Trigger log entry
+    window.logDiaryEntry();
+    
+    const diaryHistory = JSON.parse(localStorage.getItem('ramanai_diary_history') || '[]');
+    ok = assert(diaryHistory.length === 1, "Recovery Diary correctly stored symptom severity to localStorage.") && ok;
+    ok = assert(diaryHistory[0].condition === "fever" && diaryHistory[0].severity === 8, "Diary entry contains precise logged parameters.") && ok;
+    
+    // Clean up DOM mock
+    global.document.getElementById = oldGetElement;
+    localStorage.removeItem('ramanai_diary_history');
 
     return ok;
   });
