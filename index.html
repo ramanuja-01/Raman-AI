@@ -632,13 +632,13 @@
             </button>
             
             <!-- Dynamic Micro Sparkline Canvas Chart -->
-            <div style="margin-top: 10px; text-align: center;">
-              <div style="font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 6px; padding: 0 2px;">
+            <div style="margin-top: 10px;">
+              <div style="font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 0 2px;">
                 <span>Offline Trend Sparkline</span>
-                <span id="diaryTrendCount" style="color: var(--teal); font-weight: bold;">0 entries</span>
+                <span id="diaryTrendCount" style="color: var(--teal); font-weight: bold;">0 logs</span>
               </div>
-              <canvas id="diaryCanvas" width="310" height="75" style="background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; display: block; margin: 0 auto; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"></canvas>
-              <div style="font-size: 0.62rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-top: 6px; padding: 0 4px;">
+              <canvas id="diaryCanvas" height="75" style="width: 100%; display: block; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"></canvas>
+              <div style="font-size: 0.62rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding: 0 4px;">
                 <span>Start</span>
                 <span style="color: #ff4d6d; cursor: pointer; font-weight: bold;" onclick="window.clearDiaryEntries()">🗑️ Clear History</span>
                 <span>Today</span>

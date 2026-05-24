@@ -6213,10 +6213,14 @@ window.clearDiaryEntries = function() {
 window.renderDiaryChart = function() {
   const canvas = document.getElementById('diaryCanvas');
   if (!canvas) return;
+  // Sync canvas pixel buffer to its CSS-rendered width
+  const cssWidth = canvas.offsetWidth || 280;
+  canvas.width = cssWidth;
   const ctx = canvas.getContext('2d');
   const w = canvas.width;
   const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
+
   
   const history = JSON.parse(localStorage.getItem('ramanai_diary_history') || '[]');
   const countEl = document.getElementById('diaryTrendCount');
