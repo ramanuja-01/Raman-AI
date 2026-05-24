@@ -6300,3 +6300,87 @@ window.renderDiaryChart = function() {
 setTimeout(() => {
   window.renderDiaryChart();
 }, 200);
+
+// ── Interactive SVG Anatomical Scanner ──────────────────
+function initAnatomicalScanner() {
+  const hotspots = document.querySelectorAll(".map-hotspot");
+  const activeScanZone = document.getElementById("activeScanZone");
+  
+  if (!hotspots.length || !activeScanZone) return;
+  
+  hotspots.forEach(hotspot => {
+    // Mouse Enter -> Highlight and show target label
+    hotspot.addEventListener("mouseenter", function() {
+      const label = this.getAttribute("data-label");
+      activeScanZone.textContent = label;
+      activeScanZone.style.color = "var(--primary)";
+    });
+    
+    // Mouse Leave -> Reset to last active target or default
+    hotspot.addEventListener("mouseleave", function() {
+      const activeHotspot = document.querySelector(".map-hotspot.active");
+      if (activeHotspot) {
+        activeScanZone.textContent = activeHotspot.getAttribute("data-label");
+        activeScanZone.style.color = "var(--teal)";
+      } else {
+        activeScanZone.textContent = "SELECT REGION";
+        activeScanZone.style.color = "var(--cyan)";
+      }
+    });
+    
+    // Click -> Select symptom and trigger triage scan
+    hotspot.addEventListener("click", function() {
+      // Clear previous active states across all hotspots
+      hotspots.forEach(h => h.classList.remove("active"));
+      
+      // Mark clicked hotspot as active
+      this.classList.add("active");
+      
+      const isOr = window.currentLang === 'or';
+      const symptomText = isOr ? this.getAttribute("data-or") : this.getAttribute("data-en");
+      
+      // Update scan zone label to active visual
+      activeScanZone.textContent = this.getAttribute("data-label");
+      activeScanZone.style.color = "var(--teal)";
+      
+      // Populate chat text input
+      const input = document.getElementById("userInput");
+      if (input) {
+        input.value = symptomText;
+        input.dispatchEvent(new Event("input"));
+        input.focus();
+      }
+      
+      // Play high-tech bio-telemetry visual scan flash
+      const cpu = document.getElementById("cpuFill");
+      const neural = document.getElementById("neuralFill");
+      if (cpu && neural) {
+        const oldCpu = cpu.style.width;
+        const oldNeural = neural.style.width;
+        
+        cpu.style.width = "100%";
+        neural.style.width = "100%";
+        cpu.style.boxShadow = "0 0 15px var(--cyan)";
+        neural.style.boxShadow = "0 0 15px var(--teal)";
+        
+        setTimeout(() => {
+          cpu.style.width = oldCpu;
+          neural.style.width = oldNeural;
+          cpu.style.boxShadow = "";
+          neural.style.boxShadow = "";
+        }, 800);
+      }
+      
+      // Auto-submit the symptom query after short animation delay
+      setTimeout(() => {
+        sendMessage();
+      }, 300);
+    });
+  });
+}
+
+// Register anatomical scanner on load
+setTimeout(() => {
+  initAnatomicalScanner();
+}, 400);
+

@@ -647,6 +647,67 @@
           </div>
         </div>
 
+        <!-- Anatomical Symptom Scanner -->
+        <div class="sidebar-section">
+          <div class="sidebar-heading">📈 ANATOMICAL DIAGNOSTIC SCANNER</div>
+          <div class="anatomical-scanner-widget">
+            <div class="anatomical-scanner-title-row">
+              <span class="anatomical-scan-hint">ACTIVE TARGET:</span>
+              <span class="anatomical-scan-zone" id="activeScanZone">SELECT REGION</span>
+            </div>
+            
+            <svg viewBox="0 0 150 200" class="anatomical-map-svg" style="width: 100%; max-width: 140px; margin: 0 auto; display: block; filter: drop-shadow(0 0 5px rgba(0, 243, 255, 0.25));">
+              <!-- Radial Glow Definition -->
+              <defs>
+                <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="var(--cyan)" stop-opacity="1"/>
+                  <stop offset="100%" stop-color="var(--cyan)" stop-opacity="0"/>
+                </radialGradient>
+              </defs>
+              
+              <!-- Sleek Cyber Stylized Human Frame -->
+              <!-- Head Silhouette -->
+              <circle cx="75" cy="22" r="10" stroke="rgba(0, 243, 255, 0.4)" stroke-width="1.5" fill="rgba(10, 25, 41, 0.6)"/>
+              <!-- Spine & Main Nervous Pathway -->
+              <line x1="75" y1="32" x2="75" y2="110" stroke="rgba(0, 243, 255, 0.4)" stroke-width="2"/>
+              <!-- Shoulder Frame -->
+              <line x1="45" y1="42" x2="105" y2="42" stroke="rgba(0, 243, 255, 0.4)" stroke-width="2"/>
+              <!-- Arm Connectors -->
+              <line x1="45" y1="42" x2="38" y2="100" stroke="rgba(0, 243, 255, 0.4)" stroke-width="1.5"/>
+              <line x1="105" y1="42" x2="112" y2="100" stroke="rgba(0, 243, 255, 0.4)" stroke-width="1.5"/>
+              <!-- High-Tech Torso Outlines -->
+              <path d="M 45 42 L 53 110 L 97 110 L 105 42 Z" stroke="rgba(0, 243, 255, 0.4)" stroke-width="1.5" fill="rgba(0, 243, 255, 0.05)"/>
+              <!-- Pelvic Anchor -->
+              <line x1="53" y1="110" x2="97" y2="110" stroke="rgba(0, 243, 255, 0.4)" stroke-width="2"/>
+              <!-- Left and Right Legs -->
+              <line x1="58" y1="110" x2="58" y2="185" stroke="rgba(0, 243, 255, 0.4)" stroke-width="2"/>
+              <line x1="92" y1="110" x2="92" y2="185" stroke="rgba(0, 243, 255, 0.4)" stroke-width="2"/>
+              
+              <!-- Interactive Hotspots -->
+              <!-- 1. Head (Headache / ମୁଣ୍ଡବିନ୍ଧା) -->
+              <circle cx="75" cy="20" r="5" class="map-hotspot" data-symptom="headache" data-en="I have a severe headache and suspected migraine" data-or="ମୋ ମୁଣ୍ଡ ବହୁତ ବିନ୍ଧୁଛି" data-label="HEAD (ମୁଣ୍ଡବିନ୍ଧା)" fill="var(--cyan)"/>
+              <circle cx="75" cy="20" r="10" fill="url(#nodeGlow)" opacity="0.35" pointer-events="none"/>
+              
+              <!-- 2. Eyes (Eye Pain / ଆଖି ବିନ୍ଧା) -->
+              <circle cx="71" cy="25" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
+              <circle cx="79" cy="25" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
+              
+              <!-- 3. Chest (Chest Pain / ଛାତି ଯନ୍ତ୍ରଣା) -->
+              <circle cx="75" cy="50" r="6" class="map-hotspot" data-symptom="chest pain" data-en="I am experiencing crushing chest pain and shortness of breath" data-or="ମୋ ଛାତି ଯନ୍ତ୍ରଣା ହେଉଛି ଏବଂ ନିଶ୍ୱାସ ନେବାରେ କଷ୍ଟ" data-label="CHEST (ଛାତି ଯନ୍ତ୍ରଣା)" fill="var(--red-warn)"/>
+              
+              <!-- 4. Stomach (Stomach Pain / ପେଟ କାଟୁଛି) -->
+              <circle cx="75" cy="78" r="5.5" class="map-hotspot" data-symptom="stomach pain" data-en="I have severe stomach pain and nausea" data-or="ମୋ ପେଟ ବହୁତ କାଟୁଛି" data-label="ABDOMEN (ପେଟ କାଟୁଛି)" fill="#ff9f43"/>
+              
+              <!-- 5. Back (Back Pain / ଅଣ୍ଟା ବୀନ୍ଧା) -->
+              <circle cx="75" cy="98" r="5" class="map-hotspot" data-symptom="back pain" data-en="I have severe back pain and stiffness in my spine" data-or="ମୋ ଅଣ୍ଟା ବହୁତ ବୀନ୍ଧୁଛି ଏବଂ ଚାଲିବାରେ କଷ୍ଟ" data-label="BACK (ଅଣ୍ଟା ବୀନ୍ଧା)" fill="#a020f0"/>
+
+              <!-- 6. Joints (Joint Pain / ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ) -->
+              <circle cx="58" cy="145" r="4.5" class="map-hotspot" data-symptom="joint pain" data-en="I have severe joint pain and swelling in my knee joints" data-or="ମୋ ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ ଜନିତ ବିନ୍ଧା ହେଉଛି" data-label="JOINTS (ଗଣ୍ଠି ବାତ)" fill="#00ffb3"/>
+              <circle cx="92" cy="145" r="4.5" class="map-hotspot" data-symptom="joint pain" data-en="I have severe joint pain and swelling in my knee joints" data-or="ମୋ ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ ଜନିତ ବିନ୍ଧା ହେଉଛି" data-label="JOINTS (ଗଣ୍ଠି ବାତ)" fill="#00ffb3"/>
+            </svg>
+          </div>
+        </div>
+
         <div class="sidebar-section">
           <div class="sidebar-heading">QUICK SYMPTOMS</div>
           <div class="quick-symptoms">
