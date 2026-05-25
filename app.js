@@ -4919,17 +4919,17 @@ window.downloadPrescriptionPDF = function(data) {
       </div>
       
       <div class="prescription-container">
-        <!-- Clinic Header -->
+        <!-- Simulator Header -->
         <div class="rx-header">
           <div class="clinic-info">
-            <h1>RAMAN AI VIRTUAL CLINIC</h1>
+            <h1>RAMAN AI THERAPEUTIC SIMULATOR</h1>
             <p><strong>Offline Neural Diagnostics Unit (Experiment No. 170)</strong></p>
-            <p>Healthcare System: Local Client-Side Inference Sandbox</p>
-            <p>Virtual ID: ${data.healthId || 'RAMAN-HID-170'}</p>
+            <p>Simulation Framework: Local Client-Side Inference Sandbox</p>
+            <p>Simulator ID: ${data.healthId || 'RAMAN-HID-170'}</p>
           </div>
           <div class="rx-badge">
             <h2>Rx</h2>
-            <p>CLINICAL TRIAGE VIRTUAL Rx</p>
+            <p>SIMULATED THERAPEUTIC Rx</p>
           </div>
         </div>
         
@@ -5058,7 +5058,7 @@ window.downloadPrescriptionPDF = function(data) {
           </div>
         ` : data.urgencyWarning ? `
           <div class="warning-notice">
-            <strong>🚨 EMERGENCY VIRTUAL ALERT:</strong> ${data.urgencyWarning}
+            <strong>🚨 SIMULATED URGENCY ALERT:</strong> ${data.urgencyWarning}
           </div>
         ` : ''}
         
@@ -5081,7 +5081,7 @@ window.downloadPrescriptionPDF = function(data) {
         
         <!-- Legal Disclaimer -->
         <div class="disclaimer">
-          ⚠️ IMPORTANT LEGAL CLINICAL DISCLAIMER: RAMAN AI (Experiment No. 170) is a simulated virtual healthcare triage sandbox. All diagnostic classifications, lab results, and Rx drug formulations are synthesized client-side by a local lightweight Simple Language Model (SLM) vocabulary classifier and bigram Markov chain. This document is intended for educational demonstration, offline triage, and clinical sandbox validation. It DOES NOT substitute a real human doctor's physical examination, professional diagnosis, or active drug prescription. Please consult a qualified human physician before administering any medications listed in this simulated Rx.
+          ⚠️ IMPORTANT LEGAL CLINICAL DISCLAIMER: RAMAN AI (Experiment No. 170) is a simulated therapeutic triage sandbox. All diagnostic classifications, lab results, and Rx drug formulations are synthesized client-side by a local lightweight Simple Language Model (SLM) vocabulary classifier and bigram Markov chain. This document is intended for educational demonstration, offline triage, and clinical sandbox validation. It DOES NOT substitute a real human doctor's physical examination, professional diagnosis, or active drug prescription. Please consult a qualified human physician before administering any medications listed in this simulated Rx.
         </div>
       </div>
       
@@ -5792,7 +5792,7 @@ function completeClinicalConsultation() {
   };
   
   const dataUrl = generateSimulatedLabFile(vaultDocType, vaultDocTitle);
-  const summary = `Offline virtual diagnostics generated simulated lab findings for ${conditionName} (${stageText}). Patient profile and vitals (BP: ${bp}, Temp: ${temp}, SpO2: ${spo2}) checked against SLM rules.`;
+  const summary = `Offline therapeutic simulation generated simulated lab findings for ${conditionName} (${stageText}). Patient profile and vitals (BP: ${bp}, Temp: ${temp}, SpO2: ${spo2}) checked against SLM rules.`;
 
   const documentAnalysisHtml = analyzeDocument({ name: vaultDocTitle }, vaultDocType, p, tunerParams);
   const savedDocId = saveSimulatedToVault(vaultDocTitle, vaultDocType, summary, documentAnalysisHtml, dataUrl);
