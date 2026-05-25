@@ -1735,8 +1735,7 @@ let inactivityTimer = null;
 function resetInactivityTimer() {
   clearTimeout(inactivityTimer);
   inactivityTimer = setTimeout(() => {
-    if (currentHealthId) {
-      addMessage('ai', '<div class="med-section warning"><p>🔒 <strong>Session Locked:</strong> 15 minutes of inactivity detected. Your data has been securely saved.</p></div>', true);
+    if (currentHealthId || chatHistory.length > 0 || getProfile().name) {
       endCurrentSession();
     }
   }, 15 * 60 * 1000);
