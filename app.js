@@ -294,7 +294,8 @@ class NaiveBayesSymptomClassifier {
     const totalExp = exps.reduce((acc, curr) => acc + curr[1], 0);
     const confidenceList = exps.map(([c, e]) => ({
       condition: c,
-      confidence: Math.round((e / totalExp) * 100)
+      confidence: Math.round((e / totalExp) * 100),
+      score: Math.round(scores[c] * 100) / 100
     }));
 
     return confidenceList;
@@ -459,7 +460,11 @@ const SLM_TRAINING_CORPUS = {
     "kasha kafa thanda runny nose sore throat congestion",
     "constant coughing fits with severe chest congestion wheezing",
     "bronchitis productive cough throat itchiness mucus cold",
-    "kafa jami jaichi kasha saha chhati bhari"
+    "kafa jami jaichi kasha saha chhati bhari",
+    "I have a persistent cough with mucus and a sore throat",
+    "ମୋର ବହୁତ କାଶ ଏବଂ ଥଣ୍ଡା ହେଉଛି",
+    "persistent throat tickle and dry cough",
+    "gola basijaichi kansa kapa thanda"
   ],
   "chest pain": [
     "crushing chest pain radiating to left arm and jaw",
@@ -512,7 +517,11 @@ const SLM_TRAINING_CORPUS = {
     "charma kundia khasru roga patches red skin itching",
     "body rash burning red bumps hives fungal skin infection",
     "extreme skin irritation itching rash hives dry patches",
-    "kundia skin rash hives allergy dermatitis red spots"
+    "kundia skin rash hives allergy dermatitis red spots",
+    "I have an itchy red skin rash and allergic skin patches",
+    "ମୋ ଚର୍ମ କୁଣ୍ଡେଇ ହେଉଛି ଏବଂ ଲାଲ ପଡିଯାଇଛି",
+    "allergic red spots hives on forearm and shoulders itching",
+    "charma khasru roga kundia hela rash"
   ],
   "high blood pressure": [
     "dizziness, high blood pressure reading, blurry vision",
@@ -524,7 +533,11 @@ const SLM_TRAINING_CORPUS = {
     "rakta chapa badhi jaichi munda ghureiba bp high tension",
     "systolic bp reading 170 cardiac palpitations dizziness",
     "hypertensive headache dizzy racing heart bp reading",
-    "blood pressure high dizzy blurry vision racing pulse"
+    "blood pressure high dizzy blurry vision racing pulse",
+    "I have high blood pressure, dizziness, and palpitations",
+    "ମୋର ରକ୍ତଚାପ ବୃଦ୍ଧି ପାଇଛି ଏବଂ ମୁଣ୍ଡ ଘୁରାଉଛି",
+    "sudden hypertensive spike in blood pressure dizzy feeling",
+    "rakta chapa badhi gala bp spike palpitations"
   ],
   diabetes: [
     "excessive thirst, frequent urination, high blood sugar",
@@ -538,7 +551,11 @@ const SLM_TRAINING_CORPUS = {
     "fasting glucose high 180 hba1c sugar spike diabetes",
     "extreme fatigue thirsty barambar parisra diabetic glucose",
     "blood glucose test result is 260 mg/dL glycemia",
-    "aakhi dekhajiba chhota fatigue bahumutra sugar spike"
+    "aakhi dekhajiba chhota fatigue bahumutra sugar spike",
+    "I have high blood sugar, extreme thirst, and frequent urination",
+    "ମୋର ରକ୍ତ ଶର୍କରା ବୃଦ୍ଧି ପାଇଛି",
+    "diabetic spike polyuria fasting blood glucose level high",
+    "barambar parisra laguchi thirsty sugar level 300"
   ],
   "eye pain": [
     "red eyes, discharge, blurry vision, painful eyes",
@@ -3487,7 +3504,6 @@ Return ONLY the complete HTML markup directly. Do not wrap in markdown code bloc
   });
 })();
 
-// Predefined rich clinical dictionary fallbacks for offline-robust operation
 const CLINICAL_DICTS = {
   "pneumonia": ["alveolar consolidation", "pleural effusion", "bronchial density", "lobar opacities", "dyspnea", "rales and crepitations", "lung infiltration"],
   "joint pain": ["joint space narrowing", "articular cartilage degeneration", "osteophytes", "synovitis", "bone marrow edema", "subchondral sclerosis"],
@@ -3497,7 +3513,9 @@ const CLINICAL_DICTS = {
   "arrhythmia": ["premature ventricular beats", "atrial fibrillation", "paroxysmal tachycardia", "extra-systole", "av block", "ventricular ectopic runs"],
   "diabetes": ["hyperglycemia", "glycated hemoglobin", "insulin resistance", "polyuria", "polydipsia", "impaired fasting glucose", "diabetic ketoacidosis"],
   "renal failure": ["elevated creatinine", "impaired egfr", "glomerular nephritis", "uremic retention", "nephropathy", "renal clearance restriction"],
-  "high blood pressure": ["hypertensive urgency", "systolic elevation", "diastolic variance", "arterial stiffness", "renin-angiotensin activation", "high systemic resistance"]
+  "high blood pressure": ["hypertensive urgency", "systolic elevation", "diastolic variance", "arterial stiffness", "renin-angiotensin activation", "high systemic resistance"],
+  "eye pain": ["intraocular pressure elevation", "conjunctival hyperemia", "corneal edema", "photophobia", "ciliary injection", "blepharitis"],
+  "skin rash": ["allergic dermatitis", "erythematous patches", "prurigo bumps", "epidermal eczema", "urticaria papules", "fungal dermatomycosis"]
 };
 
 async function fetchBiomedicalSynonyms(detectedCondition, docType) {
@@ -6400,11 +6418,15 @@ function runSandboxInference(text) {
     return;
   }
 
+  // Retrieve active classifications from SLM
   const classifications = slmClassifier.classify(text);
+
+  // Ensure strict re-ranking sorting
+  classifications.sort((a, b) => b.confidence - a.confidence);
   
   let html = "";
   
-  classifications.forEach(item => {
+  classifications.forEach((item, index) => {
     // Condition title translation for premium bilingual experience
     const titles = {
       "fever": "Acute Febrile Illness / ଜ୍ୱର",
@@ -6414,7 +6436,7 @@ function runSandboxInference(text) {
       "stomach pain": "Hyperacidic Gastropathy / ପେଟ କାଟୁଛି",
       "joint pain": "Osteoarthropathy / ଗଣ୍ଠି ବାତ",
       "skin rash": "Allergic Dermatitis / ଚର୍ମ କୁଣ୍ଡେଇ ହେବା",
-      "high blood pressure": "Arterial Hypertension / ଉଚ୍ច ରକ୍ତଚାପ",
+      "high blood pressure": "Arterial Hypertension / ଉଚ୍ଚ ରକ୍ତଚାପ",
       "diabetes": "Diabetes Mellitus / ମଧୁମେହ",
       "eye pain": "Ocular Hypertension / ଆଖି ବିନ୍ଧା",
       "back pain": "LumbarMechanical Strain / ଅଣ୍ଟା ବୀନ୍ଧା"
@@ -6426,20 +6448,32 @@ function runSandboxInference(text) {
     // Harmonious colors depending on confidence: high (accent), moderate (cyan), low (dimmed)
     let fillStyle = "background: linear-gradient(90deg, var(--cyan), var(--teal));";
     let glowColor = "rgba(0, 229, 255, 0.4)";
+    let rankText = `#${String(index + 1).padStart(2, '0')}`;
+    let rankColor = "rgba(255,255,255,0.4)";
+    let rowBorderGlow = "";
     
-    if (item.confidence > 50) {
+    if (index === 0 && item.confidence > 0) {
       fillStyle = "background: linear-gradient(90deg, var(--accent), var(--teal));";
-      glowColor = "rgba(0, 255, 179, 0.6)";
+      glowColor = "rgba(0, 255, 179, 0.7)";
+      rankColor = "var(--accent)";
+      rowBorderGlow = "border-color: rgba(0, 255, 179, 0.25); box-shadow: 0 0 10px rgba(0, 255, 179, 0.08); background: rgba(0, 255, 179, 0.02);";
     } else if (item.confidence < 15) {
-      fillStyle = "background: rgba(255,255,255,0.1);";
-      glowColor = "rgba(255,255,255,0.05)";
+      fillStyle = "background: rgba(255,255,255,0.08);";
+      glowColor = "rgba(255,255,255,0.02)";
+      rankColor = "rgba(255,255,255,0.2)";
     }
 
     html += `
-      <div class="sandbox-meter-row">
+      <div class="sandbox-meter-row" style="${rowBorderGlow}">
         <div class="sandbox-meter-header">
-          <span style="font-weight:bold; color:${item.confidence > 25 ? 'var(--text-main)' : 'var(--text-muted)'};">${displayTitle}</span>
-          <span style="font-family:var(--font-head); font-weight:bold; color:${item.confidence > 50 ? 'var(--accent)' : 'var(--cyan)'};">${item.confidence}%</span>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-family:var(--font-head); font-size:0.65rem; color:${rankColor}; font-weight:bold;">${rankText}</span>
+            <span style="font-weight:bold; color:${item.confidence > 25 ? 'var(--text-main)' : 'var(--text-muted)'};">${displayTitle}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-family:monospace; font-size:0.6rem; color:var(--text-muted);">log-p: ${item.score}</span>
+            <span style="font-family:var(--font-head); font-weight:bold; color:${index === 0 && item.confidence > 0 ? 'var(--accent)' : 'var(--cyan)'};">${item.confidence}%</span>
+          </div>
         </div>
         <div class="sandbox-meter-bar-bg">
           <div class="sandbox-meter-bar-fill" style="width:${barWidth}; ${fillStyle} box-shadow: 0 0 8px ${glowColor};"></div>
@@ -6882,7 +6916,7 @@ window.clearDiaryEntries = function() {
   }
 };
 
-window.renderDiaryChart = function() {
+window.renderDiaryChart = function(hoveredPoint) {
   const canvas = document.getElementById('diaryCanvas');
   if (!canvas) return;
   // Sync canvas pixel buffer to its CSS-rendered width
@@ -6893,20 +6927,55 @@ window.renderDiaryChart = function() {
   const h = canvas.height;
   ctx.clearRect(0, 0, w, h);
 
-  
   const history = JSON.parse(localStorage.getItem('ramanai_diary_history') || '[]');
+  
+  // Calculate average, peak and trend
+  const avgEl = document.getElementById('diaryStatAvg');
+  const peakEl = document.getElementById('diaryStatPeak');
+  const trendEl = document.getElementById('diaryStatTrend');
   const countEl = document.getElementById('diaryTrendCount');
+  
   if (countEl) {
     countEl.textContent = `${history.length} log${history.length !== 1 ? 's' : ''}`;
   }
   
   if (history.length === 0) {
+    if (avgEl) avgEl.textContent = 'N/A';
+    if (peakEl) peakEl.textContent = 'N/A';
+    if (trendEl) {
+      trendEl.textContent = 'N/A';
+      trendEl.style.color = 'var(--teal)';
+    }
+    
     ctx.fillStyle = "rgba(255,255,255,0.25)";
     ctx.font = "10px Inter, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText("No recovery diary entries recorded.", w / 2, h / 2);
     return;
+  }
+  
+  // Math Calculations for Dashboard
+  const sum = history.reduce((acc, entry) => acc + Number(entry.severity), 0);
+  const avg = Math.round((sum / history.length) * 10) / 10;
+  const peak = history.reduce((max, entry) => Math.max(max, Number(entry.severity)), 0);
+  
+  const lastSeverity = Number(history[history.length - 1].severity);
+  let trendText = '● STABLE';
+  let trendColor = 'var(--cyan)';
+  if (lastSeverity > avg) {
+    trendText = '▲ WORSENING';
+    trendColor = '#ff4d6d';
+  } else if (lastSeverity < avg) {
+    trendText = '▼ IMPROVING';
+    trendColor = '#00ffb3';
+  }
+  
+  if (avgEl) avgEl.textContent = `${avg}/10`;
+  if (peakEl) peakEl.textContent = `${peak}/10`;
+  if (trendEl) {
+    trendEl.textContent = trendText;
+    trendEl.style.color = trendColor;
   }
   
   // Plotting recovery sparkline
@@ -6939,10 +7008,21 @@ window.renderDiaryChart = function() {
   ctx.strokeStyle = gradient;
   ctx.lineWidth = 2.5;
   ctx.beginPath();
+  
+  canvas.plottedPoints = [];
+  
   for (let i = 0; i < numPoints; i++) {
     const x = paddingX + (i / Math.max(1, numPoints - 1)) * (w - 2 * paddingX);
     const severity = points[i].severity;
     const y = h - paddingY - ((severity - 1) / 9) * (h - 2 * paddingY);
+    
+    canvas.plottedPoints.push({
+      x: x,
+      y: y,
+      severity: severity,
+      condition: points[i].condition,
+      date: points[i].date
+    });
     
     if (i === 0) {
       ctx.moveTo(x, y);
@@ -6954,17 +7034,123 @@ window.renderDiaryChart = function() {
   
   // Draw glowing dots at each data point
   for (let i = 0; i < numPoints; i++) {
-    const x = paddingX + (i / Math.max(1, numPoints - 1)) * (w - 2 * paddingX);
-    const severity = points[i].severity;
-    const y = h - paddingY - ((severity - 1) / 9) * (h - 2 * paddingY);
+    const pt = canvas.plottedPoints[i];
     
-    ctx.fillStyle = i === numPoints - 1 ? '#00ffb3' : '#00e5ff';
-    ctx.shadowBlur = 6;
+    // Highlight if this is the hoveredPoint
+    const isHovered = hoveredPoint && Math.abs(hoveredPoint.x - pt.x) < 0.1 && Math.abs(hoveredPoint.y - pt.y) < 0.1;
+    
+    ctx.fillStyle = isHovered ? '#ff00a0' : (i === numPoints - 1 ? '#00ffb3' : '#00e5ff');
+    ctx.shadowBlur = isHovered ? 12 : 6;
     ctx.shadowColor = ctx.fillStyle;
     ctx.beginPath();
-    ctx.arc(x, y, 4, 0, 2 * Math.PI);
+    ctx.arc(pt.x, pt.y, isHovered ? 6 : 4, 0, 2 * Math.PI);
     ctx.fill();
     ctx.shadowBlur = 0; // Reset shadow
+    
+    // Draw concentric outer ring if hovered
+    if (isHovered) {
+      ctx.strokeStyle = 'rgba(255, 0, 160, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 10, 0, 2 * Math.PI);
+      ctx.stroke();
+    }
+  }
+  
+  // Draw Interactive Tooltip & Crosshair if a point is hovered
+  if (hoveredPoint) {
+    // 1. Dotted vertical guide line
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.lineWidth = 1;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath();
+    ctx.moveTo(hoveredPoint.x, 0);
+    ctx.lineTo(hoveredPoint.x, h);
+    ctx.stroke();
+    ctx.setLineDash([]); // Reset dash
+    
+    // 2. Cyber floating tooltip bubble near the node
+    const text = `${hoveredPoint.condition}: ${hoveredPoint.severity}/10 on ${hoveredPoint.date}`;
+    ctx.font = '9px Inter, sans-serif';
+    const textWidth = ctx.measureText(text).width;
+    
+    // Position tooltip
+    let tooltipX = hoveredPoint.x + 10;
+    let tooltipY = hoveredPoint.y - 12;
+    
+    // Constrain tooltip within canvas boundaries
+    if (tooltipX + textWidth + 10 > w) {
+      tooltipX = hoveredPoint.x - textWidth - 10;
+    }
+    if (tooltipY - 12 < 0) {
+      tooltipY = hoveredPoint.y + 16;
+    }
+    
+    // Glassmorphic background box
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.9)'; // Dark slate glass
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.5)'; // Cyan border
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    // Rounded rect
+    const r = 4;
+    const tw = textWidth + 10;
+    const th = 16;
+    const tx = tooltipX - 5;
+    const ty = tooltipY - 11;
+    ctx.moveTo(tx + r, ty);
+    ctx.lineTo(tx + tw - r, ty);
+    ctx.quadraticCurveTo(tx + tw, ty, tx + tw, ty + r);
+    ctx.lineTo(tx + tw, ty + th - r);
+    ctx.quadraticCurveTo(tx + tw, ty + th, tx + tw - r, ty + th);
+    ctx.lineTo(tx + r, ty + th);
+    ctx.quadraticCurveTo(tx, ty + th, tx, ty + th - r);
+    ctx.lineTo(tx, ty + r);
+    ctx.quadraticCurveTo(tx, ty, tx + r, ty);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    
+    // Tooltip text
+    ctx.fillStyle = '#ffffff';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, tooltipX, tooltipY - 2);
+  }
+
+  // Setup Event Listeners ONCE
+  if (!canvas.isInteractiveListenersAttached) {
+    canvas.isInteractiveListenersAttached = true;
+    
+    canvas.addEventListener('mousemove', function(e) {
+      const rect = canvas.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      let closestPt = null;
+      let minDistance = 15; // Hitbox radius 15px
+      
+      if (canvas.plottedPoints) {
+        canvas.plottedPoints.forEach(pt => {
+          const dx = mouseX - pt.x;
+          const dy = mouseY - pt.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestPt = pt;
+          }
+        });
+      }
+      
+      if (closestPt) {
+        window.renderDiaryChart(closestPt);
+      } else {
+        window.renderDiaryChart(null);
+      }
+    });
+    
+    canvas.addEventListener('mouseleave', function() {
+      window.renderDiaryChart(null);
+    });
   }
 };
 

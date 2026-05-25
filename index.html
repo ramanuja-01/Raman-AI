@@ -667,7 +667,24 @@
                 <span>Offline Trend Sparkline</span>
                 <span id="diaryTrendCount" style="color: var(--teal); font-weight: bold;">0 logs</span>
               </div>
-              <canvas id="diaryCanvas" height="75" style="width: 100%; display: block; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5);"></canvas>
+              <canvas id="diaryCanvas" height="75" style="width: 100%; display: block; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); position: relative; cursor: crosshair;"></canvas>
+              
+              <!-- Offline Severity Stats Dashboard Grid -->
+              <div id="diaryStatsRow" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; margin-bottom: 8px; font-size: 0.58rem; text-align: center; color: var(--text-muted);">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:4px; border-radius:4px;">
+                  <div style="opacity: 0.8; font-size: 0.52rem; letter-spacing: 0.5px; text-transform: uppercase;">Avg Severity</div>
+                  <strong id="diaryStatAvg" style="color:var(--cyan); font-family:var(--font-head); font-size: 0.68rem;">N/A</strong>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:4px; border-radius:4px;">
+                  <div style="opacity: 0.8; font-size: 0.52rem; letter-spacing: 0.5px; text-transform: uppercase;">Peak Severity</div>
+                  <strong id="diaryStatPeak" style="color:#ff4d6d; font-family:var(--font-head); font-size: 0.68rem;">N/A</strong>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:4px; border-radius:4px;">
+                  <div style="opacity: 0.8; font-size: 0.52rem; letter-spacing: 0.5px; text-transform: uppercase;">Trend State</div>
+                  <strong id="diaryStatTrend" style="color:var(--teal); font-family:var(--font-head); font-size: 0.62rem;">N/A</strong>
+                </div>
+              </div>
+
               <div style="font-size: 0.62rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding: 0 4px;">
                 <span>Start</span>
                 <span style="color: #ff4d6d; cursor: pointer; font-weight: bold;" onclick="window.clearDiaryEntries()">🗑️ Clear History</span>
@@ -766,16 +783,28 @@
               <circle cx="71.5" cy="24" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
               <circle cx="78.5" cy="24" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
               
-              <!-- 3. Chest (Chest Pain / ଛାତି ଯନ୍ତ୍ରଣା) -->
+              <!-- 3. Throat (Cough / କାଶ) -->
+              <circle cx="75" cy="36" r="4" class="map-hotspot" data-symptom="cough" data-en="I have a persistent cough with mucus and a sore throat" data-or="ମୋର ବହୁତ କାଶ ଏବଂ ଥଣ୍ଡା ହେଉଛି" data-label="THROAT (କାଶ / ଗଳା)" fill="#ff00a0"/>
+              
+              <!-- 4. Chest (Chest Pain / ଛାତି ଯନ୍ତ୍ରଣା) -->
               <circle cx="75" cy="50" r="6" class="map-hotspot" data-symptom="chest pain" data-en="I am experiencing crushing chest pain and shortness of breath" data-or="ମୋ ଛାତି ଯନ୍ତ୍ରଣା ହେଉଛି ଏବଂ ନିଶ୍ୱାସ ନେବାରେ କଷ୍ଟ" data-label="CHEST (ଛାତି ଯନ୍ତ୍ରଣା)" fill="var(--red-warn)"/>
               
-              <!-- 4. Stomach (Stomach Pain / ପେଟ କାଟୁଛି) -->
+              <!-- 5. Heart/BP (High Blood Pressure / ଉଚ୍ଚ ରକ୍ତଚାପ) -->
+              <circle cx="69" cy="52" r="3.5" class="map-hotspot" data-symptom="high blood pressure" data-en="I have high blood pressure, dizziness, and palpitations" data-or="ମୋର ରକ୍ତଚାପ ବୃଦ୍ଧି ପାଇଛି ଏବଂ ମୁଣ୍ଡ ଘୁରାଉଛି" data-label="HEART (ଉଚ୍ଚ ରକ୍ତଚାପ)" fill="#ff4d6d"/>
+              
+              <!-- 6. Stomach (Stomach Pain / ପେଟ କାଟୁଛି) -->
               <circle cx="75" cy="78" r="5.5" class="map-hotspot" data-symptom="stomach pain" data-en="I have severe stomach pain and nausea" data-or="ମୋ ପେଟ ବହୁତ କାଟୁଛି" data-label="ABDOMEN (ପେଟ କାଟୁଛି)" fill="#ff9f43"/>
               
-              <!-- 5. Back (Back Pain / ଅଣ୍ଟା ବୀନ୍ଧା) -->
+              <!-- 7. Back (Back Pain / ଅଣ୍ଟା ବୀନ୍ଧା) -->
               <circle cx="75" cy="98" r="5" class="map-hotspot" data-symptom="back pain" data-en="I have severe back pain and stiffness in my spine" data-or="ମୋ ଅଣ୍ଟା ବହୁତ ବୀନ୍ଧୁଛି ଏବଂ ଚାଲିବାରେ କଷ୍ଟ" data-label="BACK (ଅଣ୍ଟା ବୀନ୍ଧା)" fill="#a020f0"/>
 
-              <!-- 6. Joints (Joint Pain / ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ) -->
+              <!-- 8. Metabolic (Diabetes / ମଧୁମେହ) -->
+              <circle cx="75" cy="112" r="4" class="map-hotspot" data-symptom="diabetes" data-en="I have high blood sugar, extreme thirst, and frequent urination" data-or="ମୋର ରକ୍ତ ଶର୍କରା ବୃଦ୍ଧି ପାଇଛି" data-label="METABOLIC (ମଧୁମେହ)" fill="#00e5ff"/>
+
+              <!-- 9. Skin (Skin Rash / ଚର୍ମ କୁଣ୍ଡେଇ ହେବା) -->
+              <circle cx="44" cy="94" r="4" class="map-hotspot" data-symptom="skin rash" data-en="I have an itchy red skin rash and allergic skin patches" data-or="ମୋ ଚର୍ମ କୁଣ୍ଡେଇ ହେଉଛି ଏବଂ ଲାଲ ପଡିଯାଇଛି" data-label="SKIN (ଚର୍ମ କୁଣ୍ଡେଇ ହେବା)" fill="#a8ff78"/>
+
+              <!-- 10. Joints (Joint Pain / ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ) -->
               <circle cx="58" cy="145" r="4.5" class="map-hotspot" data-symptom="joint pain" data-en="I have severe joint pain and swelling in my knee joints" data-or="ମୋ ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ ଜନିତ ବିନ୍ଧା ହେଉଛି" data-label="JOINTS (ଗଣ୍ଠି ବାତ)" fill="#00ffb3"/>
               <circle cx="92" cy="145" r="4.5" class="map-hotspot" data-symptom="joint pain" data-en="I have severe joint pain and swelling in my knee joints" data-or="ମୋ ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ ଜନିତ ବିନ୍ଧା ହେଉଛି" data-label="JOINTS (ଗଣ୍ଠି ବାତ)" fill="#00ffb3"/>
             </svg>
