@@ -1021,14 +1021,28 @@ const splashInterval = setInterval(() => {
     if (splashIdx < splashMsgs.length) splashStatusEl.textContent = splashMsgs[splashIdx];
     else clearInterval(splashInterval);
   } else {
-    clearInterval(splashInterval); // Element doesn't exist, stop timer
+    clearInterval(splashInterval);
   }
 }, 800);
 
+// Dynamic loading percentage animator
+let splashPct = 0;
+const splashPercentEl = document.getElementById("splashPercent");
+const pctInterval = setInterval(() => {
+  splashPct += Math.floor(Math.random() * 3) + 1;
+  if (splashPct >= 100) {
+    splashPct = 100;
+    clearInterval(pctInterval);
+  }
+  if (splashPercentEl) {
+    splashPercentEl.textContent = String(splashPct).padStart(2, '0') + "%";
+  }
+}, 38);
+
 window._splashTimer = setTimeout(() => {
-  // This timer is also set (and may be cancelled) at the bottom of app.js by the Health ID module.
-  // If Health ID module hasn't run yet (first load) this fires normally.
-}, 4800); // visual splash plays via CSS; JS app init now handled at bottom of file
+  clearInterval(pctInterval);
+  if (splashPercentEl) splashPercentEl.textContent = "100%";
+}, 4800);
 
 // ── Mobile Sidebar Toggle ──────────────────────────────────
 function toggleSidebar() {
@@ -3863,78 +3877,42 @@ const _chatObserver = new MutationObserver(() => {
 const _chatContainer = document.getElementById('chatMessages');
 if (_chatContainer) _chatObserver.observe(_chatContainer, { childList: true });
 
-// ── Splash: Health ID input handler ───────────────────
-document.getElementById('splashHidBtn').addEventListener('click', handleHidRestore);
-document.getElementById('splashHidInput').addEventListener('keydown', e => {
-  if (e.key === 'Enter') handleHidRestore();
+// ── Welcome Message: Inside-App Health ID Restore Handler ───────────────────
+document.body.addEventListener('click', e => {
+  const btn = e.target.closest('#welcomeHidBtn');
+  if (!btn) return;
+  handleWelcomeHidRestore();
 });
 
-// Cancel auto-dismiss when user interacts with the Health ID restore input
-function handleSplashInteraction() {
-  clearTimeout(window._splashTimer);
-  const splash = document.getElementById('splashScreen');
-  if (splash) splash.classList.add('interactive');
+document.body.addEventListener('keydown', e => {
+  const input = e.target.closest('#welcomeHidInput');
+  if (!input) return;
+  if (e.key === 'Enter') handleWelcomeHidRestore();
+});
+
+function handleWelcomeHidRestore() {
+  const btn = document.getElementById('welcomeHidBtn');
+  const inputEl = document.getElementById('welcomeHidInput');
+  const errEl = document.getElementById('welcomeHidError');
+  if (!btn || !inputEl || !errEl) return;
   
-  // Set progress bar to 100% instantly
-  const bar = document.getElementById('splashBar');
-  if (bar) {
-    bar.style.animation = 'none';
-    bar.style.width = '100%';
-  }
-  
-  // Update status text
-  const status = document.getElementById('splashStatus');
-  if (status && status.textContent !== 'System ready. Enter Health ID or proceed.') {
-    status.textContent = 'System ready. Enter Health ID or proceed.';
-    status.style.color = 'var(--cyan)';
-  }
-}
-
-const splashInput = document.getElementById('splashHidInput');
-if (splashInput) {
-  splashInput.addEventListener('focus', handleSplashInteraction);
-  splashInput.addEventListener('input', handleSplashInteraction);
-}
-
-const splashSkipBtn = document.getElementById('splashSkipBtn');
-if (splashSkipBtn) {
-  splashSkipBtn.addEventListener('click', () => {
-    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
-    if (typeof window.transitionToApp === 'function') {
-      window.transitionToApp(false);
-    }
-  });
-}
-
-function handleHidRestore() {
-  const btn = document.getElementById('splashHidBtn');
-  const input = document.getElementById('splashHidInput').value.trim();
-  const errEl = document.getElementById('splashHidError');
+  const input = inputEl.value.trim();
   if (!input) { errEl.textContent = 'Please enter your Health ID.'; return; }
   
   btn.textContent = 'RESTORING...';
   errEl.textContent = '';
   
   setTimeout(() => {
-    // Stop the auto-dismiss timer
-    clearTimeout(window._splashTimer);
-    
     const ok = loadHealthSession(input);
     if (!ok) {
       btn.textContent = '↩ RESTORE';
       errEl.textContent = '❌ Health ID not found. Please check and try again.';
       errEl.style.color = '#ff4d6d';
     } else {
-      if (typeof window.transitionToApp === 'function') {
-        window.transitionToApp(true);
-      } else {
-        document.getElementById('splashScreen').style.display = 'none';
-        document.getElementById('appContainer').style.display = 'flex';
-        document.getElementById('welcomeTime').textContent = nowTime();
-        initParticles();
-        renderVault();
-        bindTunerEvents();
-      }
+      // Hide the welcome message card since history is loaded
+      const welcomeMsg = document.getElementById('welcomeMsg');
+      if (welcomeMsg) welcomeMsg.style.display = 'none';
+      if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
     }
   }, 800);
 }

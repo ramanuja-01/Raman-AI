@@ -26,37 +26,60 @@
 
   <!-- ===== SPLASH SCREEN ===== -->
   <div class="splash-screen" id="splashScreen">
+    <div class="splash-cyber-grid"></div>
+    <div class="splash-radar-sweep"></div>
+    
     <div class="splash-content">
-      <div class="splash-logo-ring">
-        <div class="ring ring-1"></div>
-        <div class="ring ring-2"></div>
-        <div class="ring ring-3"></div>
-        <div class="splash-cross">✚</div>
+      <!-- High-tech circular diagnostic HUD ring -->
+      <div class="splash-hud-container">
+        <div class="splash-hud-ring pulse-slow"></div>
+        <div class="splash-hud-ring pulse-fast"></div>
+        <div class="splash-hud-scanner"></div>
+        <div class="splash-cross-glowing">✚</div>
       </div>
-      <div class="splash-title">RAMAN AI</div>
-      <div class="splash-subtitle">EXPERIMENT № 170</div>
-      <div class="splash-tagline">Medical Intelligence System · Vision · Voice · Analysis</div>
-      <div class="splash-bar-wrap">
-        <div class="splash-bar" id="splashBar"></div>
+      
+      <div class="splash-brand">
+        <div class="splash-title-glowing">RAMAN AI</div>
+        <div class="splash-subtitle-cyber">SYSTEM DIAGNOSTICS & INFRASTRUCTURE</div>
+        <div class="splash-tagline-glow">EXPERIMENT № 170 · HYPER-LOCAL INFRASTRUCTURE</div>
       </div>
-      <div class="splash-status" id="splashStatus">Initializing neural pathways...</div>
-      <div class="splash-capabilities">
-        <span class="splash-cap">🎙 Voice Input</span>
-        <span class="splash-cap">📷 Image Analysis</span>
-        <span class="splash-cap">🎥 Video Capture</span>
-        <span class="splash-cap">🧠 AI Diagnosis</span>
+
+      <!-- High-tech heartbeat/ECG visualizer -->
+      <div class="splash-ecg-wrap">
+        <svg class="splash-ecg-svg" viewBox="0 0 300 40" width="300" height="40">
+          <path class="splash-ecg-path" d="M 0,20 L 50,20 L 60,10 L 70,30 L 80,20 L 120,20 L 130,5 L 140,35 L 150,20 L 200,20 L 210,15 L 220,25 L 230,20 L 300,20" fill="none" stroke="var(--cyan)" stroke-width="2" />
+        </svg>
       </div>
-      <!-- Health ID Restore -->
-      <div class="splash-hid-section">
-        <div class="splash-hid-divider"><span>RETURNING PATIENT?</span></div>
-        <div class="splash-hid-row">
-          <input type="text" id="splashHidInput" placeholder="Enter Health ID  e.g. RMN-A3F9K2"
-            maxlength="12" autocomplete="off" spellcheck="false" />
-          <button id="splashHidBtn">↩ RESTORE</button>
+
+      <!-- Segmented glowing loading bar -->
+      <div class="splash-loading-container">
+        <div class="splash-loading-bar-outer">
+          <div class="splash-loading-bar-inner" id="splashBar"></div>
+          <div class="splash-loading-spark"></div>
         </div>
-        <div class="splash-hid-error" id="splashHidError"></div>
-        <div class="splash-hid-skip-wrap">
-          <button id="splashSkipBtn" class="splash-skip-btn">Proceed as New Patient ➔</button>
+        <div class="splash-loading-stats">
+          <span class="splash-loading-percent" id="splashPercent">00%</span>
+          <span class="splash-status-text" id="splashStatus">Initializing neural pathways...</span>
+        </div>
+      </div>
+
+      <!-- Capabilities listing with visual cyber-badges -->
+      <div class="splash-badges-container">
+        <div class="splash-badge-item">
+          <span class="badge-icon">🎙</span>
+          <span class="badge-label">VOICE INFRASTRUCTURE</span>
+        </div>
+        <div class="splash-badge-item">
+          <span class="badge-icon">📷</span>
+          <span class="badge-label">VISION INTELLIGENCE</span>
+        </div>
+        <div class="splash-badge-item">
+          <span class="badge-icon">🎥</span>
+          <span class="badge-label">MOTION TELEMETRY</span>
+        </div>
+        <div class="splash-badge-item">
+          <span class="badge-icon">🧠</span>
+          <span class="badge-label">BAYES NLP CLASSIFIER</span>
         </div>
       </div>
     </div>
@@ -841,8 +864,18 @@
                     <li>🎙 <strong>Listen</strong> to your voice description</li>
                   </ul>
                   <p>Please fill in your <strong>Patient Profile</strong> on the left, then describe your symptoms below. You can also 📎 upload a photo or 🎙 use voice input! 🩺</p>
-                  <div style="margin-top:15px; display:flex; gap:10px;">
+                  <div style="margin-top:15px; display:flex; gap:10px; flex-wrap: wrap; align-items: center;">
                     <button class="btn-consult" id="btnStartConsultation" style="background:var(--accent); border:none; padding:8px 16px; border-radius:6px; font-weight:bold; color:#0f172a; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px; transition:all 0.3s; box-shadow:0 0 10px rgba(0,255,179,0.3);">💬 START HUMAN-LIKE CLINICAL CONSULTATION</button>
+                  </div>
+                  
+                  <!-- Inside-app Returning Patient Session Restore Box -->
+                  <div class="welcome-restore-box" style="margin-top: 24px; padding: 16px 20px; border-radius: 12px; border: 1px dashed rgba(0, 229, 255, 0.3); background: rgba(0, 229, 255, 0.02); max-width: 440px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
+                    <div style="font-family: var(--font-ui); font-size: 0.65rem; letter-spacing: 2px; color: var(--cyan); margin-bottom: 10px; font-weight: bold;">🔐 RETURNING PATIENT? RESTORE PREVIOUS SESSION</div>
+                    <div style="display:flex; gap:8px;">
+                      <input type="text" id="welcomeHidInput" placeholder="Enter Health ID e.g. RMN-A3F9K2" maxlength="12" style="flex:1; padding:8px 12px; background:rgba(0,0,0,0.55); border:1px solid rgba(0, 229, 255, 0.2); border-radius:6px; color:white; font-family:var(--font-ui); font-size:0.8rem; letter-spacing:1px; outline:none; text-transform:uppercase; transition: all 0.25s ease;" />
+                      <button id="welcomeHidBtn" style="padding:8px 16px; border-radius:6px; background:linear-gradient(135deg, var(--blue), var(--cyan)); border:none; color:var(--bg-deep); font-family:var(--font-ui); font-weight:bold; font-size:0.75rem; cursor:pointer; transition:all 0.25s ease; white-space:nowrap; box-shadow: 0 2px 8px rgba(0, 229, 255, 0.2);">↩ RESTORE</button>
+                    </div>
+                    <div id="welcomeHidError" style="margin-top: 8px; font-size: 0.72rem; color: var(--red-warn); min-height: 14px; transition: all 0.2s ease;"></div>
                   </div>
                 </div>
               </div>
