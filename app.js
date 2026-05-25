@@ -3869,6 +3869,43 @@ document.getElementById('splashHidInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') handleHidRestore();
 });
 
+// Cancel auto-dismiss when user interacts with the Health ID restore input
+function handleSplashInteraction() {
+  clearTimeout(window._splashTimer);
+  const splash = document.getElementById('splashScreen');
+  if (splash) splash.classList.add('interactive');
+  
+  // Set progress bar to 100% instantly
+  const bar = document.getElementById('splashBar');
+  if (bar) {
+    bar.style.animation = 'none';
+    bar.style.width = '100%';
+  }
+  
+  // Update status text
+  const status = document.getElementById('splashStatus');
+  if (status && status.textContent !== 'System ready. Enter Health ID or proceed.') {
+    status.textContent = 'System ready. Enter Health ID or proceed.';
+    status.style.color = 'var(--cyan)';
+  }
+}
+
+const splashInput = document.getElementById('splashHidInput');
+if (splashInput) {
+  splashInput.addEventListener('focus', handleSplashInteraction);
+  splashInput.addEventListener('input', handleSplashInteraction);
+}
+
+const splashSkipBtn = document.getElementById('splashSkipBtn');
+if (splashSkipBtn) {
+  splashSkipBtn.addEventListener('click', () => {
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
+    if (typeof window.transitionToApp === 'function') {
+      window.transitionToApp(false);
+    }
+  });
+}
+
 function handleHidRestore() {
   const btn = document.getElementById('splashHidBtn');
   const input = document.getElementById('splashHidInput').value.trim();
@@ -3888,12 +3925,16 @@ function handleHidRestore() {
       errEl.textContent = '❌ Health ID not found. Please check and try again.';
       errEl.style.color = '#ff4d6d';
     } else {
-      document.getElementById('splashScreen').style.display = 'none';
-      document.getElementById('appContainer').style.display = 'flex';
-      document.getElementById('welcomeTime').textContent = nowTime();
-      initParticles();
-      renderVault();
-      bindTunerEvents();
+      if (typeof window.transitionToApp === 'function') {
+        window.transitionToApp(true);
+      } else {
+        document.getElementById('splashScreen').style.display = 'none';
+        document.getElementById('appContainer').style.display = 'flex';
+        document.getElementById('welcomeTime').textContent = nowTime();
+        initParticles();
+        renderVault();
+        bindTunerEvents();
+      }
     }
   }, 800);
 }
@@ -4082,22 +4123,45 @@ function updateViewAndStorage(id, fileName, newHtml, container) {
 
 // ── Store the splash timer so it can be cancelled ─────
 // Overwrites the dummy timer at top of file; fires after 4.8s splash animation
-window._splashTimer = setTimeout(() => {
-  document.getElementById('splashScreen').style.display = 'none';
-  document.getElementById('appContainer').style.display = 'flex';
-  const welcomeEl = document.getElementById('welcomeTime');
-  if (welcomeEl) welcomeEl.textContent = nowTime();
-  initParticles();
-  loadProfile();
-  renderVault();
-  scheduleGuidance(true);
-  bindTunerEvents();
-  bindConsultationEvents();
-  // If we already have a Health ID from a prior session, show it in header
-  if (currentHealthId) {
-    updateHidChip();
-    hidShownThisSession = true;
+window.transitionToApp = function(sessionRestored = false) {
+  clearTimeout(window._splashTimer);
+  
+  const splash = document.getElementById('splashScreen');
+  if (splash) {
+    splash.style.transition = 'opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+    splash.style.opacity = '0';
+    splash.style.pointerEvents = 'none';
   }
+  
+  setTimeout(() => {
+    if (splash) splash.style.display = 'none';
+    const appContainer = document.getElementById('appContainer');
+    if (appContainer) appContainer.style.display = 'flex';
+    
+    const welcomeEl = document.getElementById('welcomeTime');
+    if (welcomeEl) welcomeEl.textContent = nowTime();
+    
+    if (typeof initParticles === 'function') initParticles();
+    
+    if (!sessionRestored) {
+      if (typeof loadProfile === 'function') loadProfile();
+    }
+    
+    if (typeof renderVault === 'function') renderVault();
+    if (typeof scheduleGuidance === 'function') scheduleGuidance(true);
+    if (typeof bindTunerEvents === 'function') bindTunerEvents();
+    if (typeof bindConsultationEvents === 'function') bindConsultationEvents();
+    
+    // If we already have a Health ID from a prior session, show it in header
+    if (currentHealthId) {
+      updateHidChip();
+      hidShownThisSession = true;
+    }
+  }, 600);
+};
+
+window._splashTimer = setTimeout(() => {
+  window.transitionToApp(false);
 }, 4800);
 
 // ═══════════════════════════════════════════════════════
