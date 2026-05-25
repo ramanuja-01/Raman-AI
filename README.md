@@ -135,6 +135,28 @@ Large simulated diagnostics files (ECG tracings, lung X-Rays, MRI scans) are pus
   7. **Keyboard Tick (`playDataTick`)**: Symmetrical, ultra-short mechanical sine click sweeping from `2000Hz` to `1200Hz` in `0.015s`. Provides tactile acoustic feedback during message input keystrokes and quick-tag selections.
 * **Global Control Toggle**: A cyberpunk `🔊 SOUND: ON` / `🔇 SOUND: OFF` button embedded in the main header chip row that enables or silences synthesis globally at a single tap.
 
+### 8. Live SLM Training Hub & Sandbox Playground
+The Sandbox Training Center operates client-side with absolute zero dependency on any backend.
+* **Corpus Injection**: Users can inject localized or colloquial multi-word phrases directly into any of the 11 target conditions. The classifier dynamically adds these to `SLM_TRAINING_CORPUS`, rebuilds the Sliding-Window Trie database, and initiates a rigorous re-training execution in **under 3.5ms**.
+* **Strict Re-Ranking Sorting**: As user inputs are entered in the sandbox text area, `slmClassifier.classify(text)` evaluates the probabilities on-the-fly. The sandbox playground dynamically **re-sorts and re-ranks** the rows, displaying a visual leaderboard from rank `#01` to `#11`. The peak matching row is highlighted with a pulsing neon emerald border, and its probability bar scales dynamically with custom shadows.
+* **Bayesian Log-Probability Analysis**: Exposes scientific transparency by outputting the raw, mathematically computed `log-p` scores for every single condition side-by-side with the normalized percentage confidence.
+* **Neural Token Trace**: Renders an offline visual debugging panel detailing matched Trie sub-phrases, active parsed unigrams (in cyan), and detected N-grams (in orange), showing exactly *why* the model predicted a specific diagnosis.
+
+### 9. Interactive Local Recovery Diary Sparkline Engine
+Designed to keep patient symptoms tracked securely without cloud logging.
+* **Math-Telemetry Dashboard Grid**: A beautiful 3-column stats panel calculations grid is rendered directly below the sparkline canvas:
+  * **Avg Severity**: Calculates $\sum \text{severity} / n$ dynamically across the logged history, displaying a clean one-decimal score (e.g. `5.3/10`).
+  * **Peak Severity**: Scans the history array to locate and highlight the absolute worst severity recorded.
+  * **Trend State**: Symmetrical trend indicator comparing the latest logged severity against the baseline average. Renders color-coded diagnostic states: red alert `▲ WORSENING` if the latest is higher than the average, neon green `▼ IMPROVING` if it is lower, or cyan `● STABLE` if it matches.
+* **Mouse-Proximity Sensor Tooltips**:
+  * Plotted sparkline nodes coordinates `(x, y)` are saved in-memory inside the canvas context.
+  * An active `mousemove` listener intercepts coordinates relative to the canvas bounding rect.
+  * If a cursor falls within a `15px` hitbox radius of a data node, it triggers a responsive visual state override:
+    * Paints a vertical dotted guide alignment crosshair passing through the node.
+    * Highlights the targeted node with a custom neon-pink circle indicator (`#ff00a0`) and an outer glowing concentric buffer circle.
+    * Renders a glowing slate-blue glassmorphic tooltip bubble (`rgba(15, 23, 42, 0.9)`) on the canvas with a custom cyan border, displaying structural observation text (e.g. `"Gastritis: 8/10 on May 25"`).
+  * Automatically repaints and clears the tooltip state as the mouse leaves.
+
 ---
 
 ## 🇮🇳 Bilingual Clinical Training Corpus (English & Odia)
@@ -180,6 +202,75 @@ Since RAMAN AI is 100% serverless and client-side, running the application is ex
    * Click **💬 START HUMAN-LIKE CLINICAL CONSULTATION** inside the welcome message to trigger the local SLM intake wizard.
    * Toggle your profile allergies inside the left-hand Patient Profile box and observe the automatic safe pharmacotherapy drug substitutions.
    * Inspect generated lab files instantly inside the secure health vault on the side panel.
+
+---
+
+## 📖 Step-by-Step Tutorial & User Guide
+
+Follow this guide to explore and operate every component of the RAMAN AI offline sandbox:
+
+### 1. Configure the Patient Profile & Vitals (Optional)
+* **Demographics**: Enter a patient name, age, gender, and blood group in the **Patient Profile** card inside the sidebar. The completeness bar will dynamically scale to show profiles progression.
+* **Allergy Selector**: Type known allergies (e.g. *Penicillin*, *Aspirin*, *Sulfa*). The pharmacotherapy engine uses this profile to trigger active clinical contraindication overrides during treatment compilation.
+* **Physiological Vitals**: Insert simulated vitals like Blood Pressure (e.g. `145/95`), Heart Rate (e.g. `88`), Temperature (e.g. `101.2`), and SpO2 (e.g. `94`). If vitals exceed safety boundaries, vital warn alarms will automatically highlight active risks.
+* **Pain Scale**: Drag the **Pain Level Slider** from 1 to 10 to see interactive clinical emojis transition from a calm grin (`😊`) to severe distress (`😩`).
+
+### 2. Operate the 10-Target Anatomical SVG Body Scanner
+* Hover your cursor over the neon stylized human silhouette in the sidebar. You will see hotspots light up with vibrant cybernetic colors representing:
+  1. **Head**: Headache Cephalgia (Cyan)
+  2. **Eyes**: Ocular Hypertension (Teal)
+  3. **Throat**: Bronchial Cough (Neon Pink)
+  4. **Chest**: Chest Pain Ischemia (Red Warning)
+  5. **Heart/BP**: High Blood Pressure Hypertension (Coral Red)
+  6. **Stomach**: Stomach Pain Gastropathy (Orange)
+  7. **Back**: Back Spinal Strain (Purple)
+  8. **Metabolic**: Diabetes Glucose (Neon Cyan)
+  9. **Skin**: Skin Rash Allergy (Neon Green)
+  10. **Joints**: Joint Pain Osteoarthropathy (Neon Mint Green)
+* Click any hotspot. An instant laser sweep waveform plays via the **Web Audio API**, and the targeted colloquial query translates instantly into the chat bar, running a simulated diagnostic intake scan!
+
+### 3. Initiate the Intake Chat Wizard & Secure Medical Vault
+* Click the glowing **💬 START HUMAN-LIKE CLINICAL CONSULTATION** card in the main chat layout to initialize the local intake process.
+* Type symptom reports naturally (in English, Odia, or mixed Romanized Odia like *"mura pura ghirei heuchi joro laguchi"*).
+* Submit the message. The local SLM processes the observation, requests necessary physiological parameters, and synthesizes an elegant neon triage card detailing:
+  * **Simulated Diagnosis**: Classified condition mapped via Naive Bayes.
+  * **Empathetic Dialogue**: Generated via local Bigram Markov transitions.
+  * **Clinician Explainability Panel**: Fully expandable panel showing matched vocabulary tokens and mathematical weights.
+  * **Contraindication & Active Substitution Banners**: Alerts explaining Paracetamol/Azithromycin replacements based on your Patient Profile allergy settings.
+  * **Standard Pharmacotherapy Table**: Lists generic compositions, standard strengths, and standard brand alternatives with click-responsive links for online bio-equivalent searches.
+  * **Text-to-Speech (TTS)**: Click the **🎙️ Listen** button on any message card to hear the clinical triage read at a steady, intelligible cadence with active pulsing feedback signals.
+* **Secure Health Vault**: Dynamic consultations automatically push diagnostic Base64 radiographs (ECGs, chest X-rays, abdomen MRIs) into IndexedDB. Open the **Medical Vault** section in the side panel to view, review, or delete stored files completely offline.
+
+### 4. Sandbox Inference playground & Real-time Re-sorting
+* Click **🧠 SLM TRAINING HUB** in the header chip row to open the active training laboratory.
+* Look at the right-hand **🔬 LIVE INFERENCE SANDBOX PLAYGROUND** panel.
+* Type symptom keywords in the playground input (e.g. *"severe crushing chest pain deha jaluci"*).
+* Watch in real-time as the 11 target conditions dynamically **re-sort and re-rank** down the list based on the highest probability.
+* Observe the glowing leaderboards (`#01` to `#11`) shift on the fly, showing normalized percentages alongside raw Bayesian `log-p` scores.
+* Inspect the **🧬 NEURAL TRACE & TOKEN ANALYSIS** debug terminal at the bottom of the column to trace exact Trie matches, unigrams, and N-grams.
+
+### 5. Retrain the SLM with Custom Symptom Injections
+* In the left column of the Training Hub, select a target condition from the dropdown.
+* Type a new customized observation phrase in the **Symptom Observation Phrase** input.
+* Click **📥 INJECT INTO TRAINING CORPUS & RETRAIN**.
+* The console will print detailed logs showing structural re-indexing and posterior re-weighting in under 4 milliseconds.
+* Type your newly injected phrase into the sandbox playground and watch the target condition rise instantly to Rank `#01` with an emerald glowing border!
+
+### 6. Secure Offline Session & Backup Vault
+* Click **🗂️ SESSION** in the header to open the Session Manager.
+* Click **🔒 End & Save Session** to seal your active consultations. The system compiles your secured patient records and generates a unique clinical **Health ID** (e.g. `RMN-E3B9F2`).
+* Enter this Health ID inside the welcome input card at any time to instantly restore your entire offline history.
+* **Vault Backup**: Click **📤 Backup Vault** to export your entire patient profile, chat logs, and binary radiography files as a single consolidated, encrypted `.json` vault backup file. 
+* **Vault Restore**: Click **📥 Restore Backup** to upload a saved backup and instantly re-index your entire clinical medical ledger.
+
+### 7. Manage the Local Recovery Diary Sparkline & Interactive Tooltips
+* Locate the **📈 LOCAL RECOVERY DIARY** widget in the sidebar.
+* Choose a condition, specify a severity score from `1` to `10`, and click **📝 Log Entry**.
+* As multiple entries are recorded:
+  * The sparkline plots dynamic trendlines in real-time.
+  * The math dashboard updates **Avg Severity**, **Peak Severity**, and **Trend State** (`▲ WORSENING` in red, `▼ IMPROVING` in green, `● STABLE` in cyan).
+* Hover your cursor over the plotted canvas points. Observe the **dotted vertical crosshairs** target the date node, drawing an outer concentric glowing hover ring, and rendering a dark slate glassmorphic **coordinate tooltip** displaying exact condition details, severity levels, and timestamps.
+* Click **🗑️ Clear History** to safely wipe history from local storage.
 
 ---
 
