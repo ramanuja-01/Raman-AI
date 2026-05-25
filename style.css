@@ -1263,16 +1263,14 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
 }
 
 /* ===== HIGH-TECH REALISTIC HUMAN MAP SCANNER ===== */
-.human-silhouette {
-  fill: rgba(0, 229, 255, 0.05);
-  stroke: rgba(0, 229, 255, 0.35);
-  stroke-width: 1.2;
-  transition: all 0.5s ease-in-out;
+.human-map-image {
+  opacity: 0.82;
+  filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.2));
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
-.anatomical-map-svg:hover .human-silhouette {
-  fill: rgba(0, 229, 255, 0.08);
-  stroke: rgba(0, 229, 255, 0.55);
-  filter: drop-shadow(0 0 4px rgba(0, 229, 255, 0.3));
+.anatomical-map-svg:hover .human-map-image {
+  opacity: 1.0;
+  filter: drop-shadow(0 0 12px rgba(0, 229, 255, 0.5));
 }
 .map-grid-line {
   stroke: rgba(0, 229, 255, 0.12);
