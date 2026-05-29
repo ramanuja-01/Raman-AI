@@ -1,0 +1,30 @@
+{
+  "name": "raman-ai",
+  "version": "1.0.0",
+  "description": "RAMAN AI – Medical Intelligence System (Experiment No. 170)",
+  "main": "app.js",
+  "scripts": {
+    "start": "npx http-server -p 3000",
+    "dev": "npx http-server -p 3000",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ramanuja-01/Raman-AI.git"
+  },
+  "keywords": [
+    "medical",
+    "ai",
+    "analytics",
+    "vercel"
+  ],
+  "author": "Ramanuja Pathy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ramanuja-01/Raman-AI/issues"
+  },
+  "homepage": "https://github.com/ramanuja-01/Raman-AI#readme",
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
+  }
+}

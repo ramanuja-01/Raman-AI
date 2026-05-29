@@ -743,11 +743,11 @@
               
               <!-- Interactive Hotspots (Precise Bio-Targets) -->
               <!-- 1. Head (Headache / ମୁଣ୍ଡବିନ୍ଧା) -->
-              <circle cx="75" cy="20" r="5.5" class="map-hotspot" data-symptom="headache" data-en="I have a severe headache and suspected migraine" data-or="ମୋ ମୁଣ୍ଡ ବହୁତ ବିନ୍ଧୁଛି" data-label="HEAD (ମୁଣ୍ଡବିନ୍ଧା)" fill="var(--cyan)"/>
+              <circle cx="75" cy="20" r="5.5" class="map-hotspot" data-symptom="headache" data-en="I have a severe headache and suspected migraine" data-or="ମୋ ମୁଣ୍ଡ ���ହୁତ ବିନ୍ଧୁଛି" data-label="HEAD (ମୁଣ୍ଡବିନ୍ଧା)" fill="var(--cyan)"/>
               <circle cx="75" cy="20" r="10" fill="url(#nodeGlow)" opacity="0.35" pointer-events="none"/>
               
               <!-- 2. Eyes (Eye Pain / ଆଖି ବିନ୍ଧା) -->
-              <circle cx="71.5" cy="24" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
+              <circle cx="71.5" cy="24" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="���ୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
               <circle cx="78.5" cy="24" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
               
               <!-- 3. Throat (Cough / କାଶ) -->
@@ -947,5 +947,11 @@
   </div><!-- end app-container -->
 
   <script src="app.js?v=10"></script>
+  
+  <!-- Vercel Web Analytics -->
+  <script type="module">
+    import { inject } from 'https://cdn.jsdelivr.net/npm/@vercel/analytics@2.0.1/dist/index.mjs';
+    inject();
+  </script>
 </body>
 </html>
