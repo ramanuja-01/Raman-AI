@@ -334,6 +334,137 @@
             🧬 <strong>System Infrastructure Model Specification:</strong> RAMAN AI runs a local triple-model hybrid simple language model (SLM) ensemble and parallel physiological risk trajectory simulations completely offline in browser threads at <strong>&lt; 2 milliseconds</strong> latency.
           </div>
 
+          <!-- Flowchart & Sequence SVG Schematic -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 255, 179, 0.25); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--primary); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>📊 DYNAMIC TOPOLOGY &amp; SEQUENCE SCHEMATICS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 255, 179, 0.15); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: center;">
+              
+              <!-- 1. FLOWCHART SCHEMATIC -->
+              <h5 style="color:var(--cyan); margin: 0 0 10px 0; font-family:var(--font-head); font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; text-align:left;">I. LOCAL DATA FLOW &amp; PROCESSING PIPELINE</h5>
+              <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:15px 10px; margin-bottom:20px; overflow-x:auto;">
+                <svg viewBox="0 0 690 140" width="100%" height="100%" style="min-width: 600px; display:block; margin:auto;">
+                  <defs>
+                    <linearGradient id="glowCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="var(--cyan)" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="var(--cyan)" stop-opacity="0.05"/>
+                    </linearGradient>
+                    <linearGradient id="glowTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="var(--primary)" stop-opacity="0.05"/>
+                    </linearGradient>
+                    <linearGradient id="glowPink" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#ff00a0" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="#ff00a0" stop-opacity="0.05"/>
+                    </linearGradient>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 1 L 10 5 L 0 9 z" fill="rgba(0, 229, 255, 0.6)"/>
+                    </marker>
+                    <marker id="arrowPrimary" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--primary)"/>
+                    </marker>
+                  </defs>
+
+                  <!-- 1. Client Input -->
+                  <rect x="5" y="40" width="110" height="60" rx="6" fill="url(#glowCyan)" stroke="var(--cyan)" stroke-width="1.2"/>
+                  <text x="60" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">👤 PATIENT INPUT</text>
+                  <text x="60" y="80" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">Symptoms &amp; Vitals</text>
+
+                  <!-- Arrow 1 -->
+                  <line x1="115" y1="70" x2="140" y2="70" stroke="var(--cyan)" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.6"/>
+
+                  <!-- 2. Intake Sanitizer -->
+                  <rect x="145" y="40" width="115" height="60" rx="6" fill="url(#glowTeal)" stroke="var(--primary)" stroke-width="1.2"/>
+                  <text x="202.5" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🧹 SANITIZER HUD</text>
+                  <text x="202.5" y="80" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">Stop-words &amp; N-grams</text>
+
+                  <!-- Arrow 2 -->
+                  <line x1="260" y1="70" x2="285" y2="70" stroke="var(--primary)" stroke-width="1.5" marker-end="url(#arrowPrimary)"/>
+
+                  <!-- 3. SLM Core -->
+                  <rect x="290" y="40" width="120" height="60" rx="6" fill="url(#glowPink)" stroke="#ff00a0" stroke-width="1.2"/>
+                  <text x="350" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🧬 SLM ENSEMBLE</text>
+                  <text x="350" y="80" fill="var(--text-muted)" font-size="7.5" font-family="var(--font-ui)" text-anchor="middle">SVM + Bayes + Trie</text>
+
+                  <!-- Arrow 3 -->
+                  <line x1="410" y1="70" x2="435" y2="70" stroke="#ff00a0" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.6"/>
+
+                  <!-- 4. Safety Compiler -->
+                  <rect x="440" y="40" width="115" height="60" rx="6" fill="url(#glowTeal)" stroke="var(--primary)" stroke-width="1.2"/>
+                  <text x="497.5" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🛡️ SAFETY ENGINE</text>
+                  <text x="497.5" y="80" fill="var(--text-muted)" font-size="7.5" font-family="var(--font-ui)" text-anchor="middle">Allergy &amp; PGx Overrides</text>
+
+                  <!-- Arrow 4 -->
+                  <line x1="555" y1="70" x2="580" y2="70" stroke="var(--primary)" stroke-width="1.5" marker-end="url(#arrowPrimary)"/>
+
+                  <!-- 5. Output Vault -->
+                  <rect x="585" y="40" width="100" height="60" rx="6" fill="url(#glowCyan)" stroke="var(--cyan)" stroke-width="1.2"/>
+                  <text x="635" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">📄 DIGITAL VAULT</text>
+                  <text x="635" y="80" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">Rx PDF &amp; IndexedDB</text>
+                </svg>
+              </div>
+
+              <!-- 2. SEQUENCE SCHEMATIC -->
+              <h5 style="color:var(--cyan); margin: 0 0 10px 0; font-family:var(--font-head); font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; text-align:left;">II. CLINICAL COMPILATION LIFECYCLE SEQUENCE</h5>
+              <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:15px 10px; overflow-x:auto;">
+                <svg viewBox="0 0 690 310" width="100%" height="100%" style="min-width: 600px; display:block; margin:auto;">
+                  <!-- Lifelines -->
+                  <line x1="90" y1="40" x2="90" y2="280" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+                  <line x1="270" y1="40" x2="270" y2="280" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+                  <line x1="450" y1="40" x2="450" y2="280" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+                  <line x1="630" y1="40" x2="630" y2="280" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+
+                  <!-- Headers -->
+                  <rect x="35" y="10" width="110" height="25" rx="4" fill="rgba(0,229,255,0.08)" stroke="var(--cyan)" stroke-width="1"/>
+                  <text x="90" y="26" fill="#fff" font-size="8.5" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">👤 PATIENT / UI</text>
+
+                  <rect x="215" y="10" width="110" height="25" rx="4" fill="rgba(255,0,160,0.08)" stroke="#ff00a0" stroke-width="1"/>
+                  <text x="270" y="26" fill="#fff" font-size="8.5" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🧬 SLM ENGINE</text>
+
+                  <rect x="395" y="10" width="110" height="25" rx="4" fill="rgba(0,255,179,0.08)" stroke="var(--primary)" stroke-width="1"/>
+                  <text x="450" y="26" fill="#fff" font-size="8.5" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🛡️ SAFETY ENGINE</text>
+
+                  <rect x="575" y="10" width="110" height="25" rx="4" fill="rgba(0,229,255,0.08)" stroke="var(--cyan)" stroke-width="1"/>
+                  <text x="630" y="26" fill="#fff" font-size="8.5" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🔒 INDEXEDDB</text>
+
+                  <!-- Message 1 -->
+                  <text x="180" y="65" fill="var(--cyan)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">1. Submit Symptom Query</text>
+                  <line x1="90" y1="70" x2="265" y2="70" stroke="var(--cyan)" stroke-width="1.2" marker-end="url(#arrow)"/>
+                  <rect x="265" y="70" width="10" height="60" fill="rgba(255,0,160,0.2)" stroke="#ff00a0" stroke-width="0.8"/>
+
+                  <!-- Self call SLM -->
+                  <path d="M 275 80 L 305 80 L 305 105 L 277 105" fill="none" stroke="#ff00a0" stroke-width="1"/>
+                  <text x="310" y="96" fill="var(--text-muted)" font-size="7.5" font-family="var(--font-ui)" text-anchor="start">SVM+NB+Trie Score</text>
+
+                  <!-- Message 1 Return -->
+                  <line x1="265" y1="120" x2="95" y2="120" stroke="var(--cyan)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrow)"/>
+                  <text x="180" y="115" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">2. Classifications Return</text>
+
+                  <!-- Message 2 -->
+                  <text x="270" y="150" fill="var(--primary)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">3. Verify Allergy &amp; PGx Profiles</text>
+                  <line x1="90" y1="155" x2="445" y2="155" stroke="var(--primary)" stroke-width="1.2" marker-end="url(#arrowPrimary)"/>
+                  <rect x="445" y="155" width="10" height="110" fill="rgba(0,255,179,0.2)" stroke="var(--primary)" stroke-width="0.8"/>
+
+                  <!-- Message 3 -->
+                  <text x="540" y="180" fill="var(--cyan)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">4. Store Radiograph</text>
+                  <line x1="455" y1="185" x2="625" y2="185" stroke="var(--cyan)" stroke-width="1.2" marker-end="url(#arrow)"/>
+                  <rect x="625" y="185" width="10" height="35" fill="rgba(0,229,255,0.2)" stroke="var(--cyan)" stroke-width="0.8"/>
+
+                  <!-- Return 3 -->
+                  <line x1="625" y1="210" x2="460" y2="210" stroke="var(--cyan)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrow)"/>
+                  <text x="540" y="205" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">5. Acknowledge Saved</text>
+
+                  <!-- Return 2 -->
+                  <line x1="445" y1="250" x2="95" y2="250" stroke="var(--primary)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrowPrimary)"/>
+                  <text x="270" y="245" fill="var(--primary)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">6. Render Rx Card &amp; Print PDF</text>
+                </svg>
+              </div>
+
+            </div>
+          </details>
+
           <!-- Section 1 -->
           <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
             <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">

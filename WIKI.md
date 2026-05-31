@@ -60,6 +60,37 @@ flowchart TB
     end
 ```
 
+### ⏱️ System Sequence Lifecycle
+
+The sequence of operations during symptom query ingestion, ensemble classification, clinical safety check, and secure persistence is represented in the sequence schematic below:
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Patient as 👤 Patient / UI
+    participant SLM as 🧬 SLM Classifier
+    participant Safety as 🛡️ Allergy & PGx Compiler
+    participant DB as 🔒 IndexedDB Vault
+    
+    Patient->>SLM: Submit Symptom Query & Physiological Vitals
+    activate SLM
+    SLM->>SLM: N-Gram Extraction & Stop-word Filtering
+    SLM->>SLM: SVM Margin + NB Log-Probability + Trie Sliding Match
+    SLM-->>Patient: Return Sorted Diagnostic Probabilities
+    deactivate SLM
+    
+    Patient->>Safety: Trigger Clinical Prescription Compilation
+    activate Safety
+    Safety->>Safety: Check Drug Allergies (Penicillin / NSAIDs / Sulfa)
+    Safety->>Safety: Check PGx Contraindications (G6PD / HLA-B*5701 / CYP2D6)
+    Safety->>DB: Store Base64 Simulated Radiograph
+    activate DB
+    DB-->>Safety: Acknowledge Vault Persistence
+    deactivate DB
+    Safety-->>Patient: Render Glowing Rx Card & Print-Ready PDF
+    deactivate Safety
+```
+
 ---
 
 ## 🧬 1. The Local SLM Hybrid Ensemble: Mathematical Formulation
