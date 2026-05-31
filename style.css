@@ -1142,9 +1142,9 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
 @media (max-width: 768px) {
   /* Premium Circular Button Grid collapse for cluttered mobile buttons */
   .btn-session-mgr {
-    width: 32px !important;
-    height: 32px !important;
-    min-width: 32px !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
     padding: 0 !important;
     overflow: hidden !important;
     white-space: nowrap !important;
@@ -1154,13 +1154,14 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
     border-radius: 50% !important;
     box-sizing: border-box !important;
     box-shadow: 0 2px 8px rgba(0, 229, 255, 0.15) !important;
+    font-size: 0 !important; /* Completely collapses child text nodes to 0px */
   }
   .btn-session-mgr span {
     margin: 0 !important;
-    font-size: 0.95rem !important;
+    font-size: 1rem !important; /* Retains clean high-res emoji display */
   }
   .lang-select {
-    height: 32px !important;
+    height: 30px !important;
     font-size: 0.72rem !important;
     padding: 0 4px !important;
   }
