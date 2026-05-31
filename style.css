@@ -1302,4 +1302,93 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
   stroke-width: 1;
 }
 
+/* ===== ANATOMICAL SCANNER RETICLE & HUD MECHANICS ===== */
+.reticle-outer {
+  animation: reticleSpin 12s linear infinite;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+@keyframes reticleSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.reticle-inner {
+  animation: reticlePulse 1.2s ease-in-out infinite alternate;
+  transform-origin: center;
+  transform-box: fill-box;
+}
+@keyframes reticlePulse {
+  0% { transform: scale(0.85); opacity: 0.6; stroke: var(--accent); }
+  100% { transform: scale(1.15); opacity: 1; stroke: var(--cyan); }
+}
+
+/* Targeting Lock-On Scanning Effect */
+#mapReticle.lock-sequence {
+  animation: reticleLockOn 0.45s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+}
+@keyframes reticleLockOn {
+  0% { transform: scale(2.8) rotate(-45deg); opacity: 0; filter: brightness(2); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
+}
+
+/* Telemetry styling overrides */
+.anatomical-scanner-telemetry-row span {
+  font-family: var(--font-ui) !important;
+  font-size: 0.68rem !important;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+.anatomical-scanner-telemetry-row.active-scan span {
+  color: var(--primary) !important;
+  text-shadow: 0 0 8px rgba(0, 255, 179, 0.5);
+}
+
+/* ===== CLARIFY INTAKE INPUTS ===== */
+.clarify-input-field {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid var(--accent) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  color: #fff !important;
+  font-size: 0.82rem !important;
+  outline: none !important;
+  transition: all 0.3s !important;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8) !important;
+}
+.clarify-input-field:focus {
+  border-color: #fff !important;
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), inset 0 0 5px rgba(0, 0, 0, 0.8) !important;
+}
+
+/* ===== DYNAMIC HUD CANVASES CYBERPUNK NEON STYLING ===== */
+.hud-canvas-block {
+  background: rgba(10, 22, 40, 0.4);
+  border-radius: 10px;
+  padding: 6px;
+  border: 1px solid rgba(0, 229, 255, 0.08);
+  transition: all 0.3s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.hud-canvas-block:hover {
+  border-color: rgba(0, 229, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);
+  transform: translateY(-2px);
+}
+.hud-canvas-title span {
+  font-weight: 600;
+  letter-spacing: 0.8px;
+}
+.hud-neon-canvas {
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.hud-neon-canvas:hover {
+  border-color: rgba(0, 255, 179, 0.5) !important;
+  box-shadow: 0 0 15px rgba(0, 255, 179, 0.25), inset 0 0 10px rgba(0, 255, 179, 0.2) !important;
+}
+
+
+
 

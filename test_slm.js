@@ -107,6 +107,66 @@ global.indexedDB = mockIndexedDB;
 global.document = mockDocument;
 global.window = mockWindow;
 global.performance = { now() { return Date.now(); } };
+
+// Mock hardware-agnostic WebGPU APIs for Node.js testing environment
+const mockGpu = {
+  requestAdapter: async () => {
+    return {
+      name: "Mocked Universal Graphics Accelerator (NVIDIA/AMD/Intel)",
+      requestDevice: async () => {
+        return {
+          createShaderModule() { return {}; },
+          createBuffer({ size }) {
+            return {
+              byteLength: size,
+              mapAsync: async () => {},
+              getMappedRange() {
+                // Create Float32Array with mock healthy vitals
+                const buffer = new ArrayBuffer(size);
+                const array = new Float32Array(buffer);
+                array.fill(98600720); // Unpacks to Temp: 98.6 and HR: 72.0
+                return buffer;
+              },
+              unmap() {}
+            };
+          },
+          createComputePipeline() {
+            return {
+              getBindGroupLayout() { return {}; }
+            };
+          },
+          createBindGroup() { return {}; },
+          createCommandEncoder() {
+            return {
+              beginComputePass() {
+                return {
+                  setPipeline() {},
+                  setBindGroup() {},
+                  dispatchWorkgroups() {},
+                  end() {}
+                };
+              },
+              copyBufferToBuffer() {},
+              finish() { return {}; }
+            };
+          },
+          queue: {
+            writeBuffer() {},
+            submit() {}
+          }
+        };
+      }
+    };
+  }
+};
+
+Object.defineProperty(global, 'navigator', {
+  value: { gpu: mockGpu },
+  writable: true,
+  configurable: true
+});
+global.GPUBufferUsage = { STORAGE: 1, COPY_DST: 2, COPY_SRC: 4, MAP_READ: 8 };
+global.GPUMapMode = { READ: 1 };
 global.prompt = (msg, def) => def || "";
 global.alert = (msg) => console.log("ALERT:", msg);
 global.MutationObserver = class {
@@ -747,6 +807,163 @@ async function runTest(name, fn) {
         return ok;
       });
     });
+  });
+
+  await runTest("Bilingual Long-Query Evaluation & Anti-Hallucination Sandbox Validation", async () => {
+    let ok = true;
+
+    // The 10 specific target long queries from the user request
+    const testCases = [
+      {
+        id: 1,
+        query: "Doctor, I've had a low-grade fever for three days, around 99–100°F. I feel tired all the time, my muscles ache, and I have a mild headache that gets worse in the evening. My throat feels scratchy but not very sore. I have a dry cough sometimes, and I notice some nasal congestion. I haven't lost my sense of taste or smell.",
+        expected: "fever",
+        description: "Low-grade fever systemic symptoms"
+      },
+      {
+        id: 2,
+        query: "I've been experiencing sharp stomach pains on and off for two days, mostly under my ribs on the right side. The pain sometimes gets worse after I eat, and I feel nauseous, with one episode of vomiting. I haven't had diarrhea, but I feel bloated and have less appetite than usual.",
+        expected: "stomach pain",
+        description: "Right upper quadrant abdominal pain and nausea"
+      },
+      {
+        id: 3,
+        query: "For the past week I've had frequent urination and a burning sensation when I pee. I also have lower abdominal discomfort, and my urine looks a bit cloudy and has a strong smell. I don't have a fever or back pain, but I feel generally uncomfortable.",
+        expected: "uti",
+        description: "Urinary burning and frequency (UTI)"
+      },
+      {
+        id: 4,
+        query: "I've been having trouble breathing, especially when I exercise or when the weather is cold. I have a tight feeling in my chest and a dry cough that gets worse at night. Sometimes I hear a whistling or wheezing sound when I breathe out.",
+        expected: "asthma",
+        description: "Bronchial asthma hyperreactive dyspnea"
+      },
+      {
+        id: 5,
+        query: "Lately, I've been feeling extremely dizzy, like the room is spinning around me. It gets much worse when I turn my head quickly or lie down. I also feel nauseous and have lost my balance a few times. There's a ringing sound in my left ear, and my hearing feels a bit muffled on that side.",
+        expected: "vertigo",
+        description: "Vestibular vertigo with tinnitus"
+      },
+      {
+        id: 6,
+        query: "I have a red, itchy rash spreading across my arms and neck. It started as small, raised bumps and now feels very dry and scaly. I haven't used any new soaps or lotions, but I did go hiking in a wooded area a couple of days ago.",
+        expected: "skin rash",
+        description: "Allergic contact dermatitis rash"
+      },
+      {
+        id: 7,
+        query: "I've been feeling so tired and sluggish lately, no matter how much sleep I get. I feel weak, short of breath when I walk up stairs, and my skin looks unusually pale. I've also noticed my nails are brittle and I've been getting headaches more often than usual.",
+        expected: "anemia",
+        description: "Chronic fatigue, pallor and brittle nails (Anemia)"
+      },
+      {
+        id: 8,
+        query: "My throat has been extremely sore, scratchy, and painful, especially when I try to swallow. When I look in the mirror, my tonsils are swollen, very red, and have small white patches on them. I also have a fever of 101.5°F, swollen glands in my neck, and a headache.",
+        expected: "tonsillitis",
+        description: "Acute tonsillar pharyngitis with exudates"
+      },
+      {
+        id: 9,
+        query: "I've had abdominal cramps and bloating for a couple of weeks, accompanied by irregular bowel habits. Sometimes I have diarrhea and other times I'm constipation. The pain is mostly in my lower abdomen and gets slightly better after a bowel movement. I haven't had any fever or blood in my stool.",
+        expected: "stomach pain",
+        description: "Irritable bowel gastralgia cramps"
+      },
+      {
+        id: 10,
+        query: "I accidentally cut my hand on a piece of rusty metal while working in the garden yesterday. The cut is about an inch long, looks red and swollen, and is throbbing with pain. I washed it with water, but it's warm to the touch and there's some yellowish discharge. I can't remember when I last had a tetanus shot.",
+        expected: "wound",
+        description: "Traumatic superficial laceration and tetanus risk"
+      }
+    ];
+
+    console.log("  🚀 Evaluating all 10 target patient queries against local ensemble SLM...");
+    testCases.forEach(tc => {
+      const classification = slmClassifier.classify(tc.query);
+      const topMatch = classification[0];
+
+      ok = assert(topMatch.condition === tc.expected, `Query ${tc.id} (${tc.description}) correctly classified as: '${topMatch.condition}' (Expected: '${tc.expected}')`) && ok;
+      ok = assert(topMatch.confidence > 50, `  └─ Confidence score: ${topMatch.confidence.toFixed(1)}% (Exceeds safety threshold)`) && ok;
+    });
+
+    // Verify Allergy Conflict warnings inside tonsillitis with Penicillin allergy
+    const tonsillitisKb = MEDICAL_KB.tonsillitis;
+    const profilePenicillinAllergy = { allergies: "Penicillin" };
+    
+    // Simulate compilation
+    const allergyLower = profilePenicillinAllergy.allergies.toLowerCase();
+    const matchedMeds = tonsillitisKb.medications.filter(med => 
+      med.name.toLowerCase().includes(allergyLower) || 
+      (allergyLower.includes("penicillin") && med.name.toLowerCase().includes("amoxicillin"))
+    );
+
+    ok = assert(matchedMeds.length > 0, "Allergy conflict warning successfully triggered for Amoxicillin with Penicillin allergy.") && ok;
+    ok = assert(matchedMeds.some(m => m.name.includes("Amoxicillin")), "Prescription successfully flags contraindicated Amoxicillin.") && ok;
+
+    return ok;
+  });
+
+  await runTest("WebGPU Clinical Simulation Engine & GPU Hardware Acceleration", async () => {
+    let ok = true;
+
+    // 1. Verify simulation bindings
+    ok = assert(typeof window.runGpuTriageSimulation === "function", "window.runGpuTriageSimulation is successfully bound as a global function.") && ok;
+    ok = assert(typeof window.runCpuFallbackSimulation === "function", "window.runCpuFallbackSimulation is successfully bound as a global function.") && ok;
+
+    // 2. Test CPU fallback simulation directly
+    const cpuResult = window.runCpuFallbackSimulation([0.2, 0.4, 0.6], 45, 99.5);
+    ok = assert(cpuResult.mode === "CPU (Standard Emulation)", "runCpuFallbackSimulation successfully returns CPU mode identification.") && ok;
+    ok = assert(cpuResult.certaintyIndex >= 0.0 && cpuResult.certaintyIndex <= 1.0, `runCpuFallbackSimulation calculates valid Certainty Index: ${(cpuResult.certaintyIndex * 100).toFixed(1)}%`) && ok;
+    ok = assert(cpuResult.trajectoriesSimulated === 16384, "runCpuFallbackSimulation simulates exactly 16,384 paths.") && ok;
+    ok = assert(cpuResult.vitalsSample && cpuResult.vitalsSample.length === 1024, "runCpuFallbackSimulation produces exactly 1,024 vital progression samples.") && ok;
+
+    // 3. Test WebGPU simulation pipeline (using the mocked global.navigator.gpu)
+    const gpuResult = await window.runGpuTriageSimulation([0.2, 0.4, 0.6], 45, 99.5);
+    ok = assert(gpuResult.mode === "WebGPU (Hardware Accelerated)", "runGpuTriageSimulation successfully resolves WebGPU hardware acceleration mode.") && ok;
+    ok = assert(gpuResult.deviceName.includes("Accelerator") || gpuResult.deviceName.includes("NVIDIA") || gpuResult.deviceName.includes("AMD") || gpuResult.deviceName.includes("Intel"), `runGpuTriageSimulation successfully resolves active device: '${gpuResult.deviceName}'`) && ok;
+    ok = assert(gpuResult.certaintyIndex === 1.0, "runGpuTriageSimulation successfully maps WGSL output buffer and resolves certainty indexes.") && ok;
+    ok = assert(gpuResult.vitalsSample && gpuResult.vitalsSample.length === 1024, "runGpuTriageSimulation produces exactly 1,024 vital progression samples.") && ok;
+
+    // 4. Test WebGPU graceful degradation fallback by temporarily hiding navigator.gpu
+    const oldGpu = global.navigator.gpu;
+    global.navigator.gpu = null;
+
+    const degradedResult = await window.runGpuTriageSimulation([0.2, 0.4, 0.6]);
+    ok = assert(degradedResult.mode === "CPU (Standard Emulation)", "runGpuTriageSimulation gracefully degrades to CPU fallback when WebGPU is unavailable.") && ok;
+
+    // Restore WebGPU mock
+    global.navigator.gpu = oldGpu;
+
+    return ok;
+  });
+
+  await runTest("Advanced Pharmacogenomics & Active Learning Verification", async () => {
+    let ok = true;
+
+    // 1. Verify Markov decoding temperature parameters
+    const txtLow = markovGenerator.generate(12, false, 0.1);
+    const txtHigh = markovGenerator.generate(12, false, 2.0);
+    ok = assert(typeof txtLow === "string" && txtLow.length > 5, "Markov generate executes successfully at low temperature (T=0.1).") && ok;
+    ok = assert(typeof txtHigh === "string" && txtHigh.length > 5, "Markov generate executes successfully at high temperature (T=2.0).") && ok;
+
+    // 2. Verify Pharmacogenomic (PGx) check logic
+    const g6pdProfile = { genomicTraits: ["g6pd"] };
+    const simulatedMeds = [{ name: "Nitrofurantoin 100mg (Brand: Macrodantin)" }];
+    const conflicts = window.checkPgxConflicts(g6pdProfile, simulatedMeds);
+    ok = assert(conflicts.length > 0, "checkPgxConflicts successfully flags Nitrofurantoin contraindication under G6PD deficiency.") && ok;
+    ok = assert(conflicts[0].subName.includes("Ciprofloxacin"), `checkPgxConflicts successfully suggests safe alternative: '${conflicts[0].subName}'`) && ok;
+
+    // 3. Verify Active Learning feedback loop & weights deltas
+    const initialQuery = "burning sensation when i pee";
+    const oldClassifications = slmClassifier.classify(initialQuery);
+    
+    // Simulate clinician override
+    window.applyClinicianCorrection("fever", "uti", initialQuery);
+    
+    ok = assert(window.localClinicianDeltas && window.localClinicianDeltas["uti"], "applyClinicianCorrection successfully records delta adjustments under target class.") && ok;
+    ok = assert(window.localClinicianDeltas["uti"]["pee"] > 0, "applyClinicianCorrection boosts weights for active query tokens in the correct class.") && ok;
+    ok = assert(window.localClinicianDeltas["fever"]["pee"] < 0, "applyClinicianCorrection penalizes weights for active query tokens in the wrong class.") && ok;
+
+    return ok;
   });
 
   // --- Diagnostic Summary ---

@@ -451,6 +451,39 @@ Follow this guide to explore and operate every component of the RAMAN AI offline
 
 ---
 
+## 🌟 Recent Upgrades & Architectural Calibrations
+
+To elevate RAMAN AI to state-of-the-art diagnostic and performance standards, three massive advanced upgrade categories and critical NLP calibrations were recently integrated into Experiment No. 170:
+
+### 1. 🧠 Advanced Clinical & AI Upgrades
+* **Dynamic Markov Softmax Temperature controls**:
+  Equipped `MarkovTextGenerator.generate` with a soft temperature selection scaling following-word probabilities. Adjusting the cyberpunk slider adjusts dialog from deterministic clinical structures ($T \to 0.1$) to natural vocabulary ($T = 1.0$), up to high poetic creativity ($T \to 2.0$):
+  $$P(u_k) = \frac{f_k^{1/T}}{\sum_j f_j^{1/T}}$$
+* **Pharmacogenomic (PGx) Safety Checks**:
+  Expanded patient profiling to inspect genomic and metabolic traits. Intercepts risky active compounds (such as *Nitrofurantoin* under **G6PD Deficiency**, *Abacavir* under **HLA-B\*5701**, or prodrug *Codeine* conversion failures under **CYP2D6 Poor Metabolizer**), raising glowing amber conflict badges and recommending safe alternatives (e.g. *Ciprofloxacin 500mg*).
+* **Clinician Active Learning Feedback Portal**:
+  Added a glassmorphic clinician portal enabling practitioners to submit corrected diagnoses. Submitting a correction computes a gradient shift:
+  $$W_{\text{correct}} = W_{\text{correct}} + \eta \cdot X_{\text{symptoms}}$$
+  $$W_{\text{predicted}} = W_{\text{predicted}} - \eta \cdot X_{\text{symptoms}}$$
+  persisting encrypted priors deltas directly to browser `localStorage` as `localClinicianDeltas`.
+
+### 2. ⚡ Parallel WebGPU & Simulation Upgrades
+* **Demographic & Environmental WGSL Buffers**:
+  Expanded WebGPU storage buffers from 16 to 32 entries to accommodate patient demographics (`age`) and ambient conditions (`heatIndex`). The parallel WGSL compute shader adjusts simulated heart rates and temperature boundaries based on cardiac and age volatility curves.
+* **Vital Sign Density Progression scatterplot**:
+  Embedded an interactive 2D `<canvas>` heatmap scatterplot plotting 1,024 trajectory endpoints calculated live from WebGPU/CPU simulation arrays. Features a high-tech grid coordinate system and active cursor hitboxes.
+
+### 3. 🎨 Premium Interface & UX HUD
+* **Glowing Real-Time ECG Oscilloscope Canvas**:
+  Injected a glowing, real-time phosphor green ECG oscilloscope wave that dynamically scales in amplitude and speed matching the active simulated heart rate (bpm) and body temperature parameters.
+
+### 4. 🐛 Critical Inference Calibrations
+* **Fever Classification Boundary Alignment**: Added systemic fever phrasings to the Naive Bayes training corpus to correctly categorize systemic fevers, resolving decision boundary overlap with anemia.
+* **Vague Pain Safeguard**: Implemented an automated classifier verification that overrides specific diagnoses to `null` if the query only contains generic pain descriptors, routing the user to the interactive pain localization conversational fallback.
+* **Early Out-of-Context Interception**: Refactored out-of-context check to execute before Naive Bayes classification. This blocks non-medical queries containing food-related vocabulary (like breakfast) from accidentally triggering stomach pain prescriptions.
+
+---
+
 ## 👨‍💻 Developer Credit
 
 <div align="center">
