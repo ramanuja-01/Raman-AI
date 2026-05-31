@@ -8127,6 +8127,35 @@ window.toggleBioTelemetryAudio = function() {
   }
 };
 
+window.toggleTheme = function() {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playClick();
+  
+  const body = document.body;
+  const btn = document.getElementById("btnThemeToggle");
+  if (!btn) return;
+
+  const isLight = body.classList.toggle("light-theme");
+  localStorage.setItem("ramanai_theme", isLight ? "light" : "dark");
+
+  if (isLight) {
+    btn.innerHTML = "<span>☀️</span> LITE";
+  } else {
+    btn.innerHTML = "<span>🌙</span> DARK";
+  }
+};
+
+// Bootstrap theme state
+(function() {
+  const savedTheme = localStorage.getItem("ramanai_theme");
+  if (savedTheme === "light") {
+    document.body.classList.add("light-theme");
+    const btn = document.getElementById("btnThemeToggle");
+    if (btn) {
+      btn.innerHTML = "<span>☀️</span> LITE";
+    }
+  }
+})();
+
 window.switchTutorialTab = function(tabName) {
   if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
 

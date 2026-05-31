@@ -1389,6 +1389,193 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
   box-shadow: 0 0 15px rgba(0, 255, 179, 0.25), inset 0 0 10px rgba(0, 255, 179, 0.2) !important;
 }
 
+/* ===== PREMIUM LIGHT MODE (DAY THEME) ===== */
+body.light-theme {
+  --bg-deep:    #f1f5f9;
+  --bg-card:    #ffffff;
+  --bg-glass:   rgba(255,255,255,0.85);
+  --cyan:       #0082a3;
+  --cyan-dim:   #006a85;
+  --teal:       #009667;
+  --accent:     var(--teal);
+  --blue:       #0d52cc;
+  --text-main:  #0f172a;
+  --text-muted: #475569;
+  --border:     rgba(0,130,163,0.18);
+  --border-glow:rgba(0,130,163,0.35);
+  --gradient:   linear-gradient(135deg, rgba(0,130,163,0.06), rgba(13,82,204,0.06));
+}
+
+body.light-theme .app-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 4px 20px rgba(15,23,42,0.04);
+}
+
+body.light-theme .chat-input-area {
+  background: rgba(255, 255, 255, 0.95);
+  border-top: 1px solid var(--border);
+}
+
+body.light-theme .sidebar {
+  background: rgba(255, 255, 255, 0.95);
+  border-right: 1px solid var(--border);
+  box-shadow: 4px 0 20px rgba(15,23,42,0.04);
+}
+
+body.light-theme .profile-card,
+body.light-theme .symptom-tag,
+body.light-theme .vital-input-group input,
+body.light-theme .field-group input,
+body.light-theme .field-group select {
+  background: #f8fafc;
+  color: #0f172a;
+  border: 1px solid var(--border);
+}
+
+body.light-theme .symptom-tag:hover {
+  background: rgba(0, 130, 163, 0.08);
+  border-color: var(--cyan);
+}
+
+body.light-theme .symptom-tag.selected {
+  background: var(--cyan);
+  color: #ffffff;
+}
+
+body.light-theme .ai-bubble {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  box-shadow: 0 4px 15px rgba(15,23,42,0.04);
+  color: #0f172a;
+}
+
+body.light-theme .user-bubble {
+  background: linear-gradient(135deg, rgba(13,82,204,0.08), rgba(13,82,204,0.04));
+  border: 1px solid rgba(13,82,204,0.2);
+  color: #0f172a;
+}
+
+body.light-theme .user-message .sender-name {
+  color: #0d52cc;
+}
+
+body.light-theme .tutorial-modal,
+body.light-theme .session-panel,
+body.light-theme #vaultModal,
+body.light-theme #trainingHubModal {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid var(--border-glow) !important;
+  color: #0f172a !important;
+  box-shadow: 0 20px 50px rgba(15,23,42,0.1), 0 0 30px rgba(0, 130, 163, 0.1) !important;
+}
+
+body.light-theme .sp-section-label,
+body.light-theme .field-group label,
+body.light-theme .field-row label {
+  color: #475569;
+}
+
+body.light-theme .sp-hid-display {
+  background: #f8fafc;
+  border: 1px solid var(--border);
+}
+
+body.light-theme .sp-restore-row input {
+  background: #ffffff;
+  color: #0f172a;
+  border: 1px solid var(--border);
+}
+
+body.light-theme .sp-btn-copy {
+  background: #f1f5f9;
+  border-color: var(--border);
+  color: #0f172a;
+}
+
+body.light-theme .clarify-input-field {
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: inset 0 0 4px rgba(15,23,42,0.05) !important;
+}
+
+body.light-theme .hud-canvas-block {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid var(--border);
+}
+
+body.light-theme .tut-step {
+  border-bottom: 1px solid rgba(15,23,42,0.06);
+}
+
+body.light-theme details {
+  background: #ffffff !important;
+  border: 1px solid var(--border) !important;
+}
+
+body.light-theme details summary {
+  color: var(--cyan) !important;
+}
+
+body.light-theme details summary:hover {
+  background: rgba(0, 130, 163, 0.04);
+}
+
+body.light-theme input[type="range"]::-webkit-slider-runnable-track {
+  background: #e2e8f0;
+}
+
+body.light-theme select.lang-select,
+body.light-theme .btn-session-mgr {
+  background: #ffffff;
+  color: #475569;
+  border: 1px solid var(--border);
+}
+
+body.light-theme .btn-session-mgr:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+body.light-theme .splash-screen {
+  background: radial-gradient(circle at center, #ffffff 0%, #f1f5f9 100%) !important;
+}
+
+body.light-theme .splash-title-glowing {
+  color: var(--cyan) !important;
+  text-shadow: 0 0 10px rgba(0, 130, 163, 0.3) !important;
+}
+
+body.light-theme .splash-hud-scanner {
+  border-right-color: var(--cyan) !important;
+}
+
+body.light-theme .splash-cross-glowing {
+  color: var(--cyan) !important;
+}
+
+body.light-theme .splash-badge-item {
+  background: #ffffff !important;
+  border-color: var(--border) !important;
+  color: #475569 !important;
+}
+
+body.light-theme .splash-status-text {
+  color: #475569 !important;
+}
+
+body.light-theme .splash-loading-bar-outer {
+  background: #e2e8f0 !important;
+}
+
+body.light-theme #hubConsoleLog,
+body.light-theme #mcpTerminalLog {
+  background: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.15) !important;
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.2) !important;
+}
+
 
 
 

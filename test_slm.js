@@ -63,6 +63,42 @@ const makeMockElement = () => {
       };
     }
   };
+
+  el.classList = {
+    add(cls) {
+      const parts = el.className ? el.className.split(/\s+/) : [];
+      if (!parts.includes(cls)) {
+        parts.push(cls);
+        el.className = parts.join(" ");
+      }
+    },
+    remove(cls) {
+      const parts = el.className ? el.className.split(/\s+/) : [];
+      const idx = parts.indexOf(cls);
+      if (idx !== -1) {
+        parts.splice(idx, 1);
+        el.className = parts.join(" ");
+      }
+    },
+    contains(cls) {
+      const parts = el.className ? el.className.split(/\s+/) : [];
+      return parts.includes(cls);
+    },
+    toggle(cls) {
+      const parts = el.className ? el.className.split(/\s+/) : [];
+      const idx = parts.indexOf(cls);
+      if (idx !== -1) {
+        parts.splice(idx, 1);
+        el.className = parts.join(" ");
+        return false;
+      } else {
+        parts.push(cls);
+        el.className = parts.join(" ");
+        return true;
+      }
+    }
+  };
+
   return el;
 };
 
@@ -81,12 +117,7 @@ const mockDocument = {
   removeEventListener() {},
   querySelector() { return null; },
   querySelectorAll() { return []; },
-  body: {
-    appendChild() { return makeMockElement(); },
-    removeChild() {},
-    addEventListener() {},
-    removeEventListener() {}
-  }
+  body: makeMockElement()
 };
 
 const mockWindow = {
@@ -962,6 +993,36 @@ async function runTest(name, fn) {
     ok = assert(window.localClinicianDeltas && window.localClinicianDeltas["uti"], "applyClinicianCorrection successfully records delta adjustments under target class.") && ok;
     ok = assert(window.localClinicianDeltas["uti"]["pee"] > 0, "applyClinicianCorrection boosts weights for active query tokens in the correct class.") && ok;
     ok = assert(window.localClinicianDeltas["fever"]["pee"] < 0, "applyClinicianCorrection penalizes weights for active query tokens in the wrong class.") && ok;
+
+    return ok;
+  });
+
+  await runTest("Premium Light/Day Theme Toggle & State Persistence", async () => {
+    let ok = true;
+
+    // 1. Verify existence of the toggleTheme handler
+    ok = assert(typeof window.toggleTheme === "function", "window.toggleTheme is successfully registered as a global function.") && ok;
+
+    // 2. Prepare mock button and DOM state
+    const btn = document.getElementById("btnThemeToggle");
+    ok = assert(!!btn, "Theme toggle button exists in the DOM mock.") && ok;
+
+    // Make sure we start in default dark mode
+    document.body.className = "";
+    localStorage.removeItem("ramanai_theme");
+    btn.innerHTML = "<span>🌙</span> DARK";
+
+    // 3. Toggle to Light Theme
+    window.toggleTheme();
+    ok = assert(document.body.classList.contains("light-theme"), "toggleTheme successfully adds the light-theme class to document.body.") && ok;
+    ok = assert(localStorage.getItem("ramanai_theme") === "light", "toggleTheme persists the 'light' state to localStorage.") && ok;
+    ok = assert(btn.innerHTML.includes("LITE"), `Theme button updates label to: '${btn.innerHTML}'`) && ok;
+
+    // 4. Toggle back to Dark Theme
+    window.toggleTheme();
+    ok = assert(!document.body.classList.contains("light-theme"), "toggleTheme successfully removes the light-theme class on second toggle.") && ok;
+    ok = assert(localStorage.getItem("ramanai_theme") === "dark", "toggleTheme persists the 'dark' state to localStorage.") && ok;
+    ok = assert(btn.innerHTML.includes("DARK"), `Theme button reverts label to: '${btn.innerHTML}'`) && ok;
 
     return ok;
   });
