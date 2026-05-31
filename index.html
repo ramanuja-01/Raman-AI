@@ -1291,6 +1291,18 @@
           <div id="vaultList"></div>
           <div id="vaultEmpty" class="vault-empty">No documents yet.<br>Upload prescriptions, lab reports,<br>X-rays or MRI scans to get started.</div>
         </div>
+        <!-- Mobile-Only Sidebar Actions -->
+        <div class="sidebar-section mobile-only-sidebar-action" style="margin-top: 15px;">
+          <div class="sidebar-heading">SYSTEM ACTIONS</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn-session-mgr" onclick="openApiSettings()" style="width: 100% !important; justify-content: center; height: 36px; border-radius: 8px;">
+              <span>⚙️</span> API SETTINGS
+            </button>
+            <button class="btn-session-mgr" onclick="openTrainingHub()" style="width: 100% !important; justify-content: center; height: 36px; border-radius: 8px; border-color: var(--accent) !important; color: var(--accent) !important;">
+              <span>🧠</span> SLM TRAINING HUB
+            </button>
+          </div>
+        </div>
 
         <div class="disclaimer-box">
           <div class="disclaimer-icon">⚠️</div>

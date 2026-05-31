@@ -1103,6 +1103,10 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
 }
 
 /* ===== RESPONSIVE MOBILE OPTIMIZATIONS ===== */
+.mobile-only-sidebar-action {
+  display: none !important;
+}
+
 .mobile-menu-btn {
   background: none; border: none; color: var(--cyan);
   cursor: pointer; padding: 4px; display: none;
@@ -1140,8 +1144,18 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
 }
 
 @media (max-width: 768px) {
-  /* Premium Circular Button Grid collapse for cluttered mobile buttons */
-  .btn-session-mgr {
+  /* Show system action buttons inside sidebar drawer */
+  .mobile-only-sidebar-action {
+    display: block !important;
+  }
+  
+  /* Hide advanced settings from mobile header to prevent overflow/wrap */
+  #btnApiSettings, #btnTrainingHub {
+    display: none !important;
+  }
+  
+  /* Premium Circular Button Grid collapse for remaining header buttons */
+  .vital-chips .btn-session-mgr {
     width: 30px !important;
     height: 30px !important;
     min-width: 30px !important;
@@ -1156,7 +1170,7 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
     box-shadow: 0 2px 8px rgba(0, 229, 255, 0.15) !important;
     font-size: 0 !important; /* Completely collapses child text nodes to 0px */
   }
-  .btn-session-mgr span {
+  .vital-chips .btn-session-mgr span {
     margin: 0 !important;
     font-size: 1rem !important; /* Retains clean high-res emoji display */
   }
