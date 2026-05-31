@@ -1133,6 +1133,37 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
   .chat-messages { padding: 16px; }
   .chat-input-area { padding: 12px 16px 20px; }
   .media-toolbar { justify-content: center; margin-bottom: 10px; }
+  
+  /* Mobile Spacing & Hiding Decorative Elements */
+  .bio-mode-chip { display: none !important; }
+  .vital-chips { gap: 6px; }
+}
+
+@media (max-width: 768px) {
+  /* Premium Circular Button Grid collapse for cluttered mobile buttons */
+  .btn-session-mgr {
+    width: 32px !important;
+    height: 32px !important;
+    min-width: 32px !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    white-space: nowrap !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 50% !important;
+    box-sizing: border-box !important;
+    box-shadow: 0 2px 8px rgba(0, 229, 255, 0.15) !important;
+  }
+  .btn-session-mgr span {
+    margin: 0 !important;
+    font-size: 0.95rem !important;
+  }
+  .lang-select {
+    height: 32px !important;
+    font-size: 0.72rem !important;
+    padding: 0 4px !important;
+  }
 }
 
 @media (max-width: 600px) {
@@ -1140,7 +1171,7 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
   #chipTime, .session-chip { display: none; }
   
   /* Shrink remaining header items */
-  .vital-chip, .lang-select, .btn-session-mgr { 
+  .vital-chip, .lang-select { 
     padding: 0 8px; font-size: 0.65rem; height: 24px; 
   }
   .header-title { font-size: 1.1rem; }
