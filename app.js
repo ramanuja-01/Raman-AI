@@ -8127,6 +8127,43 @@ window.toggleBioTelemetryAudio = function() {
   }
 };
 
+window.switchTutorialTab = function(tabName) {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
+
+  const userGuideBtn = document.getElementById("btnTabUserGuide");
+  const wikiBtn = document.getElementById("btnTabWikiSpec");
+  const userGuideContent = document.getElementById("tutContentUserGuide");
+  const wikiContent = document.getElementById("tutContentWikiSpec");
+
+  if (tabName === "guide") {
+    if (userGuideBtn) {
+      userGuideBtn.style.borderBottomColor = "var(--cyan)";
+      userGuideBtn.style.color = "var(--cyan)";
+      userGuideBtn.classList.add("active");
+    }
+    if (wikiBtn) {
+      wikiBtn.style.borderBottomColor = "transparent";
+      wikiBtn.style.color = "var(--text-muted)";
+      wikiBtn.classList.remove("active");
+    }
+    if (userGuideContent) userGuideContent.style.display = "block";
+    if (wikiContent) wikiContent.style.display = "none";
+  } else {
+    if (wikiBtn) {
+      wikiBtn.style.borderBottomColor = "var(--cyan)";
+      wikiBtn.style.color = "var(--cyan)";
+      wikiBtn.classList.add("active");
+    }
+    if (userGuideBtn) {
+      userGuideBtn.style.borderBottomColor = "transparent";
+      userGuideBtn.style.color = "var(--text-muted)";
+      userGuideBtn.classList.remove("active");
+    }
+    if (userGuideContent) userGuideContent.style.display = "none";
+    if (wikiContent) wikiContent.style.display = "block";
+  }
+};
+
 // =========================================================================
 // ── CLINICIAN PORTAL ACTIVE LEARNING LOOP ────────────────────────────────
 // =========================================================================

@@ -282,41 +282,205 @@
 
     <!-- ===== TUTORIAL MODAL ===== -->
     <div class="session-panel-backdrop" id="tutorialBackdrop" onclick="closeTutorial()"></div>
-    <div class="tutorial-modal" id="tutorialModal">
+    <div class="tutorial-modal" id="tutorialModal" style="max-width: 750px; width: 90%;">
       <div class="tut-header">
-        <span>🤖 RAMAN AI: USER GUIDE</span>
+        <span>🤖 RAMAN AI: SYSTEM MANUAL</span>
         <button class="sp-close" onclick="closeTutorial()">✕</button>
       </div>
-      <div class="tut-body">
-        <div class="tut-step">
-          <div class="tut-icon">🌐</div>
-          <div class="tut-content">
-            <h4>Bilingual Chat (English & Odia)</h4>
-            <p>You can type in English or Odia (e.g. "munda bindhuchi"). Toggle the language dropdown in the header to switch the AI's responses between English and Odia!</p>
-          </div>
+      <div class="tut-body" style="padding-top: 10px;">
+        
+        <!-- Tab Selector Row -->
+        <div class="hub-tabs" style="display:flex; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:15px; gap:10px;">
+          <button class="hub-tab-btn active" id="btnTabUserGuide" onclick="window.switchTutorialTab('guide')" style="background:none; border:none; border-bottom:2px solid var(--cyan); color:var(--cyan); padding:10px 15px; font-weight:bold; cursor:pointer; font-family:var(--font-head); font-size:0.8rem; letter-spacing:0.5px; transition:all 0.2s;">❓ USER GUIDE</button>
+          <button class="hub-tab-btn" id="btnTabWikiSpec" onclick="window.switchTutorialTab('wiki')" style="background:none; border:none; border-bottom:2px solid transparent; color:var(--text-muted); padding:10px 15px; font-weight:bold; cursor:pointer; font-family:var(--font-head); font-size:0.8rem; letter-spacing:0.5px; transition:all 0.2s;">📖 TECHNICAL SPEC WIKI</button>
         </div>
-        <div class="tut-step">
-          <div class="tut-icon">🩺</div>
-          <div class="tut-content">
-            <h4>Diagnostic Engine</h4>
-            <p>Describe your symptoms naturally. RAMAN AI will ask follow-up questions to understand the exact nature of your condition before giving an assessment.</p>
+
+        <!-- 1. TAB CONTENT: USER GUIDE -->
+        <div id="tutContentUserGuide" style="display:block;">
+          <div class="tut-step">
+            <div class="tut-icon">🌐</div>
+            <div class="tut-content">
+              <h4>Bilingual Chat (English &amp; Odia)</h4>
+              <p>You can type in English or Odia (e.g. "munda bindhuchi"). Toggle the language dropdown in the header to switch the AI's responses between English and Odia!</p>
+            </div>
           </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-icon">🗂</div>
-          <div class="tut-content">
-            <h4>Sessions & Health ID</h4>
-            <p>Your entire conversation and profile are saved locally. Click <b>End & Save Session</b> in the Session Manager to get a unique Health ID. You can enter this ID later to instantly restore your history!</p>
+          <div class="tut-step">
+            <div class="tut-icon">🩺</div>
+            <div class="tut-content">
+              <h4>Diagnostic Engine</h4>
+              <p>Describe your symptoms naturally. RAMAN AI will ask follow-up questions to understand the exact nature of your condition before giving an assessment.</p>
+            </div>
           </div>
-        </div>
-        <div class="tut-step">
-          <div class="tut-icon">⚠️</div>
-          <div class="tut-content">
-            <h4>Disclaimer</h4>
-            <p>RAMAN AI is an experimental tool for informational purposes only. It is NOT a substitute for professional medical advice. Always consult a doctor.</p>
+          <div class="tut-step">
+            <div class="tut-icon">🗂</div>
+            <div class="tut-content">
+              <h4>Sessions &amp; Health ID</h4>
+              <p>Your entire conversation and profile are saved locally. Click <b>End &amp; Save Session</b> in the Session Manager to get a unique Health ID. You can enter this ID later to instantly restore your history!</p>
+            </div>
           </div>
+          <div class="tut-step">
+            <div class="tut-icon">⚠️</div>
+            <div class="tut-content">
+              <h4>Disclaimer</h4>
+              <p>RAMAN AI is an experimental tool for informational purposes only. It is NOT a substitute for professional medical advice. Always consult a doctor.</p>
+            </div>
+          </div>
+          <button class="sp-btn sp-btn-new" style="margin-top: 15px; width: 100%;" onclick="closeTutorial()">Got it! Start Chatting</button>
         </div>
-        <button class="sp-btn sp-btn-new" style="margin-top: 15px; width: 100%;" onclick="closeTutorial()">Got it! Start Chatting</button>
+
+        <!-- 2. TAB CONTENT: TECHNICAL SPEC WIKI -->
+        <div id="tutContentWikiSpec" style="display:none; max-height:58vh; overflow-y:auto; padding-right:5px; scrollbar-width:thin; scrollbar-color:rgba(0,229,255,0.2) transparent;">
+          <div style="background:rgba(0, 229, 255, 0.04); border:1px solid rgba(0, 229, 255, 0.15); border-radius:8px; padding:12px; margin-bottom:15px; text-align:center; font-size:0.8rem; line-height:1.4;">
+            🧬 <strong>System Infrastructure Model Specification:</strong> RAMAN AI runs a local triple-model hybrid simple language model (SLM) ensemble and parallel physiological risk trajectory simulations completely offline in browser threads at <strong>&lt; 2 milliseconds</strong> latency.
+          </div>
+
+          <!-- Section 1 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>🧬 1. ENSEMBLE CLASSIFIER MATHEMATICS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">The symptom classifier uses an L2-normalized TF-IDF vector space running across a triple-model ensemble:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Filtered Unigrams &amp; N-Grams:</strong> Strips punctuation, filters English and Odia stop-words (e.g. <i>"heuchi"</i>, <i>"laguchi"</i>), and extracts unigrams, bigrams, and trigrams.</li>
+                <li><strong>TF-IDF Weighting:</strong> Dampens common terms and amplifies diagnostic markers via Inverse Document Frequency:
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">IDF(t) = ln((1 + N_docs) / (1 + DF(t))) + 1</code>
+                </li>
+                <li><strong>Multinomial Naive Bayes:</strong> Calculates posterior classes using Laplace smoothing (α=1):
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">ln P(C|W) = ln P(C) + ∑ IDF(t) * ln P(t|C)</code>
+                </li>
+                <li><strong>Fuzzy Trie Sliding Match:</strong> Sliding window scans input character strings in O(L) time. Exact multi-word matches inject an immediate posterior score boost:
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">TrieBoost(C) = ∑ 1.5 * IDF(phrase)</code>
+                </li>
+                <li><strong>Linear SVM:</strong> One-vs-Rest Support Vector Machine trained client-side via SGD with hinge loss to establish strict decision boundaries between overlapping symptoms.</li>
+              </ul>
+              <p style="margin-bottom:0;">Scores are normalized via temperature Softmax (T=2.5) to render clean visual probability bars from 0% to 100%.</p>
+            </div>
+          </details>
+
+          <!-- Section 2 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>⚡ 2. PARALLEL WEBGPU PROGRESSION RUNS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">To simulate complex physiological vital trajectories, the system executes <strong>16,384 parallel calculations</strong> using WebGPU Shading Language (WGSL) compute shaders:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Autonomic Cardiac Progression:</strong>
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">HR_next = HR_base + (severity * 8.5) + sin(time * 0.2) * (age / 12) + noise</code>
+                </li>
+                <li><strong>Thermal Hyperpyrexia Shift:</strong>
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">Temp_next = Temp_base + (severity * 0.8) + ((heat_index - 70) / 40) * 0.5</code>
+                </li>
+                <li><strong>Oxygen Dissociation Curve:</strong>
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">SpO2_next = SpO2_base - (severity * 2.4) - ((HR_next - HR_base) / 15) * 0.3</code>
+                </li>
+              </ul>
+              <p style="margin-bottom:0;">Calculations write to a 32-entry float buffer, displaying a 1,024-point density scatterplot on the canvas, with a seamless, high-speed JavaScript CPU fallback if WebGPU is unavailable.</p>
+            </div>
+          </details>
+
+          <!-- Section 3 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>💊 3. CLINICAL ICD-11, SNOMED CT &amp; PGX SAFETY</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">Features a structured offline medical knowledge base containing <strong>17 ICD-11 conditions</strong>, <strong>47 SNOMED CT medications</strong>, and comprehensive clinical safety override pathways:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Allergic Contraindication Overrides:</strong>
+                  <ul style="padding-left:14px; margin-top:4px;">
+                    <li><strong>Penicillin Allergy:</strong> Intercepts <i>Amoxicillin</i> or <i>Ampicillin</i> and substitutes with **Azithromycin 500mg** (SNOMED CT: `372822002`).</li>
+                    <li><strong>NSAID Allergy:</strong> Intercepts anti-inflammatories (Aspirin, Ibuprofen, Diclofenac) and substitutes with **Paracetamol 650mg** (SNOMED: `387584000`, Calpol/Crocin) to protect renal &amp; mucosal tracts.</li>
+                  </ul>
+                </li>
+                <li><strong>Pharmacogenomic (PGx) Metabolic Interceptors:</strong>
+                  <ul style="padding-left:14px; margin-top:4px;">
+                    <li><strong>G6PD Deficiency:</strong> Blocks hemolytic compounds (such as <i>Nitrofurantoin</i>) and substitutes with safe **Ciprofloxacin 500mg**.</li>
+                    <li><strong>HLA-B*5701 Genotype:</strong> Intercepts <i>Abacavir</i> to prevent severe systemic hypersensitivity reactions.</li>
+                    <li><strong>CYP2D6 Poor Metabolizer:</strong> Detects metabolic failures converting prodrug <i>Codeine</i> to active morphine, overriding it with safe analgesics.</li>
+                  </ul>
+                </li>
+                <li><strong>Vitals Staging:</strong> BP, Heart Rate, SpO2, and Temp are compiled. Deviations exceed safety limits to classify patient into Stage 1, Stage 2, or Stage 3 (Critical).</li>
+              </ul>
+              <p style="margin-bottom:0;">Medications in Chat UI and A4 PDFs are hover-responsive links querying bio-equivalent alternatives instantly upon user click.</p>
+            </div>
+          </details>
+
+          <!-- Section 4 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>🔊 4. IN-MEMORY WEB AUDIO SFX &amp; SPEECH FILTERS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">Operating 100% in-memory without any external asset dependencies using the native browser **HTML5 Web Audio API**:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Laser Sweep (Hotspots click):</strong> Resonant triangle wave sweeping from 300Hz up to 1600Hz through a dynamic Biquad lowpass filter sweep.</li>
+                <li><strong>Telemetry Click (Hotspots hover):</strong> Sharp sine click sweeping from 1500Hz down to 800Hz in 0.04s.</li>
+                <li><strong>Bio-Beep Alarm (Stage 3 vital crisis):</strong> High-priority triple medical alarm sweeps pulsing at 980Hz with rapid linear attack and exponential decay.</li>
+                <li><strong>Keyboard Tick:</strong> Ultra-short mechanical clicks sweeping 2000Hz to 1200Hz in 0.015s for typewriter tactile sound effects.</li>
+                <li><strong>Bilingual Speech Synthesis Filters:</strong> Utilizes clean regex filters to purge emojis, HTML elements, and bracketed metadata before routing to Web Speech synthesis. Automatically switches between `en-US` and `hi-IN` phonetics depending on character script range.</li>
+              </ul>
+            </div>
+          </details>
+
+          <!-- Section 5 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>📈 5. RECOVERY DIARY GRAPH SPARKLINE</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">Provides a secure local symptoms canvas visualizer and calculations grid:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Math-Telemetry Grid:</strong> Calculates Average Severity (mean), Peak Severity (maximum), and Trend State. Renders 🔴 `▲ WORSENING` if latest logged severity is higher than average, 🟢 `▼ IMPROVING` if lower, and 🔵 `● STABLE` if matching.</li>
+                <li><strong>Mouse-Proximity sensor:</strong> Active mouse listener captures cursor coordinates relative to canvas. If cursor falls within a 15px radius of a data node, it triggers an interactive crosshair guide and draws a glowing slate-blue coordinates tooltip.</li>
+              </ul>
+            </div>
+          </details>
+
+          <!-- Section 6 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>🔒 6. AES-256-GCM ENCRYPTED LOCAL SESSION BACKUPS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">To guarantee security and privacy of patient information on shared devices, session backups utilize the native browser **Web Crypto API**:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>PBKDF2 Key Derivation:</strong> Derives a secure AES key from user password using a random 16-byte salt and **100,000 iterations** of SHA-256.</li>
+                <li><strong>AES-GCM Encryption:</strong> Encrypts the serialized patient profile, chat ledger, and binary radiographs stored in IndexedDB under **AES-256-GCM** with a random 12-byte IV, generating a secure ciphertext with a 16-byte authentication tag to guarantee absolute data integrity.</li>
+              </ul>
+              <p style="margin-bottom:0;">Incorrect passwords or modified backup structures during restore trigger decryption errors, safely discarding unauthorized entries.</p>
+            </div>
+          </details>
+
+          <!-- Section 7 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>🔬 7. CORPUS INJECTION &amp; CLINICIAN DELTA LEARNING</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">Enables live model recalibrations and active learning in the client thread:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Trie Database Reconstruction:</strong> Injecting custom symptom phrases rebuilds the sliding window Trie structure and retrains the Naive Bayes weights in **under 3.5ms**.</li>
+                <li><strong>Clinician Feedback Delta Portal:</strong> Credentialed practitioners can submit corrected diagnoses. Submitting a correction triggers an active weight shift:
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">W_correct = W_correct + η * X_symptoms</code>
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">W_predicted = W_predicted - η * X_symptoms</code>
+                  where learning rate η = 0.05. Weight deltas are persisted locally as `localClinicianDeltas`, permanently recalibrating local classification boundaries.
+                </li>
+              </ul>
+            </div>
+          </details>
+
+          <button class="sp-btn sp-btn-new" style="margin-top: 15px; width: 100%;" onclick="closeTutorial()">Got it! Start Chatting</button>
+        </div>
+
       </div>
     </div>
 
