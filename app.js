@@ -798,13 +798,18 @@ const SLM_TRAINING_CORPUS = {
     "increasing fatigue and shortness of breath for about a month occasional palpitations lightheadedness standing pale",
     "increasing fatigue shortness of breath palpitations lightheadedness standing quickly pale hands lips",
     "increasing fatigue shortness of breath palpitations lightheadedness standing quickly pale hands lips",
-    "increasing fatigue shortness of breath palpitations lightheadedness standing quickly pale hands lips",
+    "feeling tired sluggish weak short of breath pale skin brittle nails headaches",
     "raktaheena durbalata tired quickly breathlessness pale",
     "raktaheena durbalata tired quickly breathlessness pale",
     "chronic fatigue pale lips lightheaded when standing up tired easily",
     "raktaheena durbalata tired quickly breathlessness pale",
     "easy fatiguability palpitations lightheaded standing up pale palms",
     "raktaheena durbalata tired quickly breathlessness pale",
+    "easy fatiguability palpitations lightheaded standing up pale palms",
+    "increasing fatigue shortness of breath palpitations lightheadedness standing quickly pale hands lips",
+    "raktaheena durbalata tired quickly breathlessness pale",
+    "iron deficiency anemia breathlessness palpitations low energy pale skin",
+    "easy fatiguability palpitations lightheaded standing up pale palms",
     "easy fatiguability palpitations lightheaded standing up pale palms"
   ],
   asthma: [
@@ -825,7 +830,12 @@ const SLM_TRAINING_CORPUS = {
     "persistent cough for the last two weeks that is worse at night productive yellowish phlegm chest tightness",
     "persistent cough worse at night productive yellow phlegm short of breath chest tightness",
     "niswasa prabasare kasta heuchi kasha saha wheezing chhati tightness",
-    "climbing stairs shortness of breath chest tightness productive cough"
+    "climbing stairs shortness of breath chest tightness productive cough",
+    "ve ongoing health for a week including a dry cough breathing difficulties and general weakness",
+    "its a week suffering from continious health issues like dry cough in breathing weakness throughout the day",
+    "a persistent cough and quite fatigued fever through the roof and m trouble breathing cough also cough up a lot of mucous",
+    "a cough that continued for days and and fever high and breath become strained cough also generate a lot of mucus",
+    "admit that a high fever a persistent cough and shortness of breath in addition ve coughing up a lot of thick mucoid saliva and ve depleted and worn out"
   ],
   "back pain": [
     "lower back ache, stiff spine, nerve pain down leg",
@@ -845,7 +855,37 @@ const SLM_TRAINING_CORPUS = {
     "herniated disc pain, back muscle spasm, stiff back",
     "anta bindha bitha heuchi chalibare kasta poor posture",
     "anta bindhuchi spine stiffness backache muscle strain",
-    "lower back pain sciatica herniated lumbar disc spasm"
+    "lower back pain sciatica herniated lumbar disc spasm",
+    "backache a difficulty breathing and limb weakness bothering me balance and dizzy concerns and neck suffers",
+    "back pain a lingering cough and muscle weakness bothering me issues with dizziness and losing equilibrium and neck hurts",
+    "back pain a chronic cough and muscle weakness bothering me concerns with dizziness and losing position and neck hurts",
+    "back pain a dry cough and a lack of muscle strength bothering me neck hurts and ve lightheaded and shaky",
+    "back pain a productive cough and limb weakness bothering me balance and dizzy concerns and neck hurts"
+  ],
+  cardiomegaly: [
+    "enlarged heart cardiomegaly short of breath fluid retention swollen ankles",
+    "cardiomegaly heart enlargement congestive heart failure breathlessness lying down",
+    "chhati bhari heart failure breathlessness feet swelling fatigue cardiomegaly",
+    "difficulty breathing when lying flat orthopnea swollen legs heart enlargement",
+    "ventricular hypertrophy cardiomegaly cardiac dilation fatigue irregular pulse",
+    "enlarged cardiac silhouette on xray short of breath fatigue ankles swelling",
+    "chhati fuli jaichi breathlessness lying down feet swelling heart size high",
+    "cardiomegaly symptoms severe fatigue shortness of breath on minimal exertion",
+    "cardiomegaly symptoms severe fatigue shortness of breath on minimal exertion",
+    "enlarged heart cardiomegaly short of breath fluid retention swollen ankles",
+    "chhati fuli jaichi breathlessness lying down feet swelling heart size high",
+    "enlarged cardiac silhouette on xray short of breath fatigue ankles swelling",
+    "ventricular hypertrophy cardiomegaly cardiac dilation fatigue irregular pulse",
+    "cardiomegaly heart enlargement congestive heart failure breathlessness lying down",
+    "enlarged cardiac silhouette on xray short of breath fatigue ankles swelling",
+    "chhati bhari heart failure breathlessness feet swelling fatigue cardiomegaly",
+    "enlarged heart cardiomegaly short of breath fluid retention swollen ankles",
+    "ventricular hypertrophy cardiomegaly cardiac dilation fatigue irregular pulse",
+    "cardiomegaly heart enlargement congestive heart failure breathlessness lying down",
+    "enlarged heart cardiomegaly short of breath fluid retention swollen ankles",
+    "chhati bhari heart failure breathlessness feet swelling fatigue cardiomegaly",
+    "enlarged cardiac silhouette on xray short of breath fatigue ankles swelling",
+    "chhati bhari heart failure breathlessness feet swelling fatigue cardiomegaly"
   ],
   "chest pain": [
     "crushing chest pain radiating to left arm and jaw",
@@ -865,7 +905,12 @@ const SLM_TRAINING_CORPUS = {
     "chest compression shortness of breath severe heart pain",
     "chest compression shortness of breath severe heart pain",
     "chhati bindhuchi chati jantrana breathlessness dizziness",
-    "chhati bindhuchi chati jantrana breathlessness dizziness"
+    "chhati bindhuchi chati jantrana breathlessness dizziness",
+    "sharp chest pain when breathing, heart attack fear, squeezing",
+    "angina pectoris chest discomfort tightness left arm jaw pain",
+    "sharp chest pain when breathing, heart attack fear, squeezing",
+    "sharp chest pain when breathing, heart attack fear, squeezing",
+    "sharp pain in middle of chest squeezing coronary risk"
   ],
   cough: [
     "persistent dry cough and chest congestion with mucus",
@@ -885,7 +930,12 @@ const SLM_TRAINING_CORPUS = {
     "ମୋର ବହୁତ କାଶ ଏବଂ ଥଣ୍ଡା ହେଉଛି",
     "persistent throat tickle and dry cough",
     "gola basijaichi kansa kapa thanda",
-    "ମୋର ବହୁତ କାଶ ଏବଂ ଥଣ୍ଡା ହେଉଛି"
+    "ମୋର ବହୁତ କାଶ ଏବଂ ଥଣ୍ଡା ହେଉଛି",
+    "nose runny and t to stop sneezing in addition constantly cold and ve coughing a lot fever also high far above normal",
+    "t stop sneezing and and crummy throat sore and a lot of gunky stuff in nose and throat neck feels swollen and puffy too",
+    "m coughing nonstop and m shivering terribly a stuffy nose and face under strain in addition throat coughing up some nasty gunk and chest hurts muscles hurt a lot and t smell anything",
+    "t stop sneezing and nose runny m also cold and all the time and ve coughing a lot fever high too like way above normal",
+    "keep sneezing and m miserable and a lot of gunky things in nose and throat and throat hurting neck also feels puffy and swollen"
   ],
   diabetes: [
     "excessive thirst, frequent urination, high blood sugar",
@@ -905,7 +955,12 @@ const SLM_TRAINING_CORPUS = {
     "diabetic spike polyuria fasting blood glucose level high",
     "barambar parisra laguchi thirsty sugar level 300",
     "i have increased thirst and frequent urination i often have a dry mouth and throat recently i have been having increased hunger and appetite",
-    "i m drinking more water and urinating more frequently my throat and mouth are frequently dry recently my appetite and hunger have both grown"
+    "i m drinking more water and urinating more frequently my throat and mouth are frequently dry recently my appetite and hunger have both grown",
+    "m drinking more water and urinating more frequently throat and mouth frequently dry recently appetite and hunger both grown",
+    "ve drinking more water and urinating more frequently throat and mouth frequently dry recently both hunger and appetite grown",
+    "both water intake and frequency of urination increased mouth and throat dry a lot hunger and appetite both increased recently",
+    "both water intake and frequency of urination increased mouth and throat regularly dry appetite and hunger both increased recently",
+    "increased thirst and frequent urination a dry mouth and throat recently increased hunger and appetite"
   ],
   "eye pain": [
     "red eyes, discharge, blurry vision, painful eyes",
@@ -925,7 +980,12 @@ const SLM_TRAINING_CORPUS = {
     "akhi pani baharuchi red eye pain strain watery",
     "photophobia dry itchy red eye infection conjunctivitis",
     "ocular pain dry eyes computer screen strain redness",
-    "ocular pain dry eyes computer screen strain redness"
+    "ocular pain dry eyes computer screen strain redness",
+    "photophobia dry itchy red eye infection conjunctivitis",
+    "akhi bindhuchi akhi lala conjunctivitis blurry eye pain",
+    "akhi bindhuchi akhi lala conjunctivitis blurry eye pain",
+    "aakhi lal phuli jaichi aakhi bitha computer strain",
+    "sore eyes discharge itchiness photophobia blurry vision"
   ],
   fever: [
     "i have a severe fever and chills",
@@ -945,7 +1005,12 @@ const SLM_TRAINING_CORPUS = {
     "running a high temperature of 101 degrees Fahrenheit chills",
     "low-grade fever for three days mild headache scratchy throat dry cough nasal congestion",
     "low grade fever tired all the time muscles ache dry cough",
-    "deha jwara laguchi chabuka maruchi temperature"
+    "deha jwara laguchi chabuka maruchi temperature",
+    "the joint pain experiencing and feels like a constant ache head aches most of the time and starting to develope mild fever accompanied with chills",
+    "a high fever along with a headache the fever accompanied by extreme body pain and chills worried about health and don t know to",
+    "along with body itchiness chills and nausea ve experiencing ve perspiring and a very high fever m queasy and also a headache hurting muscles me",
+    "a lot of trouble sleeping because of the high fever and the headache moreover constant belly pain because of t go to work",
+    "a high fever accompanied with headache and body pain experince chills every night there a distinct pain behind eyes too"
   ],
   headache: [
     "my head hurts so bad and i feel dizzy",
@@ -965,7 +1030,12 @@ const SLM_TRAINING_CORPUS = {
     "i have been having trouble with my vision seeing things as distorted and experiencing visual disturbances",
     "i ve been suffering visual disruptions seeing things as distorted and eyesight problems",
     "tension headache behind eyes stiff neck and shoulder pressure",
-    "headache and nausea with extreme visual sensitivity"
+    "headache and nausea with extreme visual sensitivity",
+    "ve suffering visual disruptions seeing things as distorted and eyesight",
+    "trouble with vision seeing things as distorted and experiencing visual disturbances",
+    "ve facing visual disruptions seeing things as distorted and eyesight difficulties",
+    "ve facing visual disruptions seeing things as distorted and eyesight difficulties",
+    "experiencing acidity indigestion headaches and blurred and distorted vision as well as excessive hunger a stiff neck depression irritability and visual disturbance"
   ],
   "high blood pressure": [
     "dizziness, high blood pressure reading, blurry vision",
@@ -985,7 +1055,62 @@ const SLM_TRAINING_CORPUS = {
     "i have been feeling disoriented and dizzy and have also had trouble keeping my balance my headache has been a constant presence as well",
     "i ve been experiencing balance issues along with feeling dizzy and lightheaded additionally i ve seen a drop in my concentration and focus",
     "ମୋର ରକ୍ତଚାପ ବୃଦ୍ଧି ପାଇଛି ଏବଂ ମୁଣ୍ଡ ଘୁରାଉଛି",
-    "checked blood pressure and it is 160 over 100"
+    "checked blood pressure and it is 160 over 100",
+    "ve experiencing balance issues along with dizzy and lightheaded additionally ve seen a drop in concentration and focus",
+    "disoriented and dizzy and also trouble keeping balance headache a constant presence as well",
+    "ve experiencing balance issues in addition to disoriented and dizzy headache also present nonstop",
+    "ve experiencing dizziness and anxiousness as well as a loss in attention and concentration and ability to concentrate",
+    "in addition to dizzy and lightheaded ve keeping equilibrium capacity to concentrate and focus also slipping ve noticed"
+  ],
+  hyperlipidemia: [
+    "high cholesterol hyperlipidemia lipid panel elevated ldl triglycerides plaque",
+    "hypercholesterolemia cholesterol level 280 lipid profile cardiac risk",
+    "high triglycerides lipid panel screening hyperlipidemia no symptoms plaque",
+    "lipoproteins elevated cholesterol high ldl blood test screening lipid",
+    "cholesterol badhi jaichi hyperlipidemia lipid panel blood test high ldl",
+    "lipid profile abnormal total cholesterol 300 triglycerides 250 high ldl",
+    "hyperlipidemia atherosclerotic risk elevated total cholesterol ldl triglycerides",
+    "blood test lipid profile cholesterol spike hypercholesterolemia high triglycerides",
+    "lipid profile abnormal total cholesterol 300 triglycerides 250 high ldl",
+    "high triglycerides lipid panel screening hyperlipidemia no symptoms plaque",
+    "blood test lipid profile cholesterol spike hypercholesterolemia high triglycerides",
+    "high triglycerides lipid panel screening hyperlipidemia no symptoms plaque",
+    "lipoproteins elevated cholesterol high ldl blood test screening lipid",
+    "lipoproteins elevated cholesterol high ldl blood test screening lipid",
+    "blood test lipid profile cholesterol spike hypercholesterolemia high triglycerides",
+    "hypercholesterolemia cholesterol level 280 lipid profile cardiac risk",
+    "lipid profile abnormal total cholesterol 300 triglycerides 250 high ldl",
+    "lipid profile abnormal total cholesterol 300 triglycerides 250 high ldl",
+    "lipid profile abnormal total cholesterol 300 triglycerides 250 high ldl",
+    "lipoproteins elevated cholesterol high ldl blood test screening lipid",
+    "hyperlipidemia atherosclerotic risk elevated total cholesterol ldl triglycerides",
+    "high cholesterol hyperlipidemia lipid panel elevated ldl triglycerides plaque",
+    "cholesterol badhi jaichi hyperlipidemia lipid panel blood test high ldl"
+  ],
+  hypothyroidism: [
+    "hypothyroidism thyroid tsh high weight gain fatigue cold intolerance dry skin",
+    "thyroid level high tsh levothyroxine thyroiditis hair loss fatigue weight gain",
+    "thyroid gland underactive hypothyroidism sluggish slow heart rate constipation",
+    "tsh level 12.5 fatigue unexplained weight gain feeling cold constantly dry skin",
+    "thyroid badhi jaichi tsh high weight gain fatigue hair loss cold thyroiditis",
+    "sluggish metabolism dry skin brittle hair hypothyroidism high tsh levothyroxine",
+    "hypothyroidism symptoms cold intolerance weight gain dry scaly skin thyroid fatigue",
+    "thyroid hormone replacement levothyroxine high thyroid stimulating hormone tsh",
+    "sluggish metabolism dry skin brittle hair hypothyroidism high tsh levothyroxine",
+    "thyroid badhi jaichi tsh high weight gain fatigue hair loss cold thyroiditis",
+    "thyroid badhi jaichi tsh high weight gain fatigue hair loss cold thyroiditis",
+    "hypothyroidism thyroid tsh high weight gain fatigue cold intolerance dry skin",
+    "thyroid gland underactive hypothyroidism sluggish slow heart rate constipation",
+    "thyroid gland underactive hypothyroidism sluggish slow heart rate constipation",
+    "thyroid badhi jaichi tsh high weight gain fatigue hair loss cold thyroiditis",
+    "thyroid gland underactive hypothyroidism sluggish slow heart rate constipation",
+    "thyroid hormone replacement levothyroxine high thyroid stimulating hormone tsh",
+    "hypothyroidism symptoms cold intolerance weight gain dry scaly skin thyroid fatigue",
+    "thyroid gland underactive hypothyroidism sluggish slow heart rate constipation",
+    "thyroid hormone replacement levothyroxine high thyroid stimulating hormone tsh",
+    "thyroid badhi jaichi tsh high weight gain fatigue hair loss cold thyroiditis",
+    "thyroid gland underactive hypothyroidism sluggish slow heart rate constipation",
+    "thyroid badhi jaichi tsh high weight gain fatigue hair loss cold thyroiditis"
   ],
   "joint pain": [
     "joint swelling, knee arthritis pain, knee stiffness",
@@ -1005,7 +1130,87 @@ const SLM_TRAINING_CORPUS = {
     "joint pain wrist ankle knee stiffness swelling",
     "ganthi bitha ganthi phula knee joint pain arthritis",
     "swollen knees, severe joint pain, gout flare, bone aches",
-    "rheumatoid arthritis joint pain, knee inflammation, joint swelling"
+    "rheumatoid arthritis joint pain, knee inflammation, joint swelling",
+    "neck stiff and ve terrible muscle weakness due to the swelling in joints it challenging to move about walking quite unpleasant",
+    "ve experiencing muscular weakness and neck stiff swollen joints and find it difficult to move about without becoming stiff it also uncomfortable to walk",
+    "recently try to walk about stiffness a stiff neck swollen joints and muscular weakness walking also uncomfortable",
+    "recently muscles quite and neck tight swollen joints and find it difficult to move about without becoming stiff it also uncomfortable to walk",
+    "ve experiencing muscular weakness and neck stiff it difficult to move about since joints swollen it uncomfortable to walk"
+  ],
+  "multiple sclerosis": [
+    "numbness tingling in limbs double vision optic neuritis muscle weakness fatigue",
+    "multiple sclerosis ms flare muscle spasms loss of balance vertigo difficulty walking",
+    "paraesthesia hands legs double vision myelin plaque ms attack fatigue",
+    "numbness or weakness in one or more limbs electric shock sensations with neck movement",
+    "optic neuritis blurred vision in one eye multiple sclerosis demyelinating",
+    "unsteady gait slurred speech extreme fatigue bladder dysfunction cognitive fog ms",
+    "goda hata jhimijhimi fatigue double vision walking imbalance multiple sclerosis",
+    "ms symptoms demyelination plaques on mri muscle stiffness weakness",
+    "ms symptoms demyelination plaques on mri muscle stiffness weakness",
+    "optic neuritis blurred vision in one eye multiple sclerosis demyelinating",
+    "unsteady gait slurred speech extreme fatigue bladder dysfunction cognitive fog ms",
+    "ms symptoms demyelination plaques on mri muscle stiffness weakness",
+    "numbness tingling in limbs double vision optic neuritis muscle weakness fatigue",
+    "unsteady gait slurred speech extreme fatigue bladder dysfunction cognitive fog ms",
+    "numbness or weakness in one or more limbs electric shock sensations with neck movement",
+    "numbness tingling in limbs double vision optic neuritis muscle weakness fatigue",
+    "ms symptoms demyelination plaques on mri muscle stiffness weakness",
+    "optic neuritis blurred vision in one eye multiple sclerosis demyelinating",
+    "numbness or weakness in one or more limbs electric shock sensations with neck movement",
+    "multiple sclerosis ms flare muscle spasms loss of balance vertigo difficulty walking",
+    "numbness tingling in limbs double vision optic neuritis muscle weakness fatigue",
+    "goda hata jhimijhimi fatigue double vision walking imbalance multiple sclerosis",
+    "optic neuritis blurred vision in one eye multiple sclerosis demyelinating"
+  ],
+  pneumonia: [
+    "cough with yellow green phlegm fever chills shortness of breath lung pain",
+    "pneumonia chest congestion coughing up thick mucus high fever breathlessness",
+    "kasha saha kapa baharuche fever breathing difficulty lungs consolidation",
+    "shortness of breath painful cough fever yellow sputum lung infection",
+    "coughing up rust colored sputum high fever chills sweat rapid breathing",
+    "pneumonia alveolar consolidation chest discomfort coughing fits dyspnea",
+    "kasha heuchi nisasane kasta chest congestion fever lung opacity",
+    "pneumonia cough chills fever chest wall pain rapid shallow breathing",
+    "ve with a high fever shortness of breath sweating chills and extreme heart rate rapid and ve coughing up a lot of brownish sputum",
+    "ve experiencing chills worn out and t to rid of this cough cough chest aches and heart feels as like it beating a million miles per hour m coughing up a nasty rust colored phlegm",
+    "ve very lousy with a high temperature shortness of breath sweating chills and extreme weariness heart beating and ve coughing up a lot of brownish phlegm",
+    "m drenched with sweat and t to catch breath throat clogged with mucus and m miserable heart racing and chest aches m coughing up a brownish stringy mucus",
+    "m sweating profusely and t to enough air throat filled with a lot of mucus and don t good heart pounding and chest aches m coughing up reddish colored mucous",
+    "m drenched with sweat and t to catch breath throat clogged with mucus and m miserable heart racing and chest aches m coughing up a brownish stringy mucus",
+    "coughing up rust colored sputum high fever chills sweat rapid breathing",
+    "pneumonia chest congestion coughing up thick mucus high fever breathlessness",
+    "kasha saha kapa baharuche fever breathing difficulty lungs consolidation",
+    "ve experiencing chills worn out and t to rid of this cough cough chest aches and heart feels as like it beating a million miles per hour m coughing up a nasty rust colored phlegm",
+    "kasha saha kapa baharuche fever breathing difficulty lungs consolidation",
+    "m drenched with sweat and t to catch breath throat clogged with mucus and m miserable heart racing and chest aches m coughing up a brownish stringy mucus",
+    "pneumonia alveolar consolidation chest discomfort coughing fits dyspnea",
+    "coughing up rust colored sputum high fever chills sweat rapid breathing",
+    "kasha heuchi nisasane kasta chest congestion fever lung opacity"
+  ],
+  "renal failure": [
+    "elevated creatinine level low egfr kidney failure chronic kidney disease uremia",
+    "renal failure creatinine 3.5 egfr 20 decreased urination fluid retention swollen legs",
+    "kidney function decreased uremic retention creatinine high renal clearance",
+    "chronic kidney disease ckd stage 3 elevated creatinine kidney failure fatigue",
+    "kidneys not functioning well high creatinine egfr restriction renal impairment",
+    "kidney failure swollen ankles feet shortness of breath high creatinine uremia",
+    "creatinine badhi jaichi ckd kidney failure urine decrease swelling legs",
+    "renal clearance restriction elevated creatinine level 4.2 ckd nephropathy",
+    "renal failure creatinine 3.5 egfr 20 decreased urination fluid retention swollen legs",
+    "kidney failure swollen ankles feet shortness of breath high creatinine uremia",
+    "chronic kidney disease ckd stage 3 elevated creatinine kidney failure fatigue",
+    "chronic kidney disease ckd stage 3 elevated creatinine kidney failure fatigue",
+    "elevated creatinine level low egfr kidney failure chronic kidney disease uremia",
+    "kidneys not functioning well high creatinine egfr restriction renal impairment",
+    "creatinine badhi jaichi ckd kidney failure urine decrease swelling legs",
+    "chronic kidney disease ckd stage 3 elevated creatinine kidney failure fatigue",
+    "kidney function decreased uremic retention creatinine high renal clearance",
+    "chronic kidney disease ckd stage 3 elevated creatinine kidney failure fatigue",
+    "renal clearance restriction elevated creatinine level 4.2 ckd nephropathy",
+    "creatinine badhi jaichi ckd kidney failure urine decrease swelling legs",
+    "renal clearance restriction elevated creatinine level 4.2 ckd nephropathy",
+    "elevated creatinine level low egfr kidney failure chronic kidney disease uremia",
+    "creatinine badhi jaichi ckd kidney failure urine decrease swelling legs"
   ],
   "skin rash": [
     "itchy red rash on skin, eczema patches, dry skin hives",
@@ -1025,7 +1230,12 @@ const SLM_TRAINING_CORPUS = {
     "i have an itchy skin and lots of red bumps on my arms and legs there are some weird looking spots on my skin too and sometimes there are bumps that feel kind of hard",
     "there are now red blotches all over my body i have been itching horribly all over a few of the patches also differ in complexion from my natural skin and these lumps or bumps have developed on my skin",
     "fungal infection rash, burning skin, severe itching",
-    "extreme skin irritation itching rash hives dry patches"
+    "extreme skin irritation itching rash hives dry patches",
+    "there now red blotches all over body itching horribly all over a few of the patches also differ in complexion from natural skin and these lumps or bumps developed on skin",
+    "an itchy skin and lots of red bumps on arms and legs there some weird looking spots on skin too and sometimes there bumps that kind of hard",
+    "body itching terribly all over and there now red spots everywhere some of the patches also differ in tone from natural complexion and there these lumps or pimples that appeared on skin",
+    "all over body itching like crazy and now there red areas all over additionally some of the patches a different tone than natural skin and on skin there these lumps or pimples that developed",
+    "lots of itchy spots on skin and sometimes turn red or bumpy there also some weird patches that different colors than the rest of skin and sometimes these weird bumps that look like little balls"
   ],
   "stomach pain": [
     "stomach cramps, abdominal pain, bloating, severe nausea",
@@ -1045,7 +1255,37 @@ const SLM_TRAINING_CORPUS = {
     "peta katuchi banti laguchi stomach pain bloating",
     "peta katuchi banti laguchi stomach pain bloating",
     "peta bitha heuchi gas pain vomiting banti laguchi indigestion",
-    "gastric pain, diarrhea, loose stools, nausea, vomiting"
+    "gastric pain, diarrhea, loose stools, nausea, vomiting",
+    "uneasiness after eating and usually vomit whatever ve eaten always this pain in abdomen and acid reflux",
+    "heartburn and indigestion vomit whatever eat and difficultly swallowing food beacuse the food stuck in throat a nagging pain in upper abdomen",
+    "after eating and puke up the entire meal constantly excruciating acid reflux and stomach pain",
+    "persistant gnawing hunger and apetite sometimes abdominal cramps and spasms there bloating and gas after eating causes me a great deal of uneasiness",
+    "a strong appetite and constantly hungry stomach occasionally aches and cramps painful gas and bloating after eating"
+  ],
+  stroke: [
+    "sudden numbness weakness on one side of body face drooping arm weakness slurred speech",
+    "ischemic stroke hemiplegia loss of speech vision loss transient ischemic attack",
+    "stroke warning signs face droop arm drift speech difficulty slurred",
+    "sudden severe headache confusion difficulty walking loss of balance dizziness stroke",
+    "cerebral infarct stroke occlusion numbness arm leg face weakness",
+    "banti laguchi munda ghureiba half body paralyzed stroke sudden weakness speech",
+    "sudden visual impairment loss of coordination weakness left arm leg stroke",
+    "transient ischemic attack tia sudden paralysis numbness slurred speech stroke",
+    "sudden visual impairment loss of coordination weakness left arm leg stroke",
+    "sudden severe headache confusion difficulty walking loss of balance dizziness stroke",
+    "banti laguchi munda ghureiba half body paralyzed stroke sudden weakness speech",
+    "cerebral infarct stroke occlusion numbness arm leg face weakness",
+    "cerebral infarct stroke occlusion numbness arm leg face weakness",
+    "stroke warning signs face droop arm drift speech difficulty slurred",
+    "stroke warning signs face droop arm drift speech difficulty slurred",
+    "transient ischemic attack tia sudden paralysis numbness slurred speech stroke",
+    "banti laguchi munda ghureiba half body paralyzed stroke sudden weakness speech",
+    "sudden numbness weakness on one side of body face drooping arm weakness slurred speech",
+    "cerebral infarct stroke occlusion numbness arm leg face weakness",
+    "ischemic stroke hemiplegia loss of speech vision loss transient ischemic attack",
+    "sudden severe headache confusion difficulty walking loss of balance dizziness stroke",
+    "sudden severe headache confusion difficulty walking loss of balance dizziness stroke",
+    "banti laguchi munda ghureiba half body paralyzed stroke sudden weakness speech"
   ],
   tonsillitis: [
     "sore throat swollen glands white spots back of throat painful to swallow solids fever no cough",
@@ -1065,7 +1305,37 @@ const SLM_TRAINING_CORPUS = {
     "acute tonsillitis pharyngitis severe throat pain difficulty swallowing swollen tonsils",
     "painful swallowing throat inflammation fever throat spots neck glands swollen",
     "painful swallowing throat inflammation fever throat spots neck glands swollen",
+    "strep throat sore throat swollen neck lymph nodes painful swallow solids",
+    "sore throat swollen glands white spots back of throat painful to swallow solids fever no cough",
+    "sore throat swollen glands white spots back of throat painful to swallow solids fever no cough",
+    "painful swallowing throat inflammation fever throat spots neck glands swollen",
+    "painful swallowing throat inflammation fever throat spots neck glands swollen",
     "strep throat sore throat swollen neck lymph nodes painful swallow solids"
+  ],
+  tuberculosis: [
+    "persistent cough coughing up blood hemoptysis night sweats weight loss fever",
+    "tuberculosis chronic cough sweating at night weight loss chest discomfort fatigue",
+    "tb kasha rakta baharuche chest discomfort night sweat weight loss fatigue",
+    "cavitary lesions on chest lung cavity tuberculosis persistent cough fever",
+    "coughing for more than three weeks fever night sweats unexplained weight loss",
+    "tb suspect chronic cough hemoptysis miliary tb infiltration",
+    "kasha sahita rakta paduchi tb chest discomfort weakness weight loss",
+    "tuberculosis exposure chronic dry cough afternoon fever night sweats",
+    "tuberculosis chronic cough sweating at night weight loss chest discomfort fatigue",
+    "tb suspect chronic cough hemoptysis miliary tb infiltration",
+    "tuberculosis chronic cough sweating at night weight loss chest discomfort fatigue",
+    "tuberculosis chronic cough sweating at night weight loss chest discomfort fatigue",
+    "tb suspect chronic cough hemoptysis miliary tb infiltration",
+    "tb kasha rakta baharuche chest discomfort night sweat weight loss fatigue",
+    "tuberculosis exposure chronic dry cough afternoon fever night sweats",
+    "tb suspect chronic cough hemoptysis miliary tb infiltration",
+    "kasha sahita rakta paduchi tb chest discomfort weakness weight loss",
+    "tb kasha rakta baharuche chest discomfort night sweat weight loss fatigue",
+    "tb suspect chronic cough hemoptysis miliary tb infiltration",
+    "tb kasha rakta baharuche chest discomfort night sweat weight loss fatigue",
+    "cavitary lesions on chest lung cavity tuberculosis persistent cough fever",
+    "tb kasha rakta baharuche chest discomfort night sweat weight loss fatigue",
+    "cavitary lesions on chest lung cavity tuberculosis persistent cough fever"
   ],
   uti: [
     "burning sensation when i pee frequent urination constant urge lower abdominal discomfort",
@@ -1085,7 +1355,12 @@ const SLM_TRAINING_CORPUS = {
     "burning sensation when passing urine frequent urination dark color",
     "parikra podajala barambar parisra laguchi bitha heuchi urge",
     "barambar parisra heuchi poduchi lower abdomen pain",
-    "painful urination dark urine frequent urge to pee lower stomach pressure"
+    "painful urination dark urine frequent urge to pee lower stomach pressure",
+    "to constantly to go the bathroom to relieve myself but to empty bladder these very strong and uncontrollable urges to pee and sometimes dark or bloody pee",
+    "need to relieve myself regularly but t to bladder to empty on sometimes intense uncontrollable urges to urinate along with dark or red urine",
+    "to go the bathroom all the time but the urine output very low just a few drops stomach hurts a lot and and to able to control urges to pee",
+    "to use the restroom frequently to relieve myself but t to bladder empty occasionally uncontrolled desires to urinate as well as black or crimson urine",
+    "frequent urges to urinate with little output pain during urination cloudy or bloody urine strong or foul smelling urine pelvic pain low fever nausea and vomiting"
   ],
   vertigo: [
     "sudden dizziness room spinning nauseous unsteady walk ringing ear tinnitus",
@@ -1105,7 +1380,12 @@ const SLM_TRAINING_CORPUS = {
     "sudden dizziness room spinning nauseous unsteady walk ringing ear tinnitus",
     "vertigo attack spinning sensation dizziness nausea loss of balance",
     "sudden dizziness and the room seemed to spin feel unsteady when i walk ringing in ear",
-    "sudden dizziness room spinning nauseous unsteady walk ringing ear tinnitus"
+    "sudden dizziness room spinning nauseous unsteady walk ringing ear tinnitus",
+    "lightheadedness room spin vertigo vestibular imbalance nausea",
+    "vertigo attack spinning sensation dizziness nausea loss of balance",
+    "sudden dizziness and the room seemed to spin feel unsteady when i walk ringing in ear",
+    "vertigo attack spinning sensation dizziness nausea loss of balance",
+    "dizzy room is spinning unsteady walking tinnitus ringing in ear"
   ],
   wound: [
     "cut foot on rusty nail red swollen painful cut foul smelling discharge fever infected",
@@ -1125,9 +1405,15 @@ const SLM_TRAINING_CORPUS = {
     "injury cut rusty metal nail swelling redness pain infected pus",
     "ksata heba phuliba pucha baharuchi fever infected",
     "injury cut rusty metal nail swelling redness pain infected pus",
+    "injury cut rusty metal nail swelling redness pain infected pus",
+    "injury cut rusty metal nail swelling redness pain infected pus",
+    "skin laceration cut by rusty nail red swelling painful localized heat",
+    "injury cut rusty metal nail swelling redness pain infected pus",
+    "skin laceration cut by rusty nail red swelling painful localized heat",
     "injury cut rusty metal nail swelling redness pain infected pus"
   ]
 };;
+;
 
 const MARKOV_TRAINING_SENTENCES_EN = [
   "i understand you are feeling unwell and experiencing discomfort today",
@@ -1279,12 +1565,16 @@ async function generateSlmResponse(text, profile) {
   const bestMatch = classifications[0];
   let condition = bestMatch.confidence > 25 ? bestMatch.condition : null;
 
-  // Let's filter out generic pain terms from bypassing fallback
+  // Let's filter out generic fallback terms from bypassing fallback
   if (condition) {
     const tokens = slmClassifier.tokenize(text);
     const matchedTokens = tokens.filter(t => slmClassifier.vocabulary.has(t));
-    const genericPainTerms = new Set(["pain", "hurt", "hurts", "ache", "aches", "bitha", "jantrana"]);
-    const hasSpecificToken = matchedTokens.some(t => !genericPainTerms.has(t));
+    const genericFallbackTerms = new Set([
+      "pain", "hurt", "hurts", "ache", "aches", "bitha", "jantrana",
+      "sick", "unwell", "exhausted", "tired", "weak", "fatigue", "feeling",
+      "sluggish", "exhaust", "exhaustion", "weakness"
+    ]);
+    const hasSpecificToken = matchedTokens.some(t => !genericFallbackTerms.has(t));
     if (!hasSpecificToken) {
       condition = null;
     }
@@ -1871,6 +2161,93 @@ const MEDICAL_KB = {
     precautions: ["⚠️ CRITICAL: Check tetanus toxoid (TT) vaccination status immediately. If >5 years since last dose or rusty nail cut, get TT booster within 24 hours!", "Keep wound clean, dry, and covered", "Monitor for spreading redness, heat, or fever", "Seek urgent care if red streaks spread up leg/arm"],
     diet: ["Protein-rich foods to accelerate tissue repair", "Vitamin C and Zinc supplements for wound healing", "Stay well-hydrated", "Avoid sugary foods that delay healing"],
     specialist: "General Surgeon / General Physician / Emergency Medicine"
+  },
+  pneumonia: {
+    icd11: "CA40",
+    conditions: ["Lobar Pneumonia", "Bronchopneumonia", "Viral Pneumonia", "Bacterial Pneumonia"],
+    medications: [
+      { name: "Amoxicillin 500mg (Brand: Mox, Amoxil)", snomed: "387517006", dose: "500 mg orally 3 times daily for 7 days", note: "First-line antibiotic for uncomplicated community-acquired pneumonia. Suppresses bacterial cell wall synthesis. Complete the full course. Avoid if allergic to Penicillins." },
+      { name: "Azithromycin 500mg (Brand: Azithral, Zithromax)", snomed: "372822002", dose: "500 mg orally once daily for 3 days", note: "Macrolide antibiotic. Effective against atypical pathogens. Safe alternative for patients with penicillin allergies. Take 1 hour before or 2 hours after meals." }
+    ],
+    precautions: ["Stay hydrated – drink plenty of warm fluids", "Use a spirometer 3–5 times daily for lung exercise", "Monitor oxygen levels (SpO2) with a pulse oximeter", "Seek emergency care if SpO2 drops below 92% or breathing is labored"],
+    diet: ["Warm broths and soups", "Garlic and ginger tea", "Vitamin C-rich fruits", "Avoid cold drinks and foods"],
+    specialist: "Pulmonologist / General Physician"
+  },
+  tuberculosis: {
+    icd11: "1B10",
+    conditions: ["Pulmonary Tuberculosis", "Miliary Tuberculosis", "Latent TB Infection"],
+    medications: [
+      { name: "Isoniazid 300mg (Brand: Solonex)", snomed: "387019007", dose: "300 mg orally once daily on an empty stomach", note: "Core antitubercular agent. Inhibits mycolic acid synthesis in bacterial cell walls. Administer with Vitamin B6 (Pyridoxine) to prevent peripheral neuropathy." },
+      { name: "Rifampicin 600mg (Brand: Racin, Rimactane)", snomed: "387135007", dose: "600 mg orally once daily 1 hour before meals", note: "Bactericidal rifamycin antibiotic. Inhibits bacterial RNA polymerase. Note: Harmlessly turns urine, sweat, and tears orange-red." }
+    ],
+    precautions: ["Complete the full 6-month treatment course without interruption", "Wear a mask to prevent airborne transmission", "Perform monthly liver function tests (LFT)", "Avoid alcohol entirely during therapy"],
+    diet: ["High-protein diet (eggs, lentils, chicken)", "Calorie-dense foods", "Vitamin B6 and multivitamin supplements", "Avoid junk/processed foods"],
+    specialist: "Pulmonologist / Infectious Disease Specialist"
+  },
+  cardiomegaly: {
+    icd11: "CB41.0",
+    conditions: ["Congestive Heart Failure", "Dilated Cardiomyopathy", "Hypertensive Heart Disease"],
+    medications: [
+      { name: "Enalapril Maleate 5mg (Brand: Envas, Vasotec)", snomed: "372692003", dose: "5 mg orally once daily", note: "ACE inhibitor. Reduces cardiac afterload and prevents ventricular remodeling by blocking angiotensin II synthesis. Monitor kidney function and watch for dry cough." },
+      { name: "Metoprolol Succinate 25mg (Brand: Metolar XR, Lopressor)", snomed: "372685003", dose: "25 mg orally once daily (extended-release)", note: "Beta-1 selective adrenergic blocker. Reduces heart rate, workload, and oxygen demand. Do not stop abruptly." }
+    ],
+    precautions: ["Monitor weight daily (sudden increase indicates fluid retention)", "Restrict daily fluid intake to 1.5 Litres if advised", "Track blood pressure and pulse rate daily", "Seek immediate care for worsening breathlessness when lying flat"],
+    diet: ["Low-sodium diet (<1500mg salt/day)", "Heart-healthy fats (olive oil, walnuts)", "Avoid processed and canned foods", "Limit potassium if on potassium-sparing diuretics"],
+    specialist: "Cardiologist"
+  },
+  "multiple sclerosis": {
+    icd11: "8A40",
+    conditions: ["Relapsing-Remitting MS", "Secondary Progressive MS", "Primary Progressive MS"],
+    medications: [
+      { name: "Glatiramer Acetate 20mg (Brand: Copaxone)", snomed: "387361009", dose: "20 mg subcutaneously once daily", note: "Immunomodulator. Shifts T-cell population to suppress myelin-reactive autoimmune responses. Instruct patient on proper injection technique and rotation of sites." },
+      { name: "Methylprednisolone 1g (Brand: Solu-Medrol)", snomed: "387494002", dose: "1000 mg intravenously once daily for 3-5 days during acute relapse", note: "High-dose corticosteroid. Rapidly reduces acute neuro-inflammation and speeds recovery from relapses. Take with gastric protection (PPI)." }
+    ],
+    precautions: ["Avoid hot baths and heat exposure (prevents Uhthoff's phenomenon)", "Regular physical therapy to maintain muscle strength and mobility", "Monitor for mood changes or depression", "Regular MRI scans to track disease activity"],
+    diet: ["Anti-inflammatory diet (omega-3 fatty acids, turmeric)", "Vitamin D3 supplements (crucial for MS)", "High-fiber foods for bowel health", "Limit saturated fats"],
+    specialist: "Neurologist / MS Specialist"
+  },
+  stroke: {
+    icd11: "8B20",
+    conditions: ["Ischemic Stroke", "Hemorrhagic Stroke", "Transient Ischemic Attack (TIA)"],
+    medications: [
+      { name: "Aspirin 75mg / Clopidogrel 75mg (Brand: Clopilet-A, Plavix)", snomed: "387121004", dose: "1 tablet daily after food", note: "Dual antiplatelet therapy. Inhibits platelet aggregation to prevent secondary ischemic events. Monitor for bleeding or bruising. Blocked/substituted if NSAID allergy exists." },
+      { name: "Atorvastatin 40mg (Brand: Lipvas, Lipitor)", snomed: "372679003", dose: "40 mg orally once daily at bedtime", note: "High-intensity HMG-CoA reductase inhibitor (statin). Stabilizes arterial plaques and reduces vascular inflammation to prevent recurrent stroke." }
+    ],
+    precautions: ["Control blood pressure strictly (<130/80 mmHg)", "Monitor for bleeding, dark stools, or nosebleeds", "Undergo physical and speech rehabilitation", "Know the FAST signs: Face drooping, Arm weakness, Speech difficulty, Time to call 108/911"],
+    diet: ["Strict low-sodium, low-cholesterol DASH diet", "Rich in vegetables, fruits, and whole grains", "Avoid trans-fats and deep-fried foods", "Restrict alcohol and stop smoking"],
+    specialist: "Neurologist / Stroke Specialist / Rehabilitation Physician"
+  },
+  hyperlipidemia: {
+    icd11: "5C80",
+    conditions: ["Hypercholesterolemia", "Mixed Hyperlipidemia", "Hypertriglyceridemia"],
+    medications: [
+      { name: "Atorvastatin Calcium 20mg (Brand: Lipvas, Lipitor)", snomed: "372679003", dose: "20 mg orally once daily at bedtime", note: "HMG-CoA reductase inhibitor (statin). Significantly lowers LDL-C (bad cholesterol) and triglycerides while raising HDL-C. Avoid grapefruit juice." },
+      { name: "Fenofibrate 160mg (Brand: Lipicard, Tricor)", snomed: "372648008", dose: "160 mg orally once daily with food", note: "Fibric acid derivative. Activates PPAR-alpha to reduce triglycerides and very low-density lipoproteins (VLDL). Take with meals." }
+    ],
+    precautions: ["Check lipid profile every 3 months", "Monitor for muscle pain or weakness (rhabdomyolysis check)", "Monitor liver enzymes (ALT/AST) periodically", "Engage in 150 minutes of moderate aerobic exercise weekly"],
+    diet: ["High-soluble fiber diet (oats, beans, barley)", "Eliminate trans-fats and limit saturated fats", "Increase omega-3 fatty acids (flaxseeds, salmon)", "Avoid refined sugars and excess alcohol"],
+    specialist: "Endocrinologist / Cardiologist"
+  },
+  hypothyroidism: {
+    icd11: "5A20",
+    conditions: ["Primary Hypothyroidism", "Hashimoto's Thyroiditis", "Subclinical Hypothyroidism"],
+    medications: [
+      { name: "Levothyroxine Sodium 50mcg (Brand: Thyronorm, Synthroid)", snomed: "372834007", dose: "50 mcg orally once daily, strictly 30-60 minutes before breakfast with water", note: "Synthetic thyroid hormone replacement. Directly replenishes T4 levels to normalize metabolic rate. Take on an empty stomach; do not take with calcium/iron supplements." }
+    ],
+    precautions: ["Check Serum TSH levels every 6-8 weeks during dose adjustment, then every 6 months", "Do not switch between different brand names of thyroxine without consulting doctor", "Watch for hyperthyroidism signs (palpitations, sweating, anxiety)", "Take medication consistently every single morning"],
+    diet: ["Iodized salt usage", "Ensure adequate selenium and zinc intake", "Limit goitrogens (cabbage, broccoli) unless cooked", "Maintain a balanced, calorie-controlled diet"],
+    specialist: "Endocrinologist"
+  },
+  "renal failure": {
+    icd11: "GB61",
+    conditions: ["Chronic Kidney Disease (CKD)", "Acute Kidney Injury (AKI)", "Nephrotic Syndrome"],
+    medications: [
+      { name: "Furosemide 40mg (Brand: Lasix)", snomed: "372728003", dose: "40 mg orally once daily in the morning", note: "Loop diuretic. Promotes excretion of water and sodium to manage fluid overload and edema. Monitor serum potassium levels." },
+      { name: "Sevelamer Carbonate 800mg (Brand: Renvela)", snomed: "387063004", dose: "800 mg orally 3 times daily with meals", note: "Phosphate binder. Binds dietary phosphorus in the GI tract to prevent hyperphosphatemia in renal failure. Take strictly with food." }
+    ],
+    precautions: ["Monitor daily fluid intake and output", "Avoid all nephrotoxic drugs, especially NSAIDs (Ibuprofen, Diclofenac)", "Regularly check kidney function (creatinine, eGFR) and electrolytes", "Strictly monitor blood pressure and blood sugar"],
+    diet: ["Low sodium, low potassium, and low phosphorus diet", "Restrict protein intake as advised by nephrologist", "Limit fluid intake according to urine output"],
+    specialist: "Nephrologist"
   }
 };
 
@@ -1892,8 +2269,17 @@ const KEYWORD_MAP = {
   "vertigo|dizziness|dizzy|spinning|unsteady|tinnitus|ringing ear|munda ghureiba": "vertigo",
   "anemia|fatigue|weakness|palpitations|lightheadedness|pale skin|pale lips|durbalata": "anemia",
   "tonsillitis|throat|pharyngitis|swallow|swollen glands|tonsil|gala bitha|gila": "tonsillitis",
-  "wound|cut|nail|rusty|pus|infected|discharge|septic|ksata": "wound"
+  "wound|cut|nail|rusty|pus|infected|discharge|septic|ksata": "wound",
+  "pneumonia|consolidation|lung opacity|alveolar infiltration|chest congestion|lobar consolidation|pleural effusion": "pneumonia",
+  "tuberculosis|tb|cavitary lesion|lung cavity|hemoptysis|night sweats|coughing blood": "tuberculosis",
+  "cardiomegaly|enlarged heart|heart enlargement|ventricular hypertrophy|cardiac dilation|cardiomyopathy": "cardiomegaly",
+  "multiple sclerosis|demyelinating|uhthoff|optic neuritis|myelin erosion|paraesthesia|ms flare": "multiple sclerosis",
+  "stroke|infarct|cerebral ischemia|hemiplegia|transient ischemic attack|tia|aphasia|face droop": "stroke",
+  "hyperlipidemia|cholesterol|ldl|triglycerides|hypercholesterolemia|lipid panel": "hyperlipidemia",
+  "hypothyroidism|tsh|thyroid|myxedema|goiter|thyroiditis|levothyroxine": "hypothyroidism",
+  "renal failure|kidney failure|creatinine|egfr|kidney function|uremia|ckd": "renal failure"
 };
+
 
 function detectCondition(text) {
   const lower = text.toLowerCase();
@@ -3265,6 +3651,22 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
       keyMetricMax = 100;
       keyMetricValue = defaultStage === 1 ? "15" : defaultStage === 2 ? "35" : defaultStage === 3 ? "65" : "85";
       confidence += 15;
+    } else if (/tuberculosis|tb|cavity|cavitary/i.test(n)) {
+      detectedCondition = "Pulmonary Tuberculosis / Cavitary Lesions";
+      keyMetricName = "Lung Cavitation Area";
+      keyMetricUnit = "%";
+      keyMetricMin = 0;
+      keyMetricMax = 100;
+      keyMetricValue = defaultStage === 1 ? "8" : defaultStage === 2 ? "22" : defaultStage === 3 ? "48" : "75";
+      confidence += 15;
+    } else if (/cardiomegaly|enlarged|heart|dilation/i.test(n)) {
+      detectedCondition = "Heart Enlargement / Cardiomegaly";
+      keyMetricName = "Cardiothoracic Ratio";
+      keyMetricUnit = "%";
+      keyMetricMin = 30;
+      keyMetricMax = 80;
+      keyMetricValue = defaultStage === 1 ? "52" : defaultStage === 2 ? "58" : defaultStage === 3 ? "66" : "74";
+      confidence += 15;
     } else if (/fracture|bone|break|fissure|joint|arthritis/i.test(n)) {
       detectedCondition = "Bone Fracture & Osteoarthritis";
       keyMetricName = "Joint Space Narrowing / Displacement";
@@ -3289,6 +3691,22 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
       keyMetricMin = 0;
       keyMetricMax = 80;
       keyMetricValue = defaultStage === 1 ? "8" : defaultStage === 2 ? "18" : defaultStage === 3 ? "35" : "55";
+      confidence += 15;
+    } else if (/ms|sclerosis|demyelination|myelin/i.test(n)) {
+      detectedCondition = "Multiple Sclerosis Demyelination";
+      keyMetricName = "Active Demyelinating Plaque Count";
+      keyMetricUnit = "";
+      keyMetricMin = 0;
+      keyMetricMax = 30;
+      keyMetricValue = defaultStage === 1 ? "2" : defaultStage === 2 ? "7" : defaultStage === 3 ? "15" : "25";
+      confidence += 15;
+    } else if (/stroke|infarct|ischemia|clot/i.test(n)) {
+      detectedCondition = "Cerebral Stroke / Infarct Area";
+      keyMetricName = "Stroke Infarction Size";
+      keyMetricUnit = " mm";
+      keyMetricMin = 0;
+      keyMetricMax = 100;
+      keyMetricValue = defaultStage === 1 ? "5" : defaultStage === 2 ? "15" : defaultStage === 3 ? "40" : "75";
       confidence += 15;
     } else if (/stenosis|herniation|bulge|disc|spine/i.test(n)) {
       detectedCondition = "Spinal Herniation & Canal Stenosis";
@@ -3348,6 +3766,30 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
       keyMetricMax = 8.0;
       keyMetricValue = defaultStage === 1 ? "0.8" : defaultStage === 2 ? "1.4" : defaultStage === 3 ? "2.8" : "5.4";
       confidence += 15;
+    } else if (/lipid|cholesterol|ldl|hdl|triglyceride/i.test(n)) {
+      detectedCondition = "Lipid Panel (Hyperlipidemia)";
+      keyMetricName = "Serum LDL Cholesterol";
+      keyMetricUnit = " mg/dL";
+      keyMetricMin = 50;
+      keyMetricMax = 300;
+      keyMetricValue = defaultStage === 1 ? "95" : defaultStage === 2 ? "125" : defaultStage === 3 ? "165" : "220";
+      confidence += 15;
+    } else if (/tsh|thyroid|t3|t4/i.test(n)) {
+      detectedCondition = "Thyroid Panel (Hypothyroidism)";
+      keyMetricName = "TSH (Thyroid Stimulating Hormone)";
+      keyMetricUnit = " uIU/mL";
+      keyMetricMin = 0.1;
+      keyMetricMax = 50.0;
+      keyMetricValue = defaultStage === 1 ? "2.5" : defaultStage === 2 ? "5.8" : defaultStage === 3 ? "14.5" : "38.0";
+      confidence += 15;
+    } else if (/hemoglobin|hb|cbc|anemia/i.test(n)) {
+      detectedCondition = "Hematological Panel (Anemia)";
+      keyMetricName = "Hemoglobin (Hb) Level";
+      keyMetricUnit = " g/dL";
+      keyMetricMin = 5.0;
+      keyMetricMax = 18.0;
+      keyMetricValue = defaultStage === 1 ? "13.5" : defaultStage === 2 ? "11.2" : defaultStage === 3 ? "8.8" : "6.5";
+      confidence += 15;
     } else {
       detectedCondition = "Hematological / Biochemistry Panel";
       keyMetricName = "Diagnostic Marker Deviation";
@@ -3374,12 +3816,20 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
   if (docType === 'xray') {
     if (detectedCondition.includes("Pneumonia")) {
       conditionKey = "pneumonia";
+    } else if (detectedCondition.includes("Tuberculosis")) {
+      conditionKey = "tuberculosis";
+    } else if (detectedCondition.includes("Cardiomegaly") || detectedCondition.includes("Heart Enlargement")) {
+      conditionKey = "cardiomegaly";
     } else {
       conditionKey = "joint pain";
     }
   } else if (docType === 'mri') {
     if (detectedCondition.includes("Tumour")) {
       conditionKey = "brain tumor";
+    } else if (detectedCondition.includes("Multiple Sclerosis")) {
+      conditionKey = "multiple sclerosis";
+    } else if (detectedCondition.includes("Stroke")) {
+      conditionKey = "stroke";
     } else {
       conditionKey = "back pain";
     }
@@ -3394,6 +3844,12 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
       conditionKey = "diabetes";
     } else if (detectedCondition.includes("Renal")) {
       conditionKey = "renal failure";
+    } else if (detectedCondition.includes("Lipid")) {
+      conditionKey = "hyperlipidemia";
+    } else if (detectedCondition.includes("Thyroid")) {
+      conditionKey = "hypothyroidism";
+    } else if (detectedCondition.includes("Anemia")) {
+      conditionKey = "anemia";
     } else {
       conditionKey = "fever";
     }
@@ -3424,13 +3880,42 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
   // Apply parsedVal if extracted from filename to boost offline accuracy
   if (parsedVal !== null) {
     if (docType === 'xray') {
-      if (parsedVal >= 0 && parsedVal <= 100) {
-        keyMetricValue = parsedVal.toString();
-        if (parsedVal <= 20) defaultStage = 1;
-        else if (parsedVal <= 50) defaultStage = 2;
-        else if (parsedVal <= 80) defaultStage = 3;
-        else defaultStage = 4;
-        confidence = 96;
+      if (detectedCondition.includes("Pneumonia")) {
+        if (parsedVal >= 0 && parsedVal <= 100) {
+          keyMetricValue = parsedVal.toString();
+          if (parsedVal <= 20) defaultStage = 1;
+          else if (parsedVal <= 50) defaultStage = 2;
+          else if (parsedVal <= 80) defaultStage = 3;
+          else defaultStage = 4;
+          confidence = 96;
+        }
+      } else if (detectedCondition.includes("Tuberculosis")) {
+        if (parsedVal >= 0 && parsedVal <= 100) {
+          keyMetricValue = parsedVal.toString();
+          if (parsedVal <= 15) defaultStage = 1;
+          else if (parsedVal <= 35) defaultStage = 2;
+          else if (parsedVal <= 60) defaultStage = 3;
+          else defaultStage = 4;
+          confidence = 96;
+        }
+      } else if (detectedCondition.includes("Cardiomegaly") || detectedCondition.includes("Heart Enlargement")) {
+        if (parsedVal >= 30 && parsedVal <= 80) {
+          keyMetricValue = parsedVal.toString();
+          if (parsedVal <= 50) defaultStage = 1;
+          else if (parsedVal <= 56) defaultStage = 2;
+          else if (parsedVal <= 65) defaultStage = 3;
+          else defaultStage = 4;
+          confidence = 96;
+        }
+      } else {
+        if (parsedVal >= 0 && parsedVal <= 100) {
+          keyMetricValue = parsedVal.toString();
+          if (parsedVal <= 20) defaultStage = 1;
+          else if (parsedVal <= 50) defaultStage = 2;
+          else if (parsedVal <= 80) defaultStage = 3;
+          else defaultStage = 4;
+          confidence = 96;
+        }
       }
     } else if (docType === 'mri') {
       if (detectedCondition.includes("Tumour")) {
@@ -3439,6 +3924,24 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
           if (parsedVal <= 10) defaultStage = 1;
           else if (parsedVal <= 25) defaultStage = 2;
           else if (parsedVal <= 45) defaultStage = 3;
+          else defaultStage = 4;
+          confidence = 96;
+        }
+      } else if (detectedCondition.includes("Multiple Sclerosis")) {
+        if (parsedVal >= 0 && parsedVal <= 30) {
+          keyMetricValue = parsedVal.toString();
+          if (parsedVal <= 4) defaultStage = 1;
+          else if (parsedVal <= 9) defaultStage = 2;
+          else if (parsedVal <= 18) defaultStage = 3;
+          else defaultStage = 4;
+          confidence = 96;
+        }
+      } else if (detectedCondition.includes("Stroke")) {
+        if (parsedVal >= 0 && parsedVal <= 100) {
+          keyMetricValue = parsedVal.toString();
+          if (parsedVal <= 10) defaultStage = 1;
+          else if (parsedVal <= 30) defaultStage = 2;
+          else if (parsedVal <= 60) defaultStage = 3;
           else defaultStage = 4;
           confidence = 96;
         }
@@ -3479,6 +3982,33 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
           if (parsedVal < 5.7) defaultStage = 1;
           else if (parsedVal < 6.5) defaultStage = 2;
           else if (parsedVal <= 8.5) defaultStage = 3;
+          else defaultStage = 4;
+          confidence = 96;
+        }
+      } else if (detectedCondition.includes("Lipid")) {
+        if (parsedVal >= 50 && parsedVal <= 300) {
+          keyMetricValue = parsedVal.toString();
+          if (parsedVal < 100) defaultStage = 1;
+          else if (parsedVal < 130) defaultStage = 2;
+          else if (parsedVal < 190) defaultStage = 3;
+          else defaultStage = 4;
+          confidence = 96;
+        }
+      } else if (detectedCondition.includes("Thyroid")) {
+        if (parsedVal >= 0.1 && parsedVal <= 50.0) {
+          keyMetricValue = parsedVal.toString();
+          if (parsedVal < 4.5) defaultStage = 1;
+          else if (parsedVal < 10.0) defaultStage = 2;
+          else if (parsedVal < 20.0) defaultStage = 3;
+          else defaultStage = 4;
+          confidence = 96;
+        }
+      } else if (detectedCondition.includes("Anemia")) {
+        if (parsedVal >= 5.0 && parsedVal <= 18.0) {
+          keyMetricValue = parsedVal.toString();
+          if (parsedVal >= 13.0) defaultStage = 1;
+          else if (parsedVal >= 10.0) defaultStage = 2;
+          else if (parsedVal >= 8.0) defaultStage = 3;
           else defaultStage = 4;
           confidence = 96;
         }
@@ -3580,6 +4110,54 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
         : activeStage === 3 
         ? "🚨 Urgent consultation required. Outpatient hospital monitoring is recommended." 
         : "🚨 <strong>CRITICAL EMERGENCY:</strong> Visit the emergency ward immediately. Widespread consolidation carries severe oxygen deprivation risk.";
+    } else if (detectedCondition.includes("Tuberculosis")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Chest radiography reveals apical infiltration, consolidation, or cavitary lesions at <strong>${activeMetricVal}%</strong> volume. This matches features of mycobacterial infection.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Early sub-apical infiltrates. No visible cavitation or pleural effusion.' : activeStage === 2 ? 'Localized lobar consolidation with early cavitary formation. Sputum positive suspect.' : activeStage === 3 ? 'Widespread bilateral cavitary lesions with miliary distribution. Significant lung damage.' : 'Advanced necrotizing cavitation with massive pleural effusion or bronchopleural fistula. Respiratory failure danger.'}</li>
+          <li><strong>Radiological Markers:</strong> Ghon focus, apical scarring, and fibro-nodular pattern are present.</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>😷 <strong>Infection Control:</strong> Wear an N95 mask and ensure home isolation in a well-ventilated room.</li>
+          <li>💊 <strong>Adherence Tracking:</strong> Strictly adhere to the daily DOTS regimen without skipping doses.</li>
+          <li>🧪 <strong>LFT Checks:</strong> Get baseline and monthly Liver Function Tests (LFT) due to hepatotoxicity risks of anti-TB drugs.</li>
+          <li>🥗 <strong>Caloric Boost:</strong> High-protein, high-calorie meals are essential for recovering lost body weight.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Consult a Pulmonologist immediately to initiate first-line anti-tubercular therapy (ATT)." 
+        : activeStage === 2 
+        ? "👉 Urgent Pulmonologist/ID consult. Start DOTS regimen immediately and perform sputum culture." 
+        : activeStage === 3 
+        ? "🚨 Hospitalization and isolation required. Inpatient monitoring is recommended for systemic management." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Severe cavitation or miliary TB with hypoxemia requires immediate emergency ward care.";
+    } else if (detectedCondition.includes("Cardiomegaly") || detectedCondition.includes("Heart Enlargement")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>X-Ray analysis indicates cardiothoracic ratio expansion measured at <strong>${activeMetricVal}%</strong>. This is characteristic of chamber dilation or hypertrophy.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Mild cardiomegaly (CTR 50–55%). No visible pulmonary congestion.' : activeStage === 2 ? 'Moderate heart enlargement (CTR 56–60%). Prominent hilum, early venous congestion.' : activeStage === 3 ? 'Severe cardiomegaly (CTR >60%). Diffuse pulmonary edema and Kerley B lines.' : 'Extreme cardiomegaly with CTR >70% and bilateral pleural effusion. Decompensated heart failure.'}</li>
+          <li><strong>Radiological Markers:</strong> Left ventricular apex displacement, double right border sign, and cephalization are present.</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>⚖️ <strong>Daily Weight:</strong> Monitor body weight every morning. A sudden 1-2 kg weight gain indicates fluid retention.</li>
+          <li>🧂 <strong>Salt Restriction:</strong> Limit salt intake to less than 1.5 grams/day (eliminate processed foods).</li>
+          <li>💧 <strong>Fluid Control:</strong> Restrict daily total fluid intake to 1.5 Litres if experiencing peripheral edema.</li>
+          <li>🛋️ <strong>Positioning:</strong> Rest in a semi-upright (Fowler's) position using multiple pillows to relieve night orthopnea.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Consult a Cardiologist within 7 days for Echocardiography to assess ejection fraction." 
+        : activeStage === 2 
+        ? "👉 Schedule prompt Cardiologist check. Initiate/adjust diuretics and ACE inhibitors." 
+        : activeStage === 3 
+        ? "🚨 Urgent cardiac intervention required. Hospital admission for IV diuretic therapy is advised." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Acute decompensated heart failure with severe pulmonary edema. Seek immediate ER care.";
     } else {
       pathologyHtml = `
         <p><strong>Clinical Pathology Summary:</strong></p>
@@ -3626,6 +4204,52 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
         : activeStage === 3 
         ? "🚨 Urgent Neurosurgery/Oncology referral. Edema control therapies should be initiated immediately." 
         : "🚨 <strong>CRITICAL EMERGENCY:</strong> Infiltrative Grade IV tumors showing midline shift require immediate neuro-emergency admission.";
+    } else if (detectedCondition.includes("Multiple Sclerosis")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Magnetic resonance imaging of cerebral/spinal segments identifies <strong>${activeMetricVal}</strong> active demyelinating plaques. This matches structural signs of myelin degradation.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? '1-3 small focal white-matter plaques (Dawson fingers). No active contrast enhancement.' : activeStage === 2 ? 'Multiple periventricular/corpus callosum plaques with mild local inflammation and T2 hyperintensity.' : activeStage === 3 ? 'Widespread plaque load with active gadolinium enhancement. Spinal cord lesion involvement.' : 'Severe cerebral and brainstem demyelination with atrophy and persistent black holes. High disability index.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🧊 <strong>Uhthoff Prevention:</strong> Avoid hot showers, saunas, and strenuous exercise in high temperatures (heat worsens conduction block).</li>
+          <li>🩺 <strong>Symptom Mapping:</strong> Keep a daily log of motor symptoms, ataxia, visual changes, or bladder control issues.</li>
+          <li>🧘‍♀️ <strong>Physical Therapy:</strong> Engage in regular low-impact stretching and balance training to maintain mobility.</li>
+          <li>💡 <strong>Vitamin D:</strong> Optimize serum Vitamin D levels as it modulates immune activity in MS.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Consult a Neurologist within 7 days to establish a baseline disease-modifying therapy (DMT) plan." 
+        : activeStage === 2 
+        ? "👉 Prompt Neurologist check. DMT adjustments are recommended to reduce future relapse rates." 
+        : activeStage === 3 
+        ? "🚨 Relapse flare-up suspect. Contact your Neurologist immediately for high-dose steroid therapy (Methylprednisolone)." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Widespread myelopathy causing acute paralysis, bulbar symptoms, or respiratory distress. Seek ER care.";
+    } else if (detectedCondition.includes("Stroke")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Neuroimaging isolates a focal region of restricted diffusion corresponding to a cerebral infarct/ischemic area measured at <strong>${activeMetricVal} mm</strong>.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Small lacunar infarct (diameter <10mm) in deep white matter. No midline shift.' : activeStage === 2 ? 'Focal cortical/subcortical ischemic zone. Minimal local cytotoxic edema.' : activeStage === 3 ? 'Moderate to large territory vascular occlusion (e.g. MCA branch) with significant cytotoxic edema.' : 'Massive hemispheric infarction with severe mass effect, midline shift, or hemorrhagic transformation risk.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>⚠️ <strong>FAST Protocol:</strong> Monitor for any recurrence of Face droop, Arm drift, or Speech slurring.</li>
+          <li>💊 <strong>Secondary Prevention:</strong> Strictly follow prescribed antiplatelet (Aspirin/Clopidogrel) and statin guidelines.</li>
+          <li>🩸 <strong>BP Control:</strong> Keep systolic blood pressure under 130 mmHg unless otherwise directed by your neurologist.</li>
+          <li>🗣️ <strong>Rehabilitation:</strong> Begin physical, occupational, and speech therapy as early as possible to promote neuroplasticity.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Consult a Neurologist/Stroke Specialist within 48 hours for secondary prevention angiogram/workup." 
+        : activeStage === 2 
+        ? "👉 Urgent Neurologist consultation. Ensure blood thinners are safely optimized. Check carotid doppler." 
+        : activeStage === 3 
+        ? "🚨 Hospitalization in a Stroke Unit is required. Intensive neurological monitoring is essential." 
+        : "🚨 <strong>CRITICAL EMERGENCY:</strong> Hyperacute stroke symptoms or deteriorating consciousness. Call 108/911 immediately. Every minute counts!";
     } else {
       pathologyHtml = `
         <p><strong>Clinical Pathology Summary:</strong></p>
@@ -3719,6 +4343,72 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
         : activeStage === 3 
         ? "👉 Consult a Diabetologist. Begin or adjust oral hypoglycaemics (e.g., Metformin 500mg)." 
         : "🚨 <strong>URGENT DIABETIC RISK:</strong> Severe uncontrolled levels require immediate consultation. Insulin therapy is likely necessary.";
+    } else if (detectedCondition.includes("Lipid")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Serum lipid profiling reports LDL Cholesterol at <strong>${activeMetricVal} mg/dL</strong>. Widespread elevation accelerates plaque formation.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'LDL <100 mg/dL. Optimal level, low atherosclerotic plaque risk.' : activeStage === 2 ? 'LDL 100 - 129 mg/dL. Borderline elevated. Early cholesterol buildup.' : activeStage === 3 ? 'LDL 130 - 189 mg/dL. High risk of coronary artery disease.' : 'LDL ≥190 mg/dL. Severe hyperlipidemia. Extreme risk of acute coronary syndrome.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🥦 <strong>Dietary Fiber:</strong> Consume 10–25g soluble fiber daily (oats, legumes, fruits) to block cholesterol absorption.</li>
+          <li>🍳 <strong>Fat Control:</strong> Strictly eliminate trans-fats and restrict saturated fats to under 7% of daily calories.</li>
+          <li>🏃‍♂️ <strong>Cardio Exercise:</strong> Perform at least 30 minutes of moderate-intensity aerobic exercise 5 days a week.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Healthy levels. Re-test lipid panel annually to monitor trends." 
+        : activeStage === 2 
+        ? "👉 Focus on dietary and lifestyle modification. Re-test in 3 months." 
+        : activeStage === 3 
+        ? "👉 Consult a Physician/Cardiologist. Statin therapy (e.g. Atorvastatin 10mg) may be needed." 
+        : "🚨 <strong>HIGH LIPID HAZARD:</strong> Consult doctor immediately. High-dose statin therapy is critical to prevent stroke/infarction.";
+    } else if (detectedCondition.includes("Thyroid")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Thyroid stimulating hormone (TSH) assays show a level of <strong>${activeMetricVal} uIU/mL</strong>. Elevated TSH indicates thyroid underactivity.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'TSH 0.4 - 4.5 uIU/mL. Euthyroid (Normal thyroid clearance).' : activeStage === 2 ? 'TSH 4.6 - 10.0 uIU/mL. Subclinical Hypothyroidism. Elevated pituitary stimulation.' : activeStage === 3 ? 'TSH 10.1 - 25.0 uIU/mL. Moderate Hypothyroidism. Decreased circulating free T4.' : 'TSH >25.0 uIU/mL. Severe primary hypothyroidism with high risk of myxedema crisis.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>⏰ <strong>Thyroxine Intake:</strong> Take Levothyroxine strictly on an empty stomach 30-60 minutes before breakfast with water.</li>
+          <li>💊 <strong>Supplement Timing:</strong> Avoid taking iron, calcium, or antacids within 4 hours of your thyroid medication.</li>
+          <li>🔬 <strong>TSH Monitoring:</strong> Repeat serum TSH checks every 6–8 weeks to titrate medication dosage correctly.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Normal thyroid clearance. Keep up healthy habits and re-test yearly." 
+        : activeStage === 2 
+        ? "👉 Monitor symptoms (fatigue, cold intolerance). Re-test TSH in 3 months before starting medication." 
+        : activeStage === 3 
+        ? "👉 Consult an Endocrinologist. Start synthetic thyroid hormone replacement (Levothyroxine)." 
+        : "🚨 <strong>URGENT ENDOCRINE RISK:</strong> Severe hypothyroid levels require immediate replacement therapy to prevent myxedema.";
+    } else if (detectedCondition.includes("Anemia")) {
+      pathologyHtml = `
+        <p><strong>Clinical Pathology Summary:</strong></p>
+        <p>Blood panel indicates Hemoglobin (Hb) levels at <strong>${activeMetricVal} g/dL</strong>. Reduced Hb restricts oxygen carriage capacity.</p>
+        <ul>
+          <li><strong>Current Stage Status:</strong> ${activeStage === 1 ? 'Hb ≥13.0 g/dL (Male) or ≥12.0 g/dL (Female). Normal hematological panel.' : activeStage === 2 ? 'Hb 10.0 - 11.9 g/dL. Mild anemia. Early iron or vitamin deficiency.' : activeStage === 3 ? 'Hb 8.0 - 9.9 g/dL. Moderate anemia with significant fatigue and exertional dyspnea.' : 'Hb <8.0 g/dL. Severe anemia. High risk of high-output cardiac failure; transfusion suspect.'}</li>
+        </ul>
+      `;
+      therapeuticSuggestions = `
+        <ul>
+          <li>🥩 <strong>Iron Rich Diet:</strong> Consume iron-rich foods (spinach, beetroot, pomegranate, beans, dates, or lean meats).</li>
+          <li>🍊 <strong>Vitamin C:</strong> Pair iron intake with Vitamin C (citrus fruits, amla) to enhance absorption.</li>
+          <li>☕ <strong>Avoid Inhibitors:</strong> Do not drink tea, coffee, or milk within 2 hours of iron supplements or meals.</li>
+        </ul>
+      `;
+      medicalAction = activeStage === 1 
+        ? "👉 Normal levels. Maintain balanced nutrition. Re-test if symptoms develop." 
+        : activeStage === 2 
+        ? "👉 Increase dietary iron. Consult physician to consider oral iron supplementation." 
+        : activeStage === 3 
+        ? "👉 Consult a General Physician/Hematologist. Start daily oral iron/folic acid therapy." 
+        : "🚨 <strong>SEVERE ANEMIA WARNING:</strong> Hb levels below 8.0 g/dL require urgent medical intervention or potential transfusion.";
     } else {
       pathologyHtml = `
         <p><strong>Clinical Pathology Summary:</strong></p>
@@ -4192,7 +4882,13 @@ const CLINICAL_DICTS = {
   "renal failure": ["elevated creatinine", "impaired egfr", "glomerular nephritis", "uremic retention", "nephropathy", "renal clearance restriction"],
   "high blood pressure": ["hypertensive urgency", "systolic elevation", "diastolic variance", "arterial stiffness", "renin-angiotensin activation", "high systemic resistance"],
   "eye pain": ["intraocular pressure elevation", "conjunctival hyperemia", "corneal edema", "photophobia", "ciliary injection", "blepharitis"],
-  "skin rash": ["allergic dermatitis", "erythematous patches", "prurigo bumps", "epidermal eczema", "urticaria papules", "fungal dermatomycosis"]
+  "skin rash": ["allergic dermatitis", "erythematous patches", "prurigo bumps", "epidermal eczema", "urticaria papules", "fungal dermatomycosis"],
+  "tuberculosis": ["cavitary lesion", "airborne transmission", "acid-fast bacilli", "pulmonary infiltration", "tubercle bacilli", "miliary spread"],
+  "cardiomegaly": ["ventricular hypertrophy", "cardiac dilation", "cardiomyopathy", "heart enlargement", "pulmonary congestion", "afterload reduction"],
+  "multiple sclerosis": ["demyelinating plaques", "uhthoff phenomenon", "optic neuritis", "oligoclonal bands", "white matter lesions", "myelin degradation"],
+  "stroke": ["cerebral ischemia", "cerebral infarction", "thrombotic occlusion", "hemiplegia paralysis", "transient ischemic attack", "ischemic penumbra"],
+  "hyperlipidemia": ["hypercholesterolemia", "atherosclerotic plaque", "low-density lipoprotein", "triglyceride elevation", "lipid profile clearance", "hmg-coa inhibition"],
+  "hypothyroidism": ["thyroid stimulating hormone", "levothyroxine replacement", "hashimoto thyroiditis", "thyroid follicle activity", "subclinical hypothyroidism", "myxedema"]
 };
 
 async function fetchBiomedicalSynonyms(detectedCondition, docType) {

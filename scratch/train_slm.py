@@ -14,11 +14,23 @@ CATEGORY_MAP = {
     "fungal infection": "skin rash",
     "impetigo": "skin rash",
     "psoriasis": "skin rash",
+    "drug reaction": "skin rash",
+    "chicken pox": "skin rash",
+    "allergy": "skin rash",
     "arthritis": "joint pain",
     "diabetes": "diabetes",
     "hypertension": "high blood pressure",
     "migraine": "headache",
-    "urinary tract infection": "uti"
+    "urinary tract infection": "uti",
+    "pneumonia": "pneumonia",
+    "common cold": "cough",
+    "bronchial asthma": "asthma",
+    "dengue": "fever",
+    "malaria": "fever",
+    "typhoid": "fever",
+    "cervical spondylosis": "back pain",
+    "peptic ulcer disease": "stomach pain",
+    "gastroesophageal reflux disease": "stomach pain"
 }
 
 # Generic helper/question words to remove from the Hugging Face dataset to prevent out-of-context leakages
@@ -28,7 +40,12 @@ GENERIC_WORDS_TO_REMOVE = {
     "do", "does", "did", "doing", "done",
     "get", "gets", "getting", "got",
     "make", "makes", "making", "made",
-    "take", "takes", "taking", "took"
+    "take", "takes", "taking", "took",
+    "feel", "feeling", "felt", "seems", "seem", "sick", "unwell", "exhausted", 
+    "tired", "weak", "fatigue", "sluggish", "lately", "often", "symptom", "symptoms", 
+    "disease", "condition", "problems", "problem", "bad", "worst", "extremely", "really",
+    "severe", "severely", "am", "is", "are", "was", "were", "be", "been", "being", 
+    "have", "has", "had", "having", "i", "you", "he", "she", "they", "we", "my", "your"
 }
 
 def download_dataset():
