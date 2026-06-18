@@ -7584,7 +7584,8 @@ ${profileCtx}`;
   const maxTokens = parseInt(localStorage.getItem("ramanai_llm_max_tokens") || "2048");
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`, {
+    const apiVersion = (model.startsWith("gemini-3.5") || model.startsWith("gemini-2.")) ? "v1beta" : "v1";
+    const response = await fetch(`https://generativelanguage.googleapis.com/${apiVersion}/models/${model}:generateContent?key=${apiKey}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
