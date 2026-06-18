@@ -1119,7 +1119,8 @@ async function runTest(name, fn) {
       { input: "migraine", expected: "headache", detail: "Synonym resolution for 'migraine' -> 'headache'" },
       { input: "gout", expected: "joint pain", detail: "Synonym resolution for 'gout' -> 'joint pain'" },
       { input: "ckd", expected: "renal failure", detail: "Synonym resolution for 'ckd' -> 'renal failure'" },
-      { input: "appendicitis", expected: "stomach pain", detail: "Sub-condition matching of 'appendicitis' -> 'stomach pain'" }
+      { input: "appendicitis", expected: "stomach pain", detail: "Sub-condition matching of 'appendicitis' -> 'stomach pain'" },
+      { input: "malaria", expected: "fever", detail: "Synonym resolution for 'malaria' -> 'fever'" }
     ];
 
     const profile = { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" };

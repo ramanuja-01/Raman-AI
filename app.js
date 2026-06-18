@@ -1595,6 +1595,9 @@ async function generateSlmResponse(text, profile) {
     "migraine": "headache",
     "gout": "joint pain",
     "flu": "fever",
+    "malaria": "fever",
+    "dengue": "fever",
+    "typhoid": "fever",
     "acid reflux": "stomach pain",
     "gastritis": "stomach pain",
     "heart attack": "chest pain",
@@ -2044,7 +2047,7 @@ function initParticles() {
 const MEDICAL_KB = {
   fever: {
     icd11: "MG26",
-    conditions: ["Viral Infection", "Bacterial Infection", "Flu (Influenza)", "Common Cold", "COVID-19"],
+    conditions: ["Viral Infection", "Bacterial Infection", "Flu (Influenza)", "Common Cold", "COVID-19", "Malaria", "Dengue", "Typhoid"],
     medications: [
       { name: "Paracetamol 650mg (Brand: Calpol, Crocin)", snomed: "387584000", dose: "500–1000 mg every 6–8 hours as needed (Maximum 4000 mg per 24 hours)", note: "First-line antipyretic & analgesic. Directly acts on the hypothalamus to reduce high body temperature. Take with a glass of water; can be administered with or without food. Avoid other acetaminophen-containing medications to prevent accidental hepatotoxicity." },
       { name: "Ibuprofen 400mg (Brand: Brufen, Advil)", snomed: "386864001", dose: "400 mg every 8 hours with food (Maximum 1200 mg per 24 hours)", note: "Non-steroidal anti-inflammatory drug (NSAID). Relieves fever, body aches, and inflammatory responses by blocking prostaglandin synthesis. ALWAYS take with food, milk, or antacids to safeguard gastric mucosa. Do not use if history of peptic ulcers or severe kidney disease." }
