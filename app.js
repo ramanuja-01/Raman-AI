@@ -1585,6 +1585,78 @@ async function generateSlmResponse(text, profile) {
     }
   }
 
+  // Direct disease/condition name lookup bypass
+  const cleanQuery = text.toLowerCase().trim();
+  let directCondition = null;
+  const diseaseSynonyms = {
+    "bp": "high blood pressure",
+    "hypertension": "high blood pressure",
+    "tb": "tuberculosis",
+    "migraine": "headache",
+    "gout": "joint pain",
+    "flu": "fever",
+    "acid reflux": "stomach pain",
+    "gastritis": "stomach pain",
+    "heart attack": "chest pain",
+    "angina": "chest pain",
+    "eczema": "skin rash",
+    "hives": "skin rash",
+    "dermatitis": "skin rash",
+    "copd": "asthma",
+    "bronchitis": "cough",
+    "kidney failure": "renal failure",
+    "ckd": "renal failure",
+    "ms": "multiple sclerosis"
+  };
+
+  if (diseaseSynonyms[cleanQuery]) {
+    directCondition = diseaseSynonyms[cleanQuery];
+  }
+
+  if (!directCondition) {
+    for (const cond of Object.keys(MEDICAL_KB)) {
+      if (cleanQuery === cond || cleanQuery === cond.replace(/\s+/g, '')) {
+        directCondition = cond;
+        break;
+      }
+    }
+  }
+
+  if (!directCondition) {
+    for (const cond of Object.keys(MEDICAL_KB)) {
+      if (cond.length > 4 && cleanQuery.includes(cond)) {
+        directCondition = cond;
+        break;
+      }
+    }
+  }
+
+  if (!directCondition) {
+    for (const [cond, kbData] of Object.entries(MEDICAL_KB)) {
+      if (kbData.conditions) {
+        for (const subCond of kbData.conditions) {
+          const cleanSub = subCond.toLowerCase().replace(/\s*\(.*?\)\s*/g, '').trim();
+          const subWords = cleanSub.split(/\s+/);
+          const isExactWord = subWords.includes(cleanQuery);
+          const isSubMatch = cleanQuery.length >= 3 && (cleanSub.includes(cleanQuery) || cleanQuery.includes(cleanSub));
+          if (isExactWord || isSubMatch) {
+            directCondition = cond;
+            break;
+          }
+        }
+      }
+      if (directCondition) break;
+    }
+  }
+
+  if (directCondition) {
+    condition = directCondition;
+    if (bestMatch) {
+      bestMatch.condition = directCondition;
+      bestMatch.confidence = 100; // Force direct match confidence
+    }
+  }
+
   // Pre-compute out-of-context detection to bypass accidental vocabulary matches
   const isHello = /^hi$|^hello$|^hey$|^greetings$|namaskar/i.test(text.trim());
   const isThanks = /thank|appreciate|grateful/i.test(text.trim());

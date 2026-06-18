@@ -1109,6 +1109,30 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  await runTest("Direct Disease Name Triage Lookup", async () => {
+    let ok = true;
+
+    // Test cases for direct disease and sub-condition matches
+    const testCases = [
+      { input: "asthma", expected: "asthma", detail: "Direct match of key 'asthma'" },
+      { input: "diabetes", expected: "diabetes", detail: "Direct match of key 'diabetes'" },
+      { input: "migraine", expected: "headache", detail: "Synonym resolution for 'migraine' -> 'headache'" },
+      { input: "gout", expected: "joint pain", detail: "Synonym resolution for 'gout' -> 'joint pain'" },
+      { input: "ckd", expected: "renal failure", detail: "Synonym resolution for 'ckd' -> 'renal failure'" },
+      { input: "appendicitis", expected: "stomach pain", detail: "Sub-condition matching of 'appendicitis' -> 'stomach pain'" }
+    ];
+
+    const profile = { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" };
+
+    for (const tc of testCases) {
+      const response = await generateSlmResponse(tc.input, profile);
+      const expectedBadgeString = tc.expected.toUpperCase();
+      ok = assert(response.includes(expectedBadgeString), `${tc.detail} resolved condition correctly. Expected badge to contain '${expectedBadgeString}'.`) && ok;
+    }
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");
