@@ -2999,6 +2999,19 @@ async function sendMessage() {
     const baseUrl = localStorage.getItem("ramanai_openai_base_url") || "https://api.openai.com/v1";
     const model = localStorage.getItem("ramanai_openai_model") || "gpt-4o";
     response = await generateOpenAiResponse(text, profile, key, baseUrl, model);
+  } else if (provider === "anthropic") {
+    const key = localStorage.getItem("ramanai_anthropic_api_key");
+    const baseUrl = localStorage.getItem("ramanai_anthropic_base_url") || "https://api.anthropic.com";
+    const model = localStorage.getItem("ramanai_anthropic_model") || "claude-3-7-sonnet-20250219";
+    if (key) {
+      response = await generateAnthropicResponse(text, profile, key, baseUrl, model);
+    } else {
+      const warningText = isOr 
+        ? `<div class="med-section warning"><p>⚠️ <strong>Anthropic API କି ମିଳିଲା ନାହିଁ:</strong> ଦୟାକରି API ସେଟିଙ୍ଗ୍ସକୁ ଯାଇ API Key ପ୍ରଦାନ କରନ୍ତୁ କିମ୍ବା ଲୋକାଲ୍ SLM ବ୍ୟବହାର କରନ୍ତୁ।</p><p>ରାମନ୍ ଲୋକାଲ୍ SLM ସହିତ ଅଫ୍‌ଲାଇନ୍ ଇନଫରେନ୍ସ କରାଯାଉଛି...</p></div>`
+        : `<div class="med-section warning"><p>⚠️ <strong>Anthropic API Key Missing:</strong> Please check your System & Model Settings to configure a valid API key.</p><p>Falling back to high-speed offline RAMAN Local SLM triage...</p></div>`;
+      addMessage("ai", warningText, true);
+      response = await generateSlmResponse(text, profile);
+    }
   } else {
     response = await generateSlmResponse(text, profile);
   }
@@ -5683,10 +5696,12 @@ function toggleProviderSettings() {
   const localSlmPanel = document.getElementById("settingsLocalSlm");
   const geminiPanel = document.getElementById("settingsGemini");
   const openaiPanel = document.getElementById("settingsOpenAi");
+  const anthropicPanel = document.getElementById("settingsAnthropic");
 
   if (localSlmPanel) localSlmPanel.style.display = provider === "local-slm" ? "block" : "none";
   if (geminiPanel) geminiPanel.style.display = provider === "gemini" ? "block" : "none";
   if (openaiPanel) openaiPanel.style.display = provider === "openai" ? "block" : "none";
+  if (anthropicPanel) anthropicPanel.style.display = provider === "anthropic" ? "block" : "none";
 }
 
 function openApiSettings() {
@@ -5722,6 +5737,17 @@ function openApiSettings() {
   if (openaiKeyInput) openaiKeyInput.value = openaiKey;
   if (openaiBaseUrlInput) openaiBaseUrlInput.value = openaiBaseUrl;
   if (openaiModelInput) openaiModelInput.value = openaiModelName;
+
+  // Load Anthropic details
+  const anthropicKey = localStorage.getItem("ramanai_anthropic_api_key") || "";
+  const anthropicBaseUrl = localStorage.getItem("ramanai_anthropic_base_url") || "https://api.anthropic.com";
+  const anthropicModelName = localStorage.getItem("ramanai_anthropic_model") || "claude-3-7-sonnet-20250219";
+  const anthropicKeyInput = document.getElementById("anthropicApiKey");
+  const anthropicBaseUrlInput = document.getElementById("anthropicBaseUrl");
+  const anthropicModelSelect = document.getElementById("anthropicModel");
+  if (anthropicKeyInput) anthropicKeyInput.value = anthropicKey;
+  if (anthropicBaseUrlInput) anthropicBaseUrlInput.value = anthropicBaseUrl;
+  if (anthropicModelSelect) anthropicModelSelect.value = anthropicModelName;
 
   // Load Hyperparameters
   const temp = localStorage.getItem("ramanai_llm_temp") || "0.2";
@@ -5781,6 +5807,19 @@ function saveApiKey() {
   localStorage.setItem("ramanai_openai_base_url", openaiBaseUrl);
   localStorage.setItem("ramanai_openai_model", openaiModelName);
 
+  // Anthropic Settings
+  const anthropicKey = document.getElementById("anthropicApiKey") ? document.getElementById("anthropicApiKey").value.trim() : "";
+  const anthropicBaseUrl = document.getElementById("anthropicBaseUrl") ? document.getElementById("anthropicBaseUrl").value.trim() : "https://api.anthropic.com";
+  const anthropicModelName = document.getElementById("anthropicModel") ? document.getElementById("anthropicModel").value : "claude-3-7-sonnet-20250219";
+
+  if (anthropicKey) {
+    localStorage.setItem("ramanai_anthropic_api_key", anthropicKey);
+  } else {
+    localStorage.removeItem("ramanai_anthropic_api_key");
+  }
+  localStorage.setItem("ramanai_anthropic_base_url", anthropicBaseUrl);
+  localStorage.setItem("ramanai_anthropic_model", anthropicModelName);
+
   // Save Hyperparameters
   const tempInput = document.getElementById("llmTemperature");
   const tokensInput = document.getElementById("llmMaxTokens");
@@ -5806,6 +5845,12 @@ function saveApiKey() {
     const alertMsg = isOr
       ? "କନଫିଗରେସନ୍ ସଫଳତାର ସହ ସଂରକ୍ଷିତ ହେଲା! କଷ୍ଟମ୍ API ଗେଟୱେ ସକ୍ରିୟ ଅଛି।"
       : "Configuration saved! Custom API Gateway is the active engine.";
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+    alert(alertMsg);
+  } else if (provider === "anthropic") {
+    const alertMsg = isOr
+      ? "କନଫିଗରେସନ୍ ସଫଳତାର ସହ ସଂରକ୍ଷିତ ହେଲା! ଆନ୍ଥ୍ରୋପିକ୍ କ୍ଲଡ୍ API ସକ୍ରିୟ ଅଛି।"
+      : "Configuration saved! Anthropic Claude API is the active engine.";
     if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
     alert(alertMsg);
   }
@@ -7620,6 +7665,88 @@ ${profileCtx}`;
     return `<div class="med-section warning"><p>⚠️ Network error. Could not reach OpenAI API Gateway.</p></div>`;
   }
 }
+
+async function generateAnthropicResponse(text, profile, apiKey, baseUrl, model) {
+  const profileCtx = `Patient Profile: Name: ${profile.name || 'Unknown'}, Age: ${profile.age || 'Unknown'}, Gender: ${profile.gender || 'Unknown'}, Blood Group: ${profile.blood || 'Unknown'}, Allergies: ${profile.allergies || 'None'}.`;
+  const isOr = window.currentLang === 'or';
+  
+  const systemInstruction = `You are RAMAN AI - Experiment No. 170, an empathetic and highly advanced medical intelligence assistant.
+Your goal is to triage symptoms, suggest possible conditions, and recommend general medications or dietary adjustments based strictly on the following Medical Knowledge Base.
+
+MEDICAL KNOWLEDGE BASE:
+${JSON.stringify(MEDICAL_KB)}
+
+RULES:
+1. Be empathetic and professional.
+2. If the user's symptoms match something in the MEDICAL KNOWLEDGE BASE, use that information to structure your response. Include possible conditions, medications (with dosage), precautions, and dietary recommendations.
+3. If the user mentions chest pain radiating to the arm/jaw, or any emergency symptom, immediately recommend calling emergency services.
+4. Always include a disclaimer that you are an AI and they should consult a real doctor.
+5. You MUST respond in HTML format (using <p>, <ul>, <li>, <strong>, etc.) so it renders nicely in the chat UI. Do not use markdown backticks for HTML. Use div classes like <div class="med-section info"><div class="med-section-title">Title</div>...</div>.
+6. The user is speaking ${isOr ? 'Odia' : 'English'}. You MUST reply entirely in ${isOr ? 'Odia' : 'English'}.
+
+Here is the current patient profile:
+${profileCtx}`;
+
+  const messages = [];
+
+  // Append actual chat history
+  chatHistory.forEach(msg => {
+    messages.push({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.text
+    });
+  });
+
+  // Append current message
+  messages.push({
+    role: 'user',
+    content: text
+  });
+
+  // Load dynamically saved parameters
+  const temp = parseFloat(localStorage.getItem("ramanai_llm_temp") || "0.2");
+  const maxTokens = parseInt(localStorage.getItem("ramanai_llm_max_tokens") || "2048");
+
+  try {
+    const headers = {
+      "Content-Type": "application/json",
+      "anthropic-version": "2023-06-01"
+    };
+    if (apiKey) {
+      headers["x-api-key"] = apiKey;
+    }
+
+    const response = await fetch(`${baseUrl}/v1/messages`, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({
+        model: model,
+        system: systemInstruction,
+        messages: messages,
+        temperature: temp,
+        max_tokens: maxTokens
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Anthropic API Error:", errorData);
+      const errMsg = errorData.error ? errorData.error.message : 'Unable to connect to Anthropic';
+      return `<div class="med-section warning"><p>⚠️ API Error: ${errMsg}</p><p><small>Please check your API key and settings configuration.</small></p></div>`;
+    }
+
+    const data = await response.json();
+    if (data.content && data.content[0] && data.content[0].text) {
+      return data.content[0].text;
+    } else {
+      return `<p>An unexpected response format was returned from the Anthropic API.</p>`;
+    }
+  } catch (error) {
+    console.error("Fetch error:", error);
+    return `<div class="med-section warning"><p>⚠️ Network error. Could not reach Anthropic API Gateway.</p></div>`;
+  }
+}
+
 
 // ==========================================
 // ── RAMAN SLM TRAINING HUB & SANDBOX HUD ──

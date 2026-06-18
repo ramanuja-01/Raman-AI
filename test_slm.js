@@ -1027,6 +1027,56 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  await runTest("Anthropic Claude Integration & Query Routing", async () => {
+    let ok = true;
+
+    // 1. Verify existence of global handlers
+    ok = assert(typeof generateAnthropicResponse === "function", "generateAnthropicResponse is successfully declared globally.") && ok;
+
+    // 2. Mock API request and verify header mappings
+    const oldFetch = global.fetch;
+    let requestUrl = "";
+    let requestHeaders = {};
+    let requestBody = {};
+
+    global.fetch = function(url, options) {
+      requestUrl = url;
+      requestHeaders = options.headers;
+      requestBody = JSON.parse(options.body);
+
+      const mockResponse = {
+        content: [
+          { type: "text", text: "<p>Claude Mock: The patient has mild fever.</p>" }
+        ]
+      };
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(mockResponse)
+      });
+    };
+
+    const apiKey = "sk-ant-test-12345";
+    const baseUrl = "https://api.anthropic.com";
+    const model = "claude-3-7-sonnet-20250219";
+    const textQuery = "fever symptoms";
+    const profile = { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" };
+
+    const responseText = await generateAnthropicResponse(textQuery, profile, apiKey, baseUrl, model);
+
+    ok = assert(requestUrl === "https://api.anthropic.com/v1/messages", `Routing points to correct Anthropic endpoint: '${requestUrl}'`) && ok;
+    ok = assert(requestHeaders["x-api-key"] === apiKey, `API key header successfully mapped: '${requestHeaders["x-api-key"]}'`) && ok;
+    ok = assert(requestHeaders["anthropic-version"] === "2023-06-01", `Anthropic version header correctly set: '${requestHeaders["anthropic-version"]}'`) && ok;
+    ok = assert(requestBody.model === model, `Model selection passed in body: '${requestBody.model}'`) && ok;
+    ok = assert(responseText.includes("Claude Mock:"), "Response text successfully extracted from Claude's response structure.") && ok;
+
+    // Restore fetch
+    global.fetch = oldFetch;
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");

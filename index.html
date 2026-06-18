@@ -635,6 +635,7 @@
             <option value="local-slm">🧠 RAMAN Local SLM (Offline & Fast)</option>
             <option value="gemini">♊ Google Gemini API (Online)</option>
             <option value="openai">🔓 OpenAI / Custom API Gateway (Online)</option>
+            <option value="anthropic">🤗 Anthropic Claude API (Online)</option>
           </select>
         </div>
 
@@ -684,6 +685,32 @@
             <label for="openaiModel" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">Model Name / Identifier</label>
             <input type="text" id="openaiModel" placeholder="gpt-4o" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box;" autocomplete="off" />
             <small style="color: var(--text-muted); display: block; margin-top: 4px;">E.g. <code>llama3</code>, <code>mistral</code>, or <code>gpt-4o</code>.</small>
+          </div>
+        </div>
+
+        <!-- 4. ANTHROPIC PANEL -->
+        <div id="settingsAnthropic" style="display:none; margin: 15px 0;">
+          <div style="background: rgba(217, 119, 6, 0.08); border: 1px solid #d97706; border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center;">
+            <h4 style="color: #d97706; margin: 0 0 5px 0;">⚡ ACTIVE ENGINE: ANTHROPIC API</h4>
+            <p style="margin: 0; font-size: 0.85rem;">Execute dynamic online model reasoning via official Anthropic Claude APIs.</p>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="anthropicApiKey" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">Anthropic API Key</label>
+            <input type="password" id="anthropicApiKey" placeholder="sk-ant-..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box;" autocomplete="off" />
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="anthropicBaseUrl" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">API Base Endpoint URL</label>
+            <input type="text" id="anthropicBaseUrl" placeholder="https://api.anthropic.com" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box;" autocomplete="off" />
+            <small style="color: var(--text-muted); display: block; margin-top: 4px;">E.g. <code>https://api.anthropic.com</code> or a custom reverse proxy URL.</small>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="anthropicModel" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">Model Identifier</label>
+            <select id="anthropicModel" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; font-family: inherit;">
+              <option value="claude-3-7-sonnet-20250219">claude-3-7-sonnet-20250219 (Recommended, Claude 3.7 Sonnet)</option>
+              <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022 (Claude 3.5 Sonnet)</option>
+              <option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022 (Claude 3.5 Haiku)</option>
+              <option value="claude-3-opus-20240229">claude-3-opus-20240229 (Claude 3 Opus)</option>
+            </select>
           </div>
         </div>
 
