@@ -2984,7 +2984,7 @@ async function sendMessage() {
 
   if (provider === "gemini") {
     const key = localStorage.getItem("ramanai_gemini_api_key");
-    const model = localStorage.getItem("ramanai_gemini_model") || "gemini-1.5-flash";
+    const model = localStorage.getItem("ramanai_gemini_model") || "gemini-3.5-flash";
     if (key) {
       response = await generateGeminiResponse(text, profile, key, model);
     } else {
@@ -4818,7 +4818,7 @@ function analyzeDocument(file, docType, profile, tunerParams = null) {
     // Check if active provider is Gemini
     const provider = localStorage.getItem("ramanai_provider") || "slm";
     const geminiKey = localStorage.getItem("ramanai_gemini_api_key");
-    const geminiModel = localStorage.getItem("ramanai_gemini_model") || "gemini-1.5-flash";
+    const geminiModel = localStorage.getItem("ramanai_gemini_model") || "gemini-3.5-flash";
     
     let result = "";
     
@@ -5721,7 +5721,7 @@ function openApiSettings() {
 
   // Load Gemini details
   const geminiKey = localStorage.getItem("ramanai_gemini_api_key") || "";
-  const geminiModel = localStorage.getItem("ramanai_gemini_model") || "gemini-1.5-flash";
+  const geminiModel = localStorage.getItem("ramanai_gemini_model") || "gemini-3.5-flash";
   const geminiKeyInput = document.getElementById("geminiApiKey");
   const geminiModelSelect = document.getElementById("geminiModel");
   if (geminiKeyInput) geminiKeyInput.value = geminiKey;
@@ -5786,7 +5786,7 @@ function saveApiKey() {
 
   // Gemini Settings
   const geminiKey = document.getElementById("geminiApiKey") ? document.getElementById("geminiApiKey").value.trim() : "";
-  const geminiModel = document.getElementById("geminiModel") ? document.getElementById("geminiModel").value : "gemini-1.5-flash";
+  const geminiModel = document.getElementById("geminiModel") ? document.getElementById("geminiModel").value : "gemini-3.5-flash";
   if (geminiKey) {
     localStorage.setItem("ramanai_gemini_api_key", geminiKey);
   } else {
