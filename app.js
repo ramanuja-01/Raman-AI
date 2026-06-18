@@ -1595,7 +1595,8 @@ async function generateSlmResponse(text, profile) {
     "migraine": "headache",
     "gout": "joint pain",
     "flu": "fever",
-    "malaria": "fever",
+    "malaria": "malaria",
+    "maleria": "malaria",
     "dengue": "fever",
     "typhoid": "fever",
     "acid reflux": "stomach pain",
@@ -1872,10 +1873,12 @@ async function generateSlmResponse(text, profile) {
         </span>
       </div>`;
 
-    html += `<div class="med-section">
-      <div class="med-section-title">${isOr ? ODIA_DICT.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
-      <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
-    </div>`;
+    if (condition !== "malaria") {
+      html += `<div class="med-section">
+        <div class="med-section-title">${isOr ? ODIA_DICT.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
+        <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
+      </div>`;
+    }
 
     html += `<div class="med-section ${isEmergency ? 'warning' : ''}">
       <div class="med-section-title">${isOr ? ODIA_DICT.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
@@ -2055,6 +2058,17 @@ const MEDICAL_KB = {
     precautions: ["Stay hydrated – drink 8–10 glasses of water/day", "Rest adequately", "Monitor temperature every 4 hours", "Seek urgent care if fever exceeds 104°F (40°C)"],
     diet: ["Warm soups and broths", "Fresh citrus fruits (Vitamin C)", "Ginger and tulsi tea", "Avoid cold foods and beverages"],
     specialist: "General Physician / Internist"
+  },
+  malaria: {
+    icd11: "1F40",
+    conditions: ["Plasmodium Falciparum Malaria", "Plasmodium Vivax Malaria"],
+    medications: [
+      { name: "Artesunate 60mg and Sulfadoxine-Pyrimethamine (Brand: Larinate)", snomed: "N/A", dose: "Take as directed by physician (standard 3-day course)", note: "Artemisinin-based combination therapy (ACT). Rapidly clears asexual blood stages of malaria parasites." },
+      { name: "Primaquine Phosphate 15mg (Brand: Primarid)", snomed: "386923000", dose: "15mg orally once daily for 14 days (vivax rad. cure)", note: "8-aminoquinoline. Clears dormant liver hypnozoites in P. vivax. Contraindicated in G6PD deficiency." }
+    ],
+    precautions: ["ALWAYS check G6PD status before administering Primaquine (risk of fatal hemolysis)", "Complete the full course of antimalarials even if fever resolves", "Use insecticide-treated bed nets and insect repellent"],
+    diet: ["Stay hydrated with ORS and fresh coconut water", "Light carbohydrate-rich meals", "Avoid fatty foods during nausea"],
+    specialist: "Infectious Disease Specialist / General Physician"
   },
   headache: {
     icd11: "MB4D",
@@ -2741,10 +2755,12 @@ function buildResponse(text, profile) {
 
   let html = `<p>${profileInfo}${introTxt}</p>`;
 
-  html += `<div class="med-section">
-    <div class="med-section-title">${isOr ? ODIA_DICT.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
-    <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
-  </div>`;
+  if (condition !== "malaria") {
+    html += `<div class="med-section">
+      <div class="med-section-title">${isOr ? ODIA_DICT.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
+      <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
+    </div>`;
+  }
 
   html += `<div class="med-section ${isEmergency ? 'warning' : ''}">
     <div class="med-section-title">${isOr ? ODIA_DICT.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
@@ -7062,6 +7078,11 @@ function completeClinicalConsultation() {
       metricName = "Systemic Inflammatory Response Index (SIRI)";
       defaultMetricVal = temp.toFixed(1) + " °F";
       break;
+    case "malaria":
+      conditionName = "Plasmodium Parasitic Hemolytico-Febrile Infection";
+      metricName = "Parasitemia Hemolysis Index";
+      defaultMetricVal = "42%";
+      break;
     case "headache":
       conditionName = "Intracranial Vasospastic Cephalgia (Migraine Suspected)";
       metricName = "Intracranial Tension Abnormality Level";
@@ -8047,6 +8068,7 @@ function runSandboxInference(text) {
     // Condition title translation for premium bilingual experience
     const titles = {
       "fever": "Acute Febrile Illness / ଜ୍ୱର",
+      "malaria": "Plasmodium Parasite Infection / ମ୍ୟାଲେରିଆ",
       "headache": "Vasospastic Cephalgia / ମୁଣ୍ଡବିନ୍ଧା",
       "cough": "Bronchial Congestion / କାଶ",
       "chest pain": "Myocardial Ischemia / ଛାତି ଯନ୍ତ୍ରଣା",
@@ -8144,6 +8166,7 @@ function runSandboxInference(text) {
 function translateToPatientTerms(conditionKey) {
   const mapping = {
     "fever": "Fever & General Infection Triage",
+    "malaria": "Malaria & Parasitic Infection Triage",
     "headache": "Headache & Muscular Tension Triage",
     "cough": "Cough & Airway Clearance Support",
     "chest pain": "Chest Discomfort & Emergency Safety Triage",

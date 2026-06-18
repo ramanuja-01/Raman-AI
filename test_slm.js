@@ -1120,7 +1120,7 @@ async function runTest(name, fn) {
       { input: "gout", expected: "joint pain", detail: "Synonym resolution for 'gout' -> 'joint pain'" },
       { input: "ckd", expected: "renal failure", detail: "Synonym resolution for 'ckd' -> 'renal failure'" },
       { input: "appendicitis", expected: "stomach pain", detail: "Sub-condition matching of 'appendicitis' -> 'stomach pain'" },
-      { input: "malaria", expected: "fever", detail: "Synonym resolution for 'malaria' -> 'fever'" }
+      { input: "malaria", expected: "malaria", detail: "Direct match mapping for 'malaria' -> 'malaria'" }
     ];
 
     const profile = { name: "Raman", age: 34, gender: "Male", blood: "B+", allergies: "None" };
@@ -1130,6 +1130,17 @@ async function runTest(name, fn) {
       const expectedBadgeString = tc.expected.toUpperCase();
       ok = assert(response.includes(expectedBadgeString), `${tc.detail} resolved condition correctly. Expected badge to contain '${expectedBadgeString}'.`) && ok;
     }
+
+    // Special validation for malaria: ensure POSSIBLE CONDITIONS is hidden and correct medications are returned
+    const malariaResp = await generateSlmResponse("malaria", profile);
+    const hasPossibleCond = malariaResp.includes("POSSIBLE CONDITIONS");
+    ok = assert(!hasPossibleCond, "Malaria response should NOT contain 'POSSIBLE CONDITIONS' section") && ok;
+    ok = assert(malariaResp.includes("Artesunate") && malariaResp.includes("Primaquine"), "Malaria response should contain accurate medications (Artesunate and Primaquine)") && ok;
+
+    // Test with maleria typo as well
+    const maleriaResp = await generateSlmResponse("maleria", profile);
+    ok = assert(maleriaResp.includes("MALARIA"), "Maleria typo should resolve to MALARIA badge") && ok;
+    ok = assert(!maleriaResp.includes("POSSIBLE CONDITIONS"), "Maleria response should NOT contain 'POSSIBLE CONDITIONS' section") && ok;
 
     return ok;
   });
