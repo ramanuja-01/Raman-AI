@@ -7498,6 +7498,39 @@ function bindConsultationEvents() {
   });
 }
 
+function cleanAIResponse(text) {
+  if (!text) return text;
+  let cleaned = text.trim();
+
+  // 1. Remove <think>...</think> blocks if present
+  cleaned = cleaned.replace(/&lt;think&gt;[\s\S]*?&lt;\/think&gt;/gi, '');
+  cleaned = cleaned.replace(/<think>[\s\S]*?<\/think>/gi, '');
+
+  // 2. Remove self-correction or thought prefixes before the first HTML tag.
+  const firstTagIndex = cleaned.indexOf('<');
+  if (firstTagIndex > 0) {
+    const prefix = cleaned.substring(0, firstTagIndex).trim();
+    if (/self-correction|thinking|thought|correction|self correction/i.test(prefix)) {
+      cleaned = cleaned.substring(firstTagIndex).trim();
+    }
+  }
+
+  // 3. Remove specific markdown self-correction and thought patterns anywhere in response
+  cleaned = cleaned.replace(/\*(?:Self-Correction|Self Correction|Thought|Thinking Process)[^*]*\*(?:[^*<]|\n)*/gi, '');
+
+  // 4. Handle cases where the text starts with a "Self-Correction:" prefix but no HTML tag follows immediately
+  cleaned = cleaned.replace(/^(?:Thinking Process|Thought|Thinking|Self-Correction|Self Correction):\s*[\s\S]*?(?=\n\n|\n[<*#]|$)/i, '');
+
+  // 5. Clean up outer markdown code block wrappers (e.g. ```html ... ``` or ``` ... ```)
+  const codeBlockRegex = /^```(?:html)?\s*([\s\S]*?)\s*```$/i;
+  const match = cleaned.match(codeBlockRegex);
+  if (match) {
+    cleaned = match[1].trim();
+  }
+
+  return cleaned.trim();
+}
+
 async function generateGeminiResponse(text, profile, apiKey, model) {
   const profileCtx = `Patient Profile: Name: ${profile.name || 'Unknown'}, Age: ${profile.age || 'Unknown'}, Gender: ${profile.gender || 'Unknown'}, Blood Group: ${profile.blood || 'Unknown'}, Allergies: ${profile.allergies || 'None'}.`;
   const isOr = window.currentLang === 'or';
@@ -7515,6 +7548,7 @@ RULES:
 4. Always include a disclaimer that you are an AI and they should consult a real doctor.
 5. You MUST respond in HTML format (using <p>, <ul>, <li>, <strong>, etc.) so it renders nicely in the chat UI. Do not use markdown backticks for HTML. Use div classes like <div class="med-section info"><div class="med-section-title">Title</div>...</div>.
 6. The user is speaking ${isOr ? 'Odia' : 'English'}. You MUST reply entirely in ${isOr ? 'Odia' : 'English'}.
+7. Do NOT include any self-correction, thoughts, explanation of formatting, reasoning steps, or internal commentary. Output ONLY the final rendered HTML and nothing else.
 
 Here is the current patient profile:
 ${profileCtx}`;
@@ -7573,7 +7607,7 @@ ${profileCtx}`;
 
     const data = await response.json();
     if (data.candidates && data.candidates[0].content.parts[0].text) {
-      return data.candidates[0].content.parts[0].text;
+      return cleanAIResponse(data.candidates[0].content.parts[0].text);
     } else {
       return `<p>An unexpected response format was returned from the API.</p>`;
     }
@@ -7600,6 +7634,7 @@ RULES:
 4. Always include a disclaimer that you are an AI and they should consult a real doctor.
 5. You MUST respond in HTML format (using <p>, <ul>, <li>, <strong>, etc.) so it renders nicely in the chat UI. Do not use markdown backticks for HTML. Use div classes like <div class="med-section info"><div class="med-section-title">Title</div>...</div>.
 6. The user is speaking ${isOr ? 'Odia' : 'English'}. You MUST reply entirely in ${isOr ? 'Odia' : 'English'}.
+7. Do NOT include any self-correction, thoughts, explanation of formatting, reasoning steps, or internal commentary. Output ONLY the final rendered HTML and nothing else.
 
 Here is the current patient profile:
 ${profileCtx}`;
@@ -7656,7 +7691,7 @@ ${profileCtx}`;
 
     const data = await response.json();
     if (data.choices && data.choices[0] && data.choices[0].message) {
-      return data.choices[0].message.content;
+      return cleanAIResponse(data.choices[0].message.content);
     } else {
       return `<p>An unexpected response format was returned from the API.</p>`;
     }
@@ -7683,6 +7718,7 @@ RULES:
 4. Always include a disclaimer that you are an AI and they should consult a real doctor.
 5. You MUST respond in HTML format (using <p>, <ul>, <li>, <strong>, etc.) so it renders nicely in the chat UI. Do not use markdown backticks for HTML. Use div classes like <div class="med-section info"><div class="med-section-title">Title</div>...</div>.
 6. The user is speaking ${isOr ? 'Odia' : 'English'}. You MUST reply entirely in ${isOr ? 'Odia' : 'English'}.
+7. Do NOT include any self-correction, thoughts, explanation of formatting, reasoning steps, or internal commentary. Output ONLY the final rendered HTML and nothing else.
 
 Here is the current patient profile:
 ${profileCtx}`;
@@ -7737,7 +7773,7 @@ ${profileCtx}`;
 
     const data = await response.json();
     if (data.content && data.content[0] && data.content[0].text) {
-      return data.content[0].text;
+      return cleanAIResponse(data.content[0].text);
     } else {
       return `<p>An unexpected response format was returned from the Anthropic API.</p>`;
     }

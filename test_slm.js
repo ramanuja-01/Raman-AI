@@ -1077,6 +1077,38 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  await runTest("AI Response Sanitization (cleanAIResponse)", async () => {
+    let ok = true;
+
+    // Verify existence of the function
+    ok = assert(typeof cleanAIResponse === "function", "cleanAIResponse is successfully declared globally.") && ok;
+
+    // Case 1: Standard response should remain untouched
+    const normalInput = "<div class=\"med-section info\"><p>Normal HTML</p></div>";
+    ok = assert(cleanAIResponse(normalInput) === normalInput, "Standard HTML response is left unchanged.") && ok;
+
+    // Case 2: Strip self-correction prefix before HTML tag
+    const selfCorrectionPrefix = `*Self-Correction on formatting:* Ensure no markdown formatting like '\`\`\`html ... \`\`\`' is outputted. The prompt says "You MUST respond in HTML format... Do not use markdown backticks for HTML." This means I should write raw HTML directly in the output without wrapping it in triple backticks. Let me review the raw HTML string to ensure it looks perfectly fine when rendered directly.
+
+<div class="med-section info"><p>Actual Content</p></div>`;
+    const cleanedCorrection = cleanAIResponse(selfCorrectionPrefix);
+    ok = assert(cleanedCorrection === "<div class=\"med-section info\"><p>Actual Content</p></div>", `Self-correction prefix is successfully stripped. Got: ${cleanedCorrection}`) && ok;
+
+    // Case 3: Strip <think>...</think> blocks
+    const thinkInput = "<think>We need to check the patient's symptoms first.</think><p>Output content</p>";
+    ok = assert(cleanAIResponse(thinkInput) === "<p>Output content</p>", `Think blocks are successfully stripped. Got: ${cleanAIResponse(thinkInput)}`) && ok;
+
+    // Case 4: Strip markdown backtick wrappers
+    const wrappedInput = "```html\n<p>Wrapped content</p>\n```";
+    ok = assert(cleanAIResponse(wrappedInput) === "<p>Wrapped content</p>", `Markdown code block wrappers are stripped. Got: ${cleanAIResponse(wrappedInput)}`) && ok;
+
+    // Case 5: Strip Thinking Process/Thought block
+    const thoughtBlock = "Thinking Process: This is a test thought.\n\n<p>Thought block output</p>";
+    ok = assert(cleanAIResponse(thoughtBlock) === "<p>Thought block output</p>", `Thinking Process block is stripped. Got: ${cleanAIResponse(thoughtBlock)}`) && ok;
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");
