@@ -289,6 +289,11 @@ class NaiveBayesSymptomClassifier {
       tokens.push(stemmedWords[i] + " " + stemmedWords[i+1] + " " + stemmedWords[i+2]);
     }
     
+    // Extract quadgrams to increase vocabulary size and feature density
+    for (let i = 0; i < stemmedWords.length - 3; i++) {
+      tokens.push(stemmedWords[i] + " " + stemmedWords[i+1] + " " + stemmedWords[i+2] + " " + stemmedWords[i+3]);
+    }
+    
     return tokens;
   }
 
