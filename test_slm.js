@@ -1142,6 +1142,18 @@ async function runTest(name, fn) {
     ok = assert(maleriaResp.includes("MALARIA"), "Maleria typo should resolve to MALARIA badge") && ok;
     ok = assert(!maleriaResp.includes("POSSIBLE CONDITIONS"), "Maleria response should NOT contain 'POSSIBLE CONDITIONS' section") && ok;
 
+    // Verify all primary symptoms show POSSIBLE CONDITIONS
+    for (const symptom of ["fever", "headache", "cough", "stomach pain"]) {
+      const resp = await generateSlmResponse(symptom, profile);
+      ok = assert(resp.includes("POSSIBLE CONDITIONS"), `Symptom '${symptom}' response should contain 'POSSIBLE CONDITIONS' section`) && ok;
+    }
+
+    // Verify all primary diseases hide POSSIBLE CONDITIONS
+    for (const disease of ["diabetes", "asthma", "anemia", "high blood pressure"]) {
+      const resp = await generateSlmResponse(disease, profile);
+      ok = assert(!resp.includes("POSSIBLE CONDITIONS"), `Disease '${disease}' response should NOT contain 'POSSIBLE CONDITIONS' section`) && ok;
+    }
+
     return ok;
   });
 

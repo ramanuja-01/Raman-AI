@@ -1873,7 +1873,12 @@ async function generateSlmResponse(text, profile) {
         </span>
       </div>`;
 
-    if (condition !== "malaria") {
+    const CLINICAL_SYMPTOMS = new Set([
+      "fever", "headache", "cough", "chest pain", "stomach pain", 
+      "joint pain", "skin rash", "eye pain", "back pain", 
+      "vertigo", "wound"
+    ]);
+    if (CLINICAL_SYMPTOMS.has(condition)) {
       html += `<div class="med-section">
         <div class="med-section-title">${isOr ? ODIA_DICT.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
         <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
@@ -2755,7 +2760,12 @@ function buildResponse(text, profile) {
 
   let html = `<p>${profileInfo}${introTxt}</p>`;
 
-  if (condition !== "malaria") {
+  const CLINICAL_SYMPTOMS = new Set([
+    "fever", "headache", "cough", "chest pain", "stomach pain", 
+    "joint pain", "skin rash", "eye pain", "back pain", 
+    "vertigo", "wound"
+  ]);
+  if (CLINICAL_SYMPTOMS.has(condition)) {
     html += `<div class="med-section">
       <div class="med-section-title">${isOr ? ODIA_DICT.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
       <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
