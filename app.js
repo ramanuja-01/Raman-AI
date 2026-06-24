@@ -9292,6 +9292,30 @@ window.applyClinicianCorrection = function(predictedClass, correctClass, queryTe
   const tokens = slmClassifier.tokenize(queryText);
   if (tokens.length === 0) return;
 
+  // 1. Build Query TF-IDF Vector over all query tokens
+  const queryTf = {};
+  for (const token of tokens) {
+    queryTf[token] = (queryTf[token] || 0) + 1;
+  }
+
+  const queryVector = {};
+  for (const [token, count] of Object.entries(queryTf)) {
+    queryVector[token] = count * (slmClassifier.idf[token] || 1.0);
+  }
+
+  let sumSq = 0;
+  for (const val of Object.values(queryVector)) {
+    sumSq += val * val;
+  }
+  const queryMagnitude = Math.sqrt(sumSq);
+
+  const normQueryVector = {};
+  if (queryMagnitude > 0) {
+    for (const [token, val] of Object.entries(queryVector)) {
+      normQueryVector[token] = val / queryMagnitude;
+    }
+  }
+
   if (!window.localClinicianDeltas[correctClass]) {
     window.localClinicianDeltas[correctClass] = {};
   }
@@ -9299,9 +9323,13 @@ window.applyClinicianCorrection = function(predictedClass, correctClass, queryTe
     window.localClinicianDeltas[predictedClass] = {};
   }
 
+  const eta = 0.05; // Active learning rate as defined in WIKI.md / index.html
+
   for (const token of tokens) {
-    window.localClinicianDeltas[correctClass][token] = (window.localClinicianDeltas[correctClass][token] || 0) + 0.15;
-    window.localClinicianDeltas[predictedClass][token] = (window.localClinicianDeltas[predictedClass][token] || 0) - 0.15;
+    const x_symptom = normQueryVector[token] !== undefined ? normQueryVector[token] : 1.0;
+    const delta = eta * x_symptom;
+    window.localClinicianDeltas[correctClass][token] = (window.localClinicianDeltas[correctClass][token] || 0) + delta;
+    window.localClinicianDeltas[predictedClass][token] = (window.localClinicianDeltas[predictedClass][token] || 0) - delta;
   }
 
   try {
