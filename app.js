@@ -260,6 +260,14 @@ class NaiveBayesSymptomClassifier {
     this.nbWordCounts = {}; // Maps condition -> token -> count
     this.nbClassTotals = {}; // Maps condition -> sum of tokens
     this.nbPriors = {}; // Maps condition -> log prior
+
+    // Neural Network (MLP) structures
+    this.mlpW1 = [];          // V x H weights
+    this.mlpb1 = null;        // H bias
+    this.mlpW2 = [];          // H x C weights
+    this.mlpb2 = null;        // C bias
+    this.vocabIndices = new Map();
+    this.conditions = [];
   }
 
   tokenize(text) {
@@ -293,6 +301,20 @@ class NaiveBayesSymptomClassifier {
     for (let i = 0; i < stemmedWords.length - 3; i++) {
       tokens.push(stemmedWords[i] + " " + stemmedWords[i+1] + " " + stemmedWords[i+2] + " " + stemmedWords[i+3]);
     }
+
+    // Extract subword character n-grams to handle typos and spelling variants
+    for (const w of words) {
+      if (!stopWords.has(w) && w.length >= 4) {
+        // Extract char 3-grams
+        for (let i = 0; i <= w.length - 3; i++) {
+          tokens.push("c3:" + w.substring(i, i + 3));
+        }
+        // Extract char 4-grams
+        for (let i = 0; i <= w.length - 4; i++) {
+          tokens.push("c4:" + w.substring(i, i + 4));
+        }
+      }
+    }
     
     return tokens;
   }
@@ -316,7 +338,7 @@ class NaiveBayesSymptomClassifier {
         }
         for (const token of tokens) {
           this.vocabulary.add(token);
-          if (token.length > 2) {
+          if (token.length > 2 && !token.startsWith("c3:") && !token.startsWith("c4:")) {
             this.trie.insert(token, condition);
           }
         }
@@ -342,7 +364,11 @@ class NaiveBayesSymptomClassifier {
         
         const vector = {};
         for (const [token, count] of Object.entries(tf)) {
-          vector[token] = count * (this.idf[token] || 1.0);
+          let val = count * (this.idf[token] || 1.0);
+          if (token.startsWith("c3:") || token.startsWith("c4:")) {
+            val *= 0.5;
+          }
+          vector[token] = val;
         }
         
         // Normalize L2 Norm of vector
@@ -441,6 +467,153 @@ class NaiveBayesSymptomClassifier {
         }
       }
     }
+
+    // 5. Train Multi-Layer Perceptron (MLP)
+    this.conditions = Object.keys(corpus);
+    const C = this.conditions.length;
+    const V = this.vocabulary.size;
+    const H = 16;
+
+    // Build vocabulary index mapping
+    this.vocabIndices.clear();
+    let idx = 0;
+    for (const token of this.vocabulary) {
+      this.vocabIndices.set(token, idx);
+      idx++;
+    }
+
+    // Initialize MLP weights & biases using Xavier/Glorot initialization and seeded LCG
+    this.mlpb1 = new Float32Array(H);
+    this.mlpb2 = new Float32Array(C);
+
+    let seed = 42;
+    const seededRandom = () => {
+      seed = (seed * 9301 + 49297) % 233280;
+      return seed / 233280;
+    };
+
+    const limit1 = Math.sqrt(6 / (V + H));
+    this.mlpW1 = Array.from({length: V}, () => {
+      const row = new Float32Array(H);
+      for (let j = 0; j < H; j++) {
+        row[j] = (seededRandom() - 0.5) * 2 * limit1;
+      }
+      return row;
+    });
+
+    const limit2 = Math.sqrt(6 / (H + C));
+    this.mlpW2 = Array.from({length: H}, () => {
+      const row = new Float32Array(C);
+      for (let k = 0; k < C; k++) {
+        row[k] = (seededRandom() - 0.5) * 2 * limit2;
+      }
+      return row;
+    });
+
+    // MLP Training Epochs
+    const mlpEpochs = 40;
+    for (let epoch = 0; epoch < mlpEpochs; epoch++) {
+      // Use LCG seeded shuffling to maintain determinism
+      const shuffled = [...vectorizedDataset];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(seededRandom() * (i + 1));
+        const temp = shuffled[i];
+        shuffled[i] = shuffled[j];
+        shuffled[j] = temp;
+      }
+
+      const eta = 0.1 / (1 + epoch * 0.05);
+
+      for (const sample of shuffled) {
+        const yIdx = this.conditions.indexOf(sample.label);
+        if (yIdx === -1) continue;
+
+        // Forward propagation
+        const z1 = new Float32Array(H);
+        z1.set(this.mlpb1);
+        for (const [token, x_val] of Object.entries(sample.vector)) {
+          const vIdx = this.vocabIndices.get(token);
+          if (vIdx !== undefined) {
+            const w1_row = this.mlpW1[vIdx];
+            for (let j = 0; j < H; j++) {
+              z1[j] += x_val * w1_row[j];
+            }
+          }
+        }
+
+        const a1 = new Float32Array(H);
+        for (let j = 0; j < H; j++) {
+          a1[j] = Math.max(0, z1[j]);
+        }
+
+        const z2 = new Float32Array(C);
+        z2.set(this.mlpb2);
+        for (let j = 0; j < H; j++) {
+          const a1_val = a1[j];
+          if (a1_val > 0) {
+            const w2_row = this.mlpW2[j];
+            for (let k = 0; k < C; k++) {
+              z2[k] += a1_val * w2_row[k];
+            }
+          }
+        }
+
+        let maxZ2 = -Infinity;
+        for (let k = 0; k < C; k++) {
+          if (z2[k] > maxZ2) maxZ2 = z2[k];
+        }
+        const exps = new Float32Array(C);
+        let sumExps = 0;
+        for (let k = 0; k < C; k++) {
+          exps[k] = Math.exp(z2[k] - maxZ2);
+          sumExps += exps[k];
+        }
+        const a2 = new Float32Array(C);
+        for (let k = 0; k < C; k++) {
+          a2[k] = sumExps > 0 ? exps[k] / sumExps : 0;
+        }
+
+        // Backpropagation
+        const d2 = new Float32Array(C);
+        for (let k = 0; k < C; k++) {
+          d2[k] = a2[k] - (k === yIdx ? 1.0 : 0.0);
+        }
+
+        const d1 = new Float32Array(H);
+        for (let j = 0; j < H; j++) {
+          if (z1[j] > 0) {
+            let sum = 0;
+            const w2_row = this.mlpW2[j];
+            for (let k = 0; k < C; k++) {
+              sum += d2[k] * w2_row[k];
+            }
+            d1[j] = sum;
+          }
+        }
+
+        // Weight updates
+        for (let k = 0; k < C; k++) {
+          const d2_val = d2[k];
+          this.mlpb2[k] -= eta * d2_val;
+          for (let j = 0; j < H; j++) {
+            this.mlpW2[j][k] -= eta * d2_val * a1[j];
+          }
+        }
+
+        for (let j = 0; j < H; j++) {
+          this.mlpb1[j] -= eta * d1[j];
+        }
+        for (const [token, x_val] of Object.entries(sample.vector)) {
+          const vIdx = this.vocabIndices.get(token);
+          if (vIdx !== undefined) {
+            const w1_row = this.mlpW1[vIdx];
+            for (let j = 0; j < H; j++) {
+              w1_row[j] -= eta * d1[j] * x_val;
+            }
+          }
+        }
+      }
+    }
   }
 
   classify(text) {
@@ -459,7 +632,11 @@ class NaiveBayesSymptomClassifier {
 
     const queryVector = {};
     for (const [token, count] of Object.entries(queryTf)) {
-      queryVector[token] = count * (this.idf[token] || 1.0);
+      let val = count * (this.idf[token] || 1.0);
+      if (token.startsWith("c3:") || token.startsWith("c4:")) {
+        val *= 0.5;
+      }
+      queryVector[token] = val;
     }
 
     let sumSq = 0;
@@ -499,7 +676,58 @@ class NaiveBayesSymptomClassifier {
       normNbScores[condition] = nbScores[condition] - meanNb;
     }
 
-    // 3. Compute SVM Margin decision values + Naive Bayes ensemble fusions
+    // Run MLP Forward Pass
+    const C = this.conditions.length;
+    const H = 16;
+    const z1 = new Float32Array(H);
+    z1.set(this.mlpb1);
+    for (const [token, x_val] of Object.entries(normQueryVector)) {
+      const idx = this.vocabIndices.get(token);
+      if (idx !== undefined) {
+        const w1_row = this.mlpW1[idx];
+        for (let j = 0; j < H; j++) {
+          z1[j] += x_val * w1_row[j];
+        }
+      }
+    }
+    const a1 = new Float32Array(H);
+    for (let j = 0; j < H; j++) {
+      a1[j] = Math.max(0, z1[j]);
+    }
+    const z2 = new Float32Array(C);
+    z2.set(this.mlpb2);
+    for (let j = 0; j < H; j++) {
+      const a1_val = a1[j];
+      if (a1_val > 0) {
+        const w2_row = this.mlpW2[j];
+        for (let k = 0; k < C; k++) {
+          z2[k] += a1_val * w2_row[k];
+        }
+      }
+    }
+    let maxZ2 = -Infinity;
+    for (let k = 0; k < C; k++) {
+      if (z2[k] > maxZ2) maxZ2 = z2[k];
+    }
+    const mlpExps = new Float32Array(C);
+    let mlpSum = 0;
+    for (let k = 0; k < C; k++) {
+      mlpExps[k] = Math.exp(z2[k] - maxZ2);
+      mlpSum += mlpExps[k];
+    }
+    const mlpLogProbs = {};
+    for (let k = 0; k < C; k++) {
+      const prob = mlpSum > 0 ? mlpExps[k] / mlpSum : 0;
+      mlpLogProbs[this.conditions[k]] = Math.log(prob + 1e-15);
+    }
+    const mlpValues = Object.values(mlpLogProbs);
+    const meanMlp = mlpValues.reduce((a, b) => a + b, 0) / mlpValues.length;
+    const normMlpScores = {};
+    for (const condition of Object.keys(mlpLogProbs)) {
+      normMlpScores[condition] = mlpLogProbs[condition] - meanMlp;
+    }
+
+    // 3. Compute SVM Margin decision values + Naive Bayes & MLP ensemble fusions
     const scores = {};
     for (const condition of Object.keys(this.weights)) {
       const w = this.weights[condition];
@@ -513,7 +741,7 @@ class NaiveBayesSymptomClassifier {
       }
       
       const svmMargin = dotProduct + b;
-      scores[condition] = svmMargin + 0.4 * normNbScores[condition];
+      scores[condition] = svmMargin + 0.4 * normNbScores[condition] + 0.3 * (normMlpScores[condition] || 0);
     }
 
     // 4. Inject Trie-based fuzzy phrase matches as margin shifts
@@ -575,7 +803,11 @@ class NaiveBayesSymptomClassifier {
     }
     const queryVector = {};
     for (const [token, count] of Object.entries(queryTf)) {
-      queryVector[token] = count * (this.idf[token] || 1.0);
+      let val = count * (this.idf[token] || 1.0);
+      if (token.startsWith("c3:") || token.startsWith("c4:")) {
+        val *= 0.5;
+      }
+      queryVector[token] = val;
     }
     let sumSq = 0;
     for (const val of Object.values(queryVector)) {
@@ -619,6 +851,57 @@ class NaiveBayesSymptomClassifier {
       normNbScores[condition] = nbScores[condition] - meanNb;
     }
 
+    // Run MLP Forward Pass in explain
+    const C = this.conditions.length;
+    const H = 16;
+    const z1 = new Float32Array(H);
+    z1.set(this.mlpb1);
+    for (const [token, x_val] of Object.entries(normQueryVector)) {
+      const idx = this.vocabIndices.get(token);
+      if (idx !== undefined) {
+        const w1_row = this.mlpW1[idx];
+        for (let j = 0; j < H; j++) {
+          z1[j] += x_val * w1_row[j];
+        }
+      }
+    }
+    const a1 = new Float32Array(H);
+    for (let j = 0; j < H; j++) {
+      a1[j] = Math.max(0, z1[j]);
+    }
+    const z2 = new Float32Array(C);
+    z2.set(this.mlpb2);
+    for (let j = 0; j < H; j++) {
+      const a1_val = a1[j];
+      if (a1_val > 0) {
+        const w2_row = this.mlpW2[j];
+        for (let k = 0; k < C; k++) {
+          z2[k] += a1_val * w2_row[k];
+        }
+      }
+    }
+    let maxZ2 = -Infinity;
+    for (let k = 0; k < C; k++) {
+      if (z2[k] > maxZ2) maxZ2 = z2[k];
+    }
+    const mlpExps = new Float32Array(C);
+    let mlpSum = 0;
+    for (let k = 0; k < C; k++) {
+      mlpExps[k] = Math.exp(z2[k] - maxZ2);
+      mlpSum += mlpExps[k];
+    }
+    const mlpLogProbs = {};
+    for (let k = 0; k < C; k++) {
+      const prob = mlpSum > 0 ? mlpExps[k] / mlpSum : 0;
+      mlpLogProbs[this.conditions[k]] = Math.log(prob + 1e-15);
+    }
+    const mlpValues = Object.values(mlpLogProbs);
+    const meanMlp = mlpValues.reduce((a, b) => a + b, 0) / mlpValues.length;
+    const normMlpScores = {};
+    for (const condition of Object.keys(mlpLogProbs)) {
+      normMlpScores[condition] = mlpLogProbs[condition] - meanMlp;
+    }
+
     for (const [condition, w] of Object.entries(this.weights)) {
       const b = this.biases[condition];
       const matchedTokens = [];
@@ -640,7 +923,7 @@ class NaiveBayesSymptomClassifier {
       }
 
       let boostVal = trieBoost[condition] || 0;
-      let finalMargin = rawMargin + 0.4 * normNbScores[condition] + boostVal;
+      let finalMargin = rawMargin + 0.4 * normNbScores[condition] + 0.3 * (normMlpScores[condition] || 0) + boostVal;
 
       details[condition] = {
         prior: b.toFixed(3),
@@ -648,6 +931,7 @@ class NaiveBayesSymptomClassifier {
         matchedTokens: matchedTokens,
         trieBoost: boostVal.toFixed(3),
         nbLogProb: nbScores[condition].toFixed(3),
+        mlpLogProb: (mlpLogProbs[condition] || 0).toFixed(3),
         svmMargin: rawMargin.toFixed(3)
       };
     }
@@ -1573,11 +1857,11 @@ async function generateSlmResponse(text, profile) {
   // Let's filter out generic fallback terms from bypassing fallback
   if (condition) {
     const tokens = slmClassifier.tokenize(text);
-    const matchedTokens = tokens.filter(t => slmClassifier.vocabulary.has(t));
+    const matchedTokens = tokens.filter(t => slmClassifier.vocabulary.has(t) && !t.startsWith("c3:") && !t.startsWith("c4:"));
     const genericFallbackTerms = new Set([
-      "pain", "hurt", "hurts", "ache", "aches", "bitha", "jantrana",
-      "sick", "unwell", "exhausted", "tired", "weak", "fatigue", "feeling",
-      "sluggish", "exhaust", "exhaustion", "weakness"
+      "pain", "hurt", "hurts", "ache", "aches", "ach", "bitha", "jantrana",
+      "sick", "unwell", "unwel", "exhausted", "tired", "weak", "fatigue", "feeling", "feel",
+      "sluggish", "exhaust", "exhaustion", "weakness", "weaknes", "tire", "fatigu", "slugish"
     ]);
     const hasSpecificToken = matchedTokens.some(t => !genericFallbackTerms.has(t));
     if (!hasSpecificToken) {
@@ -9300,7 +9584,11 @@ window.applyClinicianCorrection = function(predictedClass, correctClass, queryTe
 
   const queryVector = {};
   for (const [token, count] of Object.entries(queryTf)) {
-    queryVector[token] = count * (slmClassifier.idf[token] || 1.0);
+    let val = count * (slmClassifier.idf[token] || 1.0);
+    if (token.startsWith("c3:") || token.startsWith("c4:")) {
+      val *= 0.5;
+    }
+    queryVector[token] = val;
   }
 
   let sumSq = 0;

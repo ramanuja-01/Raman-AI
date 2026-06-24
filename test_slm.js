@@ -1157,6 +1157,30 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  await runTest("Offline SLM Neural Layers (MLP) & Typo Tolerance (Character N-Grams)", async () => {
+    let ok = true;
+
+    // 1. Verify neural weights initialization and structure
+    ok = assert(slmClassifier.mlpW1.length > 0, "MLP input-to-hidden weight matrix is successfully initialized.") && ok;
+    ok = assert(slmClassifier.mlpW2.length === 16, "MLP hidden-to-output weight matrix is successfully initialized with 16 hidden units.") && ok;
+    ok = assert(slmClassifier.mlpb1 instanceof Float32Array && slmClassifier.mlpb1.length === 16, "MLP hidden layer bias is Float32Array of size 16.") && ok;
+    ok = assert(slmClassifier.mlpb2 instanceof Float32Array, "MLP output layer bias is successfully initialized.") && ok;
+    
+    // 2. Verify subword character n-gram extraction in tokenize()
+    const sampleTokenize = slmClassifier.tokenize("diabetes");
+    const hasChar3Grams = sampleTokenize.some(t => t.startsWith("c3:"));
+    const hasChar4Grams = sampleTokenize.some(t => t.startsWith("c4:"));
+    ok = assert(hasChar3Grams && hasChar4Grams, "tokenize() successfully extracts subword character 3-grams and 4-grams.") && ok;
+
+    // 3. Verify typo tolerance on a modified clinical query (e.g. "diabtes" -> "diabetes")
+    const typoQuery = "I have high blood sugar and need insulin for my diabtes";
+    const classification = slmClassifier.classify(typoQuery);
+    const topResult = classification[0];
+    ok = assert(topResult.condition === "diabetes", `Typo query 'diabtes' successfully resolved to 'diabetes' (Got: '${topResult.condition}').`) && ok;
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");
