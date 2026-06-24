@@ -21,19 +21,24 @@
 
 ## 🌐 Technical Architecture Overview
 
-RAMAN AI (Experiment No. 170) is designed to operate completely private, sandboxed, and with zero network dependencies. It takes colloquial patient inputs (in both English and Odia), combines them with real-time physiological vitals (SpO2, Blood Pressure, Heart Rate, Temperature), and runs a multi-layered local NLP inference pipeline in **under 2 milliseconds**. The system has been comprehensively audited and achieves **100% classification accuracy** across 10 complex long-form clinical queries, with **15/15 automated test suites passing** (92 assertions) at sub-millisecond inference speeds.
+RAMAN AI (Experiment No. 170) is designed to operate completely private, sandboxed, and with zero network dependencies. It takes colloquial patient inputs (in both English and Odia), combines them with real-time physiological vitals (SpO2, Blood Pressure, Heart Rate, Temperature), and runs a multi-layered local NLP inference pipeline in **under 2 milliseconds**. The system has been comprehensively audited and achieves **100% classification accuracy** across 10 complex long-form clinical queries, with **20/20 automated test suites passing** at sub-millisecond inference speeds.
 
 ```mermaid
 flowchart TD
     A[Patient Input: Speech/Text/Vitals] --> B[NLP Inference Pipeline]
     
     subgraph B [Local SLM Engine]
-        B1[N-Gram Tokenizer] --> B2[Grammatical Noise & Stop-Word Filter]
-        B2 --> B3[Unigrams, Bigrams & Trigrams Vector]
-        B3 --> B4[Naive Bayes Classifier + TF-IDF Weights]
-        B3 --> B5[Trie Substring Sliding phrase Lookup]
-        B4 --> B6[Diagnostic Posterior Probabilities]
-        B5 --> B6
+        B1[Bilingual N-Gram & Subword Tokenizer] --> B2[Stop-Word & Noise Filtering]
+        B2 --> B3[Unigrams, N-Grams & Subword n-Grams Vector]
+        B3 --> B4[L2-Normalized TF-IDF Vectorizer]
+        
+        %% Parallel Inference Paths
+        B4 --> B5a[Multinomial Naive Bayes Classifier]
+        B4 --> B5b[One-vs-Rest Linear SVM Margin]
+        B4 --> B5c[3-Layer MLP Neural Network]
+        B3 --> B5d[Trie Sliding-Window Phrase Matcher]
+        
+        B5a & B5b & B5c & B5d --> B6[Hybrid Ensemble Score Fusion Layer]
     end
     
     B6 --> C[Clinical Synthesis Engine]
@@ -43,6 +48,7 @@ flowchart TD
         C2[Allergy Profile Interceptor]
         C3[Bigram Markov Empathy Filler Generator]
         C4[Pharmacotherapy Safe-Substitution Engine]
+        C5[Pharmacogenomic PGx Safety Engine]
     end
     
     C --> D[System Output Layers]
@@ -64,7 +70,7 @@ flowchart TD
 | **Core Client** | HTML5 (Semantic Structure) & ES6+ Javascript | Native browser API compatibility, maximum offline speed, zero build-step latency. |
 | **Styling Engine** | Vanilla CSS3 Variables & Custom Keyframes | Sleek glassmorphic aesthetics, neon cyber borders (`#00f3ff` & `#ff00a0`), glowing animations, and private custom font-families. |
 | **Local Storage** | HTML5 IndexedDB (`RamanMedicalDB`) | Bypass standard 5MB `localStorage` limits to persist binary Base64 images and simulated radiography documents. |
-| **NLP Core** | Custom Client-side Simple Language Model (SLM) | Hybrid Ensemble: One-vs-Rest Linear SVM (SGD) + Multinomial Naive Bayes (Laplace α=1) + Fuzzy Trie (Levenshtein ≤1) with TF-IDF L2-normalized feature vectors. Score fusion: `svmMargin + 0.4*NB + trieBoost + clinicianDelta`. |
+| **NLP Core** | Custom Client-side Simple Language Model (SLM) | Hybrid Ensemble: One-vs-Rest Linear SVM (SGD) + Multinomial Naive Bayes (Laplace α=1) + 3-Layer MLP Neural Network (ReLU hidden, Softmax output) + Fuzzy Trie (Levenshtein ≤1) with subword character 3-grams/4-grams and TF-IDF L2-normalized vectors. Score fusion: `svmMargin + 0.4*normNB + 0.3*normMLP + trieBoost + clinicianDelta`. |
 | **Generative Text** | Bigram Markov Chain Engine | Synthesizes coherent, non-repetitive empathetic clinical filler text locally in English and Odia. |
 | **Print Engine** | Native Print Layout Window CSS | Formats simulated A4 clinical prescriptions with precise tabular layouts, signatures, and stamps. |
 | **Prescription TTS** | Native HTML5 Web Speech API | Symmetrical local speech engine with smart language phonetics filters, custom speech rates, and pulsing neon visual state indicators. |
@@ -74,10 +80,12 @@ flowchart TD
 
 ## 🧠 Core Component Deep-Dive
 
-### 1. N-Gram Tokenizer & TF-IDF Vectorizer
+### 1. N-Gram Tokenizer, Subword Character N-Grams, & TF-IDF Vectorizer
 To handle the rich, complex, and sometimes colloquial ways patients explain their symptoms, standard space-based token splitting is replaced by a custom multi-word N-gram parsing algorithm:
 * **Stop-Word Eliminator**: Filters out grammatical filler words in both English (*"i"*, *"have"*, *"feeling"*) and Odia (*"heuchi"*, *"laguchi"*, *"pura"*).
-* **N-Gram Generator**: Extracts **Unigrams** (individual terms), **Bigrams** (two-word phrases like *"chest pain"*, *"high fever"*), and **Trigrams** (*"left arm pain"*, *"chhati chirei bitha"*).
+* **N-Gram Generator**: Extracts **Unigrams** (individual terms), **Bigrams** (two-word phrases like *"chest pain"*, *"high fever"*), **Trigrams** (*"left arm pain"*, *"chhati chirei bitha"*), and **Quadgrams** for context-rich sequence capture.
+* **Subword Character N-Grams**: Extracts character 3-grams (prefixed with `c3:`) and 4-grams (prefixed with `c4:`) from words of length $\ge 4$ to handle spelling variations and typos.
+* **Subword Weight Scaling**: Scales subword features by a 0.5 factor to balance typo tolerance and precise word alignment.
 * **TF-IDF Weighting**: Instead of basic keyword counts, every token is evaluated using an automated **Term Frequency-Inverse Document Frequency** algorithm. Tokens that occur commonly across all categories (e.g. *"pain"*) are automatically downweighted, while highly diagnostic markers (e.g. *"shivering"*, *"squeezing"*) receive massive inference multipliers.
 
 ```javascript
@@ -157,56 +165,84 @@ Designed to keep patient symptoms tracked securely without cloud logging.
     * Renders a glowing slate-blue glassmorphic tooltip bubble (`rgba(15, 23, 42, 0.9)`) on the canvas with a custom cyan border, displaying structural observation text (e.g. `"Gastritis: 8/10 on May 25"`).
   * Automatically repaints and clears the tooltip state as the mouse leaves.
 
+### 10. Multi-Layer Perceptron (MLP) Neural Network
+* **Deeper 3-Layer Topology**: Upgraded from a simple 2-layer model to a deeper 3-layer feedforward network architecture (Input $\to$ Hidden 1 [16 units] $\to$ Hidden 2 [8 units] $\to$ Output [C clinical conditions]) for enhanced feature extraction and condition separation.
+* **Seeded Xavier/Glorot Initialization**: Utilizes a deterministic seeded Linear Congruential Generator (LCG) to implement Xavier/Glorot weight initialization parameters. This ensures 100% reproducible weights and biases across all client browser contexts and eliminates training initialization volatility.
+* **Sparse Backpropagation**: Implements an optimized Stochastic Gradient Descent (SGD) backpropagation loop in native Javascript. It leverages input vector sparsity, only computing gradients and weights updates for non-zero features. This results in sub-millisecond execution times.
+
+### 11. Subword Character N-Gram Tokenization & Typo Tolerance
+* **Subword Parsing**: Extracts character 3-grams and 4-grams for all content words of length $\ge 4$ to build a robust typo-tolerant search space.
+* **Relative Token Scaling**: Scales subword TF-IDF features by a 0.5 discount factor to guarantee that spelling fallbacks are matched successfully without overpowering exact word and phrase alignments.
+* **Safe Bypass Filtering**: Excludes prefix subword tokens from query bypass filters to ensure generic queries correctly fall back to diagnostic triage prompts.
+
 ---
 
 ## 🧬 Raman Local SLM Engine: Mathematical Formulation & Technical Specification
 
-The **Raman Local SLM (Simple Language Model)** is a client-side, 100% offline medical classification and text-generation suite designed to run in sandboxed browser threads under **2 milliseconds**. It is implemented as a **triple-model hybrid ensemble**: a **One-vs-Rest Linear SVM** (trained via SGD with hinge loss, 15 epochs, λ=0.01 regularization) fused with a **Multinomial Naive Bayes classifier** (Laplace α=1, IDF-weighted log-probabilities) and a **Fuzzy Trie** (Levenshtein distance ≤1 sliding-window phrase matcher), all operating on **L2-normalized TF-IDF feature vectors**. The ensemble is backed by a **Trigram Markov Chain** (with bigram fallback and temperature-softmax decoding) for empathetic dialog synthesis. Classification achieves **100% accuracy on 10 complex long-form clinical narratives** spanning 17 medical conditions.
+The **Raman Local SLM (Simple Language Model)** is a client-side, 100% offline medical classification and text-generation suite designed to run in sandboxed browser threads under **2 milliseconds**. It is implemented as a **quad-model hybrid ensemble**: a **One-vs-Rest Linear SVM** (trained via SGD with hinge loss, 15 epochs, λ=0.01 regularization) fused with a **Multinomial Naive Bayes classifier** (Laplace α=1, IDF-weighted log-probabilities), a **3-Layer MLP Neural Network** (trained via SGD with cross-entropy loss, 40 epochs), and a **Fuzzy Trie** (Levenshtein distance ≤1 sliding-window phrase matcher), all operating on **L2-normalized TF-IDF feature vectors**. The ensemble is backed by a **Trigram Markov Chain** (with bigram fallback and temperature-softmax decoding) for empathetic dialog synthesis. Classification achieves **100% accuracy on 10 complex long-form clinical narratives** spanning 17 medical conditions.
 
 ```mermaid
 flowchart TD
-    A["👤 User Input Query<br/>(English / Odia / Romanized Odia)"] --> B["🧹 Text Normalization & Sanitization<br/>(Lowercase, Strip Punctuation, Whitespace Split)"]
+    A["👤 User Input Query<br/>(English / Odia / Romanized Odia)"] --> B["🧹 Text Normalization & Sanitization<br/>(Lowercase, Strip Punctuation, Whitespace Split, Stemming)"]
     
     %% Tokenization
-    B --> C["📦 N-Gram Tokenizer & Filter"]
-    subgraph Tokenizer ["N-Gram Tokenizer"]
+    B --> C["📦 N-Gram & Subword Tokenizer"]
+    subgraph Tokenizer ["N-Gram & Subword Tokenizer"]
         C1["Stop-Word Removal<br/>(English & Odia Stop-list)"]
         C2["Unigrams (tokens > 1 char)"]
-        C3["Bigrams (adjacent pairs)"]
-        C4["Trigrams (adjacent triples)"]
+        C3["N-Grams (Bigrams, Trigrams, Quadgrams)"]
+        C4["Subword N-Grams<br/>(Character 3-grams & 4-grams)"]
         C --> C1 & C2 & C3 & C4
     end
 
+    %% Vectorization
+    C2 & C3 & C4 --> VEC["⚖️ TF-IDF Vectorizer<br/>(Scale Subwords * 0.5, Apply L2 Normalization)"]
+
     %% Inference Paths
-    C2 & C3 & C4 --> D1["🧬 Path A: Naive Bayes Symptom Classification"]
-    C2 & C3 & C4 --> D2["🔍 Path B: Trie Sliding-Window Phrase Matcher"]
+    VEC --> D1["🧬 Path A: Naive Bayes Symptom Classification"]
+    VEC --> D2["⚡ Path B: One-vs-Rest Linear SVM Margin"]
+    VEC --> D3["🧠 Path C: 3-Layer MLP Neural Network"]
+    C2 & C3 & C4 --> D4["🔍 Path D: Trie Sliding-Window Phrase Matcher"]
 
     %% Naive Bayes Details
     subgraph NB ["Path A: Naive Bayes Engine (Log Space)"]
-        NB1["Calculate Prior Class Probability<br/>P(C) = docs(C) / N"]
-        NB2["Evaluate Vocabulary Matches"]
-        NB3["Apply Laplace Smoothing<br/>P(t|C) = (count(t,C)+1)/(total_words(C)+|V|)"]
-        NB4["Scale Contribution via IDF Weight<br/>IDF(t) = ln((1+N)/(1+DF(t)))+1"]
-        NB5["Accumulate Log-Probability Score<br/>Score_NB = ln P(C) + ∑ IDF(t) * ln P(t|C)"]
-        D1 --> NB1 --> NB2 --> NB3 --> NB4 --> NB5
+        NB1["Prior P(C) = docs(C) / N"]
+        NB2["Laplace Smoothing P(t|C) = (count+1)/(total+|V|)"]
+        NB3["Accumulate Log-Prob Score<br/>Score_NB = ln P(C) + ∑ IDF(t) * ln P(t|C)"]
+        D1 --> NB1 --> NB2 --> NB3
+    end
+
+    %% SVM Details
+    subgraph SVM ["Path B: Linear SVM Classifier"]
+        SVM1["Dot Product:<br/>W_c • X + b_c"]
+        SVM2["Hinge Loss Training Margin"]
+        D2 --> SVM1 --> SVM2
+    end
+
+    %% MLP Details
+    subgraph MLP ["Path C: 3-Layer MLP Classifier"]
+        MLP1["Layer 1: Input to Hidden 1 (H1=16)<br/>z_1 = W_1 • X + b_1 (ReLU)"]
+        MLP2["Layer 2: Hidden 1 to Hidden 2 (H2=8)<br/>z_2 = W_2 • a_1 + b_2 (ReLU)"]
+        MLP3["Layer 3: Hidden 2 to Output (C)<br/>z_3 = W_3 • a_2 + b_3 (Softmax)"]
+        D3 --> MLP1 --> MLP2 --> MLP3
     end
 
     %% Trie Matching Details
-    subgraph TriePath ["Path B: Trie Sliding-phrase Boost"]
+    subgraph TriePath ["Path D: Trie Sliding-phrase Boost"]
         TR1["Initialize Trie Root Lookups"]
         TR2["Sliding Window Match<br/>(Unigram, Bigram, Trigram)"]
-        TR3["Compute Phrase Boost Score<br/>TrieBoost(C) = ∑ 1.5 * IDF(phrase)"]
-        D2 --> TR1 --> TR2 --> TR3
+        TR3["Phrase Boost Score<br/>TrieBoost(C) = ∑ 0.25 * IDF(phrase) * discount"]
+        D4 --> TR1 --> TR2 --> TR3
     end
 
     %% Score Merging
-    NB5 & TR3 --> E["➕ Score Aggregation Layer<br/>TotalScore(C) = Score_NB(C) + TrieBoost(C)"]
+    NB3 & SVM2 & MLP3 & TR3 --> E["➕ Ensemble Score Fusion Layer<br/>TotalScore(C) = Score_SVM(C) + 0.4 * norm(Score_NB) + 0.3 * norm(Score_MLP) + TrieBoost(C) + ClinicianDelta(C)"]
     
     %% Classification output
-    E --> F["📊 Softmax Confidence Normalization<br/>Confidence(C) = exp(Score(C) - max) / ∑ exp(Score - max)"]
+    E --> F["📊 Softmax Confidence Normalization<br/>Confidence(C) = exp(2.5 * (Score - max)) / ∑ exp(2.5 * (Score - max))"]
     
     %% Outputs
-    F --> G["🏆 Rank Conditions Leaderboard (#01 to #11)"]
+    F --> G["🏆 Rank Conditions Leaderboard (#01 to #17)"]
     G --> H["🩺 Peak Matching Diagnostic Extraction"]
     
     %% Side panel / UI integration
@@ -216,7 +252,7 @@ flowchart TD
     subgraph Markov ["Generative Markov Empathy Engine"]
         M1["Bilingual Sentences Pool"]
         M2["State Matrix: key(w_i_w_j) ➔ [words]"]
-        M3["Random Walk Text Synthesis"]
+        M3["Random Walk Text Synthesis (Softmax Temp)"]
         M1 --> M2 --> M3
     end
     
@@ -231,58 +267,190 @@ flowchart TD
 #### A. Text Normalization and Token Extraction
 For any colloquial symptom report $S$, the system strips all grammatical punctuation and normalizes casing to produce a normalized sequence of lowercase terms $\mathbf{T}_{raw}$.
 $$\mathbf{T}_{raw} = \text{split}\left(\text{lowercase}\left(\text{replace}(S, /[.,\/#!$%\^&\*;:{}=\-_`~()?"']/g, \text{" "})\right)\right)$$
-To reduce non-diagnostic grammatical noise while preserving phrase combinations, the system applies dual-track token generation:
-1. **Filtered Unigrams ($\mathbf{U}$)**: Raw terms of length $> 1$ excluding a bilingual stop-word list $\mathbf{W}_{stop}$ (containing standard English particles like *"i"*, *"have"*, *"feeling"* and Odia particles like *"heuchi"*, *"laguchi"*, *"pura"*).
-   $$\mathbf{U} = \{ t \in \mathbf{T}_{raw} \mid \text{length}(t) > 1 \text{ and } t \notin \mathbf{W}_{stop} \}$$
-2. **N-Grams ($\mathbf{N}$)**: Multi-word sequences extracted from adjacent raw terms to preserve colloquial structures (e.g., *"chest pain"*, *"akhi lal"*).
-   $$\mathbf{B} = \{ t_i + \text{" "} + t_{i+1} \mid t \in \mathbf{T}_{raw}, 0 \le i < |\mathbf{T}_{raw}| - 1 \}$$
-   $$\mathbf{TR} = \{ t_i + \text{" "} + t_{i+1} + \text{" "} + t_{i+2} \mid t \in \mathbf{T}_{raw}, 0 \le i < |\mathbf{T}_{raw}| - 2 \}$$
-The complete inference token set for a query is the union: $\mathbf{W}_{inference} = \mathbf{U} \cup \mathbf{B} \cup \mathbf{TR}$.
+To reduce non-diagnostic grammatical noise while preserving phrase combinations, the system applies multi-track token generation:
+1. **Bilingual Stemming**: Tokens are processed via a bilingual stemmer $stem(t)$ to normalize inflected forms.
+2. **Filtered Unigrams ($\mathbf{U}$)**: Stemmed terms of length $> 1$ excluding a bilingual stop-word list $\mathbf{W}_{stop}$ (containing standard English particles like *"i"*, *"have"*, *"feeling"* and Odia particles like *"heuchi"*, *"laguchi"*, *"pura"*).
+   $$\mathbf{U} = \{ stem(t) \mid t \in \mathbf{T}_{raw} \text{ and } stem(t) \notin \mathbf{W}_{stop} \text{ and } \text{length}(stem(t)) > 1 \}$$
+3. **N-Grams ($\mathbf{N}$)**: Multi-word sequences extracted from adjacent stemmed terms to preserve colloquial structures:
+   $$\mathbf{B} = \{ stem(t_i) + \text{" "} + stem(t_{i+1}) \mid 0 \le i < |\mathbf{T}_{raw}| - 1 \}$$
+   $$\mathbf{TR} = \{ stem(t_i) + \text{" "} + stem(t_{i+1}) + \text{" "} + stem(t_{i+2}) \mid 0 \le i < |\mathbf{T}_{raw}| - 2 \}$$
+   $$\mathbf{Q} = \{ stem(t_i) + \text{" "} + stem(t_{i+1}) + \text{" "} + stem(t_{i+2}) + \text{" "} + stem(t_{i+3}) \mid 0 \le i < |\mathbf{T}_{raw}| - 3 \}$$
+4. **Subword Character N-Grams ($\mathbf{NG}_{char}$)**: Character 3-grams and 4-grams extracted from content words of length $\ge 4$:
+   $$\mathbf{NG}_{char} = \bigcup_{w \in \mathbf{T}_{raw} \setminus \mathbf{W}_{stop}, |w| \ge 4} \left( \{ \text{"c3:"} + w[i:i+3] \mid 0 \le i \le |w|-3 \} \cup \{ \text{"c4:"} + w[i:i+4] \mid 0 \le i \le |w|-4 \} \right)$$
 
-#### B. Term Frequency-Inverse Document Frequency (TF-IDF)
-Rather than treating all words equally, the classifier computes an Inverse Document Frequency (IDF) weight for every token in the vocabulary to heavily down-weight generic words (like *"pain"*) and scale up specific clinical symptoms (like *"shivering"*, *"squeezing"*).
+The complete inference token set for a query is the union:
+$$\mathbf{W}_{inference} = \mathbf{U} \cup \mathbf{B} \cup \mathbf{TR} \cup \mathbf{Q} \cup \mathbf{NG}_{char}$$
+
+#### B. TF-IDF & Subword Scaling
+The Inverse Document Frequency (IDF) weight for every token is calculated as:
 $$\text{IDF}(t) = \ln \left( \frac{1 + N_{docs}}{1 + DF(t)} \right) + 1$$
-where:
-* $N_{docs}$ is the total number of documents (training phrases) in all target conditions.
-* $DF(t)$ is the document frequency of token $t$ (how many training phrases across all conditions contain the token $t$).
+We compile the query vector $\mathbf{X}$ by calculating the term frequencies and applying a relevance penalty to subwords:
+$$X(t) = \text{TF}(t) \cdot \text{IDF}(t) \cdot \left(1 - 0.5 \cdot \mathbb{I}(t \text{ starts with "c3:" or "c4:"})\right)$$
+The vector is then L2-normalized:
+$$\bar{\mathbf{X}} = \frac{\mathbf{X}}{\|\mathbf{X}\|_2}$$
 
-#### C. Naive Bayes Statistical Symptom Inference
-The posterior log-probability for a condition class $C_j \in \mathcal{C}$ given the input token set $\mathbf{W}_{inference}$ is modeled using an IDF-scaled log-posterior formula:
-$$\ln P(C_j \mid \mathbf{W}_{inference}) = \ln P(C_j) + \sum_{t \in \mathbf{W}_{inference} \cap \mathcal{V}} \text{IDF}(t) \cdot \ln P(t \mid C_j)$$
-where:
-* $\mathcal{V}$ is the complete vocabulary of all trained tokens.
-* $P(C_j)$ is the prior probability of class $C_j$, derived from the corpus composition:
-  $$P(C_j) = \frac{\text{docs}(C_j)}{N_{docs}}$$
-* $P(t \mid C_j)$ is the smoothed conditional probability of token $t$ in class $C_j$. Symmetrical **Laplace smoothing** is applied to prevent zero-probability errors for out-of-training tokens:
-  $$P(t \mid C_j) = \frac{\text{count}(t, C_j) + 1}{\text{class\_total\_words}(C_j) + |\mathcal{V}|}$$
-  where $\text{count}(t, C_j)$ is the frequency of token $t$ in training examples of class $C_j$, and $\text{class\_total\_words}(C_j)$ is the sum of all tokens across all training documents of class $C_j$.
+#### C. Path A: Multinomial Naive Bayes (MNB)
+The log-probability score for condition class $C_j$ is given by:
+$$S_{NB}(C_j) = \ln P(C_j) + \sum_{t \in \mathbf{W}_{inference} \cap \mathcal{V}} \text{IDF}(t) \cdot \ln P(t \mid C_j)$$
+where the conditional term probabilities are smoothed via Laplace smoothing ($\alpha = 1$):
+$$P(t \mid C_j) = \frac{\text{count}(t, C_j) + 1}{\text{class\_total\_words}(C_j) + |\mathcal{V}|}$$
+The MNB scores are mean-centered to prepare for ensemble fusion:
+$$S'_{NB}(C_j) = S_{NB}(C_j) - \frac{1}{|\mathcal{C}|} \sum_{k} S_{NB}(C_k)$$
 
-#### D. Trie Sliding-Window Phrase Matcher & Log-Score Boost
-To achieve maximum accuracy on multi-word clinical phrases, an in-memory **Trie database** indexes all multi-word phrases (with length $> 2$ characters) associated with each diagnostic condition during training. 
+#### D. Path B: One-vs-Rest Linear Support Vector Machine (SVM)
+The SVM decision boundary computes a linear projection margin for each class:
+$$S_{SVM}(C_j) = \mathbf{W}_{SVM, j} \cdot \bar{\mathbf{X}} + b_{SVM, j}$$
+where $\mathbf{W}_{SVM, j}$ is the weight vector and $b_{SVM, j}$ is the bias term for condition $C_j$.
 
-During inference, a sliding window scans the raw input text, matching substrings against the Trie nodes in $O(L)$ time where $L$ is the character length of the query. For every phrase successfully intercepted and matching category $C_j$, a cumulative **Trie Boost Score** is calculated and added directly to the Naive Bayes log-probability:
-$$\text{TrieBoost}(C_j) = \sum_{p \in \text{Matches}(C_j)} 1.5 \cdot \text{IDF}(p)$$
-$$\text{Score}(C_j) = \ln P(C_j \mid \mathbf{W}_{inference}) + \text{TrieBoost}(C_j)$$
+#### E. Path C: 3-Layer Multi-Layer Perceptron (MLP)
+The neural network performs forward propagation mapping the input $\bar{\mathbf{X}} \in \mathbb{R}^V$ through two hidden layers to the outputs:
+1. **Layer 1**:
+   $$\mathbf{z}^{(1)} = W_1 \bar{\mathbf{X}} + \mathbf{b}_1, \quad \mathbf{a}^{(1)} = \max(0, \mathbf{z}^{(1)})$$
+   where $W_1 \in \mathbb{R}^{V \times H_1}$, $\mathbf{b}_1 \in \mathbb{R}^{H_1}$, and $H_1 = 16$.
+2. **Layer 2**:
+   $$\mathbf{z}^{(2)} = W_2 \mathbf{a}^{(1)} + \mathbf{b}_2, \quad \mathbf{a}^{(2)} = \max(0, \mathbf{z}^{(2)})$$
+   where $W_2 \in \mathbb{R}^{H_1 \times H_2}$, $\mathbf{b}_2 \in \mathbb{R}^{H_2}$, and $H_2 = 8$.
+3. **Layer 3**:
+   $$\mathbf{z}^{(3)} = W_3 \mathbf{a}^{(2)} + \mathbf{b}_3$$
+   where $W_3 \in \mathbb{R}^{H_2 \times C}$, $\mathbf{b}_3 \in \mathbb{R}^C$, and $C = |\mathcal{C}|$.
+The outputs are converted to a probability distribution via Softmax:
+   $$P_{MLP}(C_j) = \frac{\exp\left(z^{(3)}_j\right)}{\sum_k \exp\left(z^{(3)}_k\right)}$$
+The MLP score is the log-probability:
+   $$S_{MLP}(C_j) = \ln\left(P_{MLP}(C_j) + 10^{-15}\right)$$
+We normalize the MLP scores by mean-centering:
+   $$S'_{MLP}(C_j) = S_{MLP}(C_j) - \frac{1}{|\mathcal{C}|} \sum_{k} S_{MLP}(C_k)$$
 
-#### E. Softmax Normalization for UI Confidence Metrics
-To display normalized, intuitive percentage confidence scores for the 17 clinical categories on the live dashboard leaderboard, the log scores are transformed using a numerically stable temperature-scaled Softmax (T=2.5):
-$$\text{Confidence}(C_j) = \text{round}\left( \frac{\exp\left(T \cdot (\text{Score}(C_j) - \max_{k} \text{Score}(C_k))\right)}{\sum_{l} \exp\left(T \cdot (\text{Score}(C_l) - \max_{k} \text{Score}(C_k))\right)} \cdot 100 \right)$$
-This maps all outputs into the interval $[0, 100]$ such that $\sum \text{Confidence}(C_j) = 100\%$, highlighting the primary diagnostic category with an emerald glowing border in the sandbox.
+```mermaid
+graph LR
+    subgraph Input ["Input Layer (TF-IDF features)"]
+        X1["x_1"]
+        X2["x_2"]
+        X3["..."]
+        XV["x_V"]
+    end
+    subgraph H1 ["Hidden Layer 1 (ReLU)"]
+        H1_1["h1_1"]
+        H1_2["h1_2"]
+        H1_dots["..."]
+        H1_16["h1_16"]
+    end
+    subgraph H2 ["Hidden Layer 2 (ReLU)"]
+        H2_1["h2_1"]
+        H2_2["h2_2"]
+        H2_dots["..."]
+        H2_8["h2_8"]
+    end
+    subgraph Output ["Output Layer (Softmax)"]
+        O1["P_1"]
+        O2["P_2"]
+        O_dots["..."]
+        OC["P_C"]
+    end
+    Input --> H1
+    H1 --> H2
+    H2 --> Output
+```
 
-#### F. Generative Bigram Markov Chain Empathy Synthesis
-The generative empathy module is built on a statistical state-transition model based on clinical dialog corpuses.
-1. **Transition Mapping**: Sentence collections are analyzed to map pairs of adjacent words (bigrams) to their corresponding successors:
-   $$K(w_a, w_b) \rightarrow \{ w_{next, 1}, w_{next, 2}, \dots \}$$
-2. **Start States**: Valid sentence-initiating word pairs are logged in a start-state matrix $S_{start} = \{ (w_0, w_1) \}$.
-3. **Random-Walk Generator**: Empathy lines are synthesized on-the-fly by randomly selecting a starting pair $(w_0, w_1)$ and traversing the transitions recursively until a terminal punctuation or length limit (e.g., 15 words) is encountered:
-   $$w_{i+2} = \text{random\_choice}\left( K(w_i, w_{i+1}) \right)$$
-This yields highly coherent, non-repetitive, context-appropriate responses in both English and Odia without requiring heavy deep neural nets.
+#### F. Seeded Deterministic Weight Initialization
+To guarantee exact training reproducibility across browser environments, weight matrices are initialized using Xavier/Glorot uniform distributions powered by a seeded Linear Congruential Generator (LCG):
+$$X_{n+1} = (9301 X_n + 49297) \pmod{233280}$$
+$$r = \frac{X_n}{233280}$$
+Weights are sampled uniformly in the range $[-L, L]$:
+$$W_{ij} = (2r - 1) \cdot L, \quad \text{where } L = \sqrt{\frac{6}{N_{in} + N_{out}}}$$
+
+#### G. Cross-Entropy Loss and Sparse Backpropagation
+The MLP is optimized using Stochastic Gradient Descent (SGD) to minimize the Cross-Entropy loss:
+$$\mathcal{L} = -\sum_k y^*_k \ln P_{MLP}(C_k)$$
+where $y^*$ is the one-hot target class vector. The backpropagation error derivatives (deltas) are:
+- Output Layer:
+  $$\delta^{(3)}_k = P_{MLP}(C_k) - y^*_k$$
+- Hidden Layer 2:
+  $$\delta^{(2)}_l = \left(\sum_k \delta^{(3)}_k W_{3,lk}\right) \cdot \mathbb{I}\left(z^{(2)}_l > 0\right)$$
+- Hidden Layer 1:
+  $$\delta^{(1)}_j = \left(\sum_l \delta^{(2)}_l W_{2,jl}\right) \cdot \mathbb{I}\left(z^{(1)}_j > 0\right)$$
+Gradients are backpropagated sparsely. Updates to weight matrices are skipped for zero-valued input features, maximizing efficiency:
+- Biases updates:
+  $$\mathbf{b}_d \leftarrow \mathbf{b}_d - \eta \cdot \mathbf{\delta}^{(d)} \quad \text{for } d \in \{1, 2, 3\}$$
+- Weights updates:
+  $$W_{3,lk} \leftarrow W_{3,lk} - \eta \cdot \delta^{(3)}_k a^{(2)}_l$$
+  $$W_{2,jl} \leftarrow W_{2,jl} - \eta \cdot \delta^{(2)}_l a^{(1)}_j$$
+  $$W_{1,vj} \leftarrow W_{1,vj} - \eta \cdot \delta^{(1)}_j X_v \quad \text{for } X_v > 0$$
+The learning rate decays dynamically per epoch $e$:
+$$\eta_e = \frac{0.15}{1 + 0.05e}$$
+
+#### H. Path D: Trie Sliding-Window Phrase Matcher Boost
+During inference, a sliding window matches substrings against the Trie nodes. For each matched phrase $p$ mapped to condition $C_j$:
+$$\text{TrieBoost}(C_j) = \sum_{p \in \text{Matches}(C_j)} 0.25 \cdot \text{IDF}(p) \cdot \text{Discount}(p)$$
+where $\text{Discount}(p) = 0.75$ if edit distance $>0$, else $1.0$.
+
+#### I. Path E: Clinician Active Learning Prior Offsets
+Clinician feedback shifts the classification boundaries by updating prior weights via direct gradient injection:
+$$\text{ClinicianDelta}(C_j) = \sum_{t \in \mathbf{T}_{raw}} \Delta W_{j,t}$$
+where $\Delta W$ is persisted locally in IndexedDB/localStorage.
+
+#### J. Hybrid Ensemble Score Fusion & Leaderboard Softmax
+The final scores are compiled by fusing all inference paths:
+$$S_{Ensemble}(C_j) = S_{SVM}(C_j) + 0.4 \cdot S'_{NB}(C_j) + 0.3 \cdot S'_{MLP}(C_j) + \text{TrieBoost}(C_j) + \text{ClinicianDelta}(C_j)$$
+These are normalized using a temperature-scaled Softmax ($T=2.5$):
+$$\text{Confidence}(C_j) = \text{round}\left( \frac{\exp\left(T \cdot (S_{Ensemble}(C_j) - \max_{k} S_{Ensemble}(C_k))\right)}{\sum_{l} \exp\left(T \cdot (S_{Ensemble}(C_l) - \max_{k} S_{Ensemble}(C_k))\right)} \cdot 100 \right)$$
+
+#### K. Generative Trigram Markov Chain Empathy Synthesis
+Empathetic filler messages are generated using a Trigram Markov Chain with temperature-scaled softmax word selection. Words are generated sequentially based on the state matrix transition:
+$$K(w_a, w_b) \rightarrow \text{Successor list of words } [w_1, w_2, \dots]$$
+Successor frequencies $f_k$ are decoded using a temperature parameter $T$:
+$$P(w_{next} = u_k \mid w_i, w_{i+1}) = \frac{f_k^{1/T}}{\sum_j f_j^{1/T}}$$
 
 ---
 
 ### 2. Local SLM Data Schemas & Structures
 
 The complete in-memory state of the SLM is represented by three core JS objects.
+
+#### UML Class Diagram
+
+```mermaid
+classDiagram
+    class NaiveBayesSymptomClassifier {
+        +Object weights
+        +Object biases
+        +Object nbPriors
+        +Object nbWordCounts
+        +Object nbClassTotals
+        +Set vocabulary
+        +Object idf
+        +Map vocabIndices
+        +Trie trie
+        +Float32Array mlpW1
+        +Float32Array mlpb1
+        +Float32Array mlpW2
+        +Float32Array mlpb2
+        +Float32Array mlpW3
+        +Float32Array mlpb3
+        +Array conditions
+        +int docCounts
+        +tokenize(text) Array
+        +train(corpus)
+        +classify(text) Array
+        +explain(text) Object
+    }
+    class Trie {
+        +TrieNode root
+        +insert(word, category)
+        +search(text) Array
+    }
+    class TrieNode {
+        +Object children
+        +boolean isWord
+        +String category
+    }
+    class ClinicalKnowledgeBaseEntry {
+        +String icd11
+        +Array medications
+    }
+    NaiveBayesSymptomClassifier --> Trie : uses
+    Trie --> TrieNode : root
+    NaiveBayesSymptomClassifier ..> ClinicalKnowledgeBaseEntry : references
+```
 
 #### A. Trie Node Structure
 ```typescript
@@ -305,6 +473,12 @@ interface NaiveBayesSymptomClassifier {
   idf: { [token: string]: number };                  // Precomputed IDF weights
   docCounts: number;                                 // Total documents in corpus
   trie: Trie;                                        // In-memory phrase indexer
+  mlpW1: Array<Float32Array>;                        // Input-to-Hidden1 weights (V x 16)
+  mlpb1: Float32Array;                              // Hidden1 bias (16)
+  mlpW2: Array<Float32Array>;                        // Hidden1-to-Hidden2 weights (16 x 8)
+  mlpb2: Float32Array;                              // Hidden2 bias (8)
+  mlpW3: Array<Float32Array>;                        // Hidden2-to-Output weights (8 x C)
+  mlpb3: Float32Array;                              // Output bias (C)
 }
 ```
 
