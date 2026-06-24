@@ -262,10 +262,12 @@ class NaiveBayesSymptomClassifier {
     this.nbPriors = {}; // Maps condition -> log prior
 
     // Neural Network (MLP) structures
-    this.mlpW1 = [];          // V x H weights
-    this.mlpb1 = null;        // H bias
-    this.mlpW2 = [];          // H x C weights
-    this.mlpb2 = null;        // C bias
+    this.mlpW1 = [];          // V x H1 weights
+    this.mlpb1 = null;        // H1 bias
+    this.mlpW2 = [];          // H1 x H2 weights
+    this.mlpb2 = null;        // H2 bias
+    this.mlpW3 = [];          // H2 x C weights
+    this.mlpb3 = null;        // C bias
     this.vocabIndices = new Map();
     this.conditions = [];
   }
@@ -472,7 +474,8 @@ class NaiveBayesSymptomClassifier {
     this.conditions = Object.keys(corpus);
     const C = this.conditions.length;
     const V = this.vocabulary.size;
-    const H = 16;
+    const H1 = 16;
+    const H2 = 8;
 
     // Build vocabulary index mapping
     this.vocabIndices.clear();
@@ -483,8 +486,9 @@ class NaiveBayesSymptomClassifier {
     }
 
     // Initialize MLP weights & biases using Xavier/Glorot initialization and seeded LCG
-    this.mlpb1 = new Float32Array(H);
-    this.mlpb2 = new Float32Array(C);
+    this.mlpb1 = new Float32Array(H1);
+    this.mlpb2 = new Float32Array(H2);
+    this.mlpb3 = new Float32Array(C);
 
     let seed = 42;
     const seededRandom = () => {
@@ -492,20 +496,29 @@ class NaiveBayesSymptomClassifier {
       return seed / 233280;
     };
 
-    const limit1 = Math.sqrt(6 / (V + H));
+    const limit1 = Math.sqrt(6 / (V + H1));
     this.mlpW1 = Array.from({length: V}, () => {
-      const row = new Float32Array(H);
-      for (let j = 0; j < H; j++) {
+      const row = new Float32Array(H1);
+      for (let j = 0; j < H1; j++) {
         row[j] = (seededRandom() - 0.5) * 2 * limit1;
       }
       return row;
     });
 
-    const limit2 = Math.sqrt(6 / (H + C));
-    this.mlpW2 = Array.from({length: H}, () => {
+    const limit2 = Math.sqrt(6 / (H1 + H2));
+    this.mlpW2 = Array.from({length: H1}, () => {
+      const row = new Float32Array(H2);
+      for (let l = 0; l < H2; l++) {
+        row[l] = (seededRandom() - 0.5) * 2 * limit2;
+      }
+      return row;
+    });
+
+    const limit3 = Math.sqrt(6 / (H2 + C));
+    this.mlpW3 = Array.from({length: H2}, () => {
       const row = new Float32Array(C);
       for (let k = 0; k < C; k++) {
-        row[k] = (seededRandom() - 0.5) * 2 * limit2;
+        row[k] = (seededRandom() - 0.5) * 2 * limit3;
       }
       return row;
     });
@@ -522,92 +535,135 @@ class NaiveBayesSymptomClassifier {
         shuffled[j] = temp;
       }
 
-      const eta = 0.1 / (1 + epoch * 0.05);
+      const eta = 0.15 / (1 + epoch * 0.05);
 
       for (const sample of shuffled) {
         const yIdx = this.conditions.indexOf(sample.label);
         if (yIdx === -1) continue;
 
         // Forward propagation
-        const z1 = new Float32Array(H);
+        // Layer 1
+        const z1 = new Float32Array(H1);
         z1.set(this.mlpb1);
         for (const [token, x_val] of Object.entries(sample.vector)) {
           const vIdx = this.vocabIndices.get(token);
           if (vIdx !== undefined) {
             const w1_row = this.mlpW1[vIdx];
-            for (let j = 0; j < H; j++) {
+            for (let j = 0; j < H1; j++) {
               z1[j] += x_val * w1_row[j];
             }
           }
         }
 
-        const a1 = new Float32Array(H);
-        for (let j = 0; j < H; j++) {
+        const a1 = new Float32Array(H1);
+        for (let j = 0; j < H1; j++) {
           a1[j] = Math.max(0, z1[j]);
         }
 
-        const z2 = new Float32Array(C);
+        // Layer 2
+        const z2 = new Float32Array(H2);
         z2.set(this.mlpb2);
-        for (let j = 0; j < H; j++) {
+        for (let j = 0; j < H1; j++) {
           const a1_val = a1[j];
           if (a1_val > 0) {
             const w2_row = this.mlpW2[j];
-            for (let k = 0; k < C; k++) {
-              z2[k] += a1_val * w2_row[k];
+            for (let l = 0; l < H2; l++) {
+              z2[l] += a1_val * w2_row[l];
             }
           }
         }
 
-        let maxZ2 = -Infinity;
+        const a2 = new Float32Array(H2);
+        for (let l = 0; l < H2; l++) {
+          a2[l] = Math.max(0, z2[l]);
+        }
+
+        // Layer 3
+        const z3 = new Float32Array(C);
+        z3.set(this.mlpb3);
+        for (let l = 0; l < H2; l++) {
+          const a2_val = a2[l];
+          if (a2_val > 0) {
+            const w3_row = this.mlpW3[l];
+            for (let k = 0; k < C; k++) {
+              z3[k] += a2_val * w3_row[k];
+            }
+          }
+        }
+
+        let maxZ3 = -Infinity;
         for (let k = 0; k < C; k++) {
-          if (z2[k] > maxZ2) maxZ2 = z2[k];
+          if (z3[k] > maxZ3) maxZ3 = z3[k];
         }
         const exps = new Float32Array(C);
         let sumExps = 0;
         for (let k = 0; k < C; k++) {
-          exps[k] = Math.exp(z2[k] - maxZ2);
+          exps[k] = Math.exp(z3[k] - maxZ3);
           sumExps += exps[k];
         }
-        const a2 = new Float32Array(C);
+        const a3 = new Float32Array(C);
         for (let k = 0; k < C; k++) {
-          a2[k] = sumExps > 0 ? exps[k] / sumExps : 0;
+          a3[k] = sumExps > 0 ? exps[k] / sumExps : 0;
         }
 
         // Backpropagation
-        const d2 = new Float32Array(C);
+        const d3 = new Float32Array(C);
         for (let k = 0; k < C; k++) {
-          d2[k] = a2[k] - (k === yIdx ? 1.0 : 0.0);
+          d3[k] = a3[k] - (k === yIdx ? 1.0 : 0.0);
         }
 
-        const d1 = new Float32Array(H);
-        for (let j = 0; j < H; j++) {
+        const d2 = new Float32Array(H2);
+        for (let l = 0; l < H2; l++) {
+          if (z2[l] > 0) {
+            let sum = 0;
+            const w3_row = this.mlpW3[l];
+            for (let k = 0; k < C; k++) {
+              sum += d3[k] * w3_row[k];
+            }
+            d2[l] = sum;
+          }
+        }
+
+        const d1 = new Float32Array(H1);
+        for (let j = 0; j < H1; j++) {
           if (z1[j] > 0) {
             let sum = 0;
             const w2_row = this.mlpW2[j];
-            for (let k = 0; k < C; k++) {
-              sum += d2[k] * w2_row[k];
+            for (let l = 0; l < H2; l++) {
+              sum += d2[l] * w2_row[l];
             }
             d1[j] = sum;
           }
         }
 
         // Weight updates
+        // Layer 3
         for (let k = 0; k < C; k++) {
-          const d2_val = d2[k];
-          this.mlpb2[k] -= eta * d2_val;
-          for (let j = 0; j < H; j++) {
-            this.mlpW2[j][k] -= eta * d2_val * a1[j];
+          const d3_val = d3[k];
+          this.mlpb3[k] -= eta * d3_val;
+          for (let l = 0; l < H2; l++) {
+            this.mlpW3[l][k] -= eta * d3_val * a2[l];
           }
         }
 
-        for (let j = 0; j < H; j++) {
+        // Layer 2
+        for (let l = 0; l < H2; l++) {
+          const d2_val = d2[l];
+          this.mlpb2[l] -= eta * d2_val;
+          for (let j = 0; j < H1; j++) {
+            this.mlpW2[j][l] -= eta * d2_val * a1[j];
+          }
+        }
+
+        // Layer 1
+        for (let j = 0; j < H1; j++) {
           this.mlpb1[j] -= eta * d1[j];
         }
         for (const [token, x_val] of Object.entries(sample.vector)) {
           const vIdx = this.vocabIndices.get(token);
           if (vIdx !== undefined) {
             const w1_row = this.mlpW1[vIdx];
-            for (let j = 0; j < H; j++) {
+            for (let j = 0; j < H1; j++) {
               w1_row[j] -= eta * d1[j] * x_val;
             }
           }
@@ -678,41 +734,57 @@ class NaiveBayesSymptomClassifier {
 
     // Run MLP Forward Pass
     const C = this.conditions.length;
-    const H = 16;
-    const z1 = new Float32Array(H);
+    const H1 = 16;
+    const H2 = 8;
+    const z1 = new Float32Array(H1);
     z1.set(this.mlpb1);
     for (const [token, x_val] of Object.entries(normQueryVector)) {
       const idx = this.vocabIndices.get(token);
       if (idx !== undefined) {
         const w1_row = this.mlpW1[idx];
-        for (let j = 0; j < H; j++) {
+        for (let j = 0; j < H1; j++) {
           z1[j] += x_val * w1_row[j];
         }
       }
     }
-    const a1 = new Float32Array(H);
-    for (let j = 0; j < H; j++) {
+    const a1 = new Float32Array(H1);
+    for (let j = 0; j < H1; j++) {
       a1[j] = Math.max(0, z1[j]);
     }
-    const z2 = new Float32Array(C);
+    const z2 = new Float32Array(H2);
     z2.set(this.mlpb2);
-    for (let j = 0; j < H; j++) {
+    for (let j = 0; j < H1; j++) {
       const a1_val = a1[j];
       if (a1_val > 0) {
         const w2_row = this.mlpW2[j];
-        for (let k = 0; k < C; k++) {
-          z2[k] += a1_val * w2_row[k];
+        for (let l = 0; l < H2; l++) {
+          z2[l] += a1_val * w2_row[l];
         }
       }
     }
-    let maxZ2 = -Infinity;
+    const a2 = new Float32Array(H2);
+    for (let l = 0; l < H2; l++) {
+      a2[l] = Math.max(0, z2[l]);
+    }
+    const z3 = new Float32Array(C);
+    z3.set(this.mlpb3);
+    for (let l = 0; l < H2; l++) {
+      const a2_val = a2[l];
+      if (a2_val > 0) {
+        const w3_row = this.mlpW3[l];
+        for (let k = 0; k < C; k++) {
+          z3[k] += a2_val * w3_row[k];
+        }
+      }
+    }
+    let maxZ3 = -Infinity;
     for (let k = 0; k < C; k++) {
-      if (z2[k] > maxZ2) maxZ2 = z2[k];
+      if (z3[k] > maxZ3) maxZ3 = z3[k];
     }
     const mlpExps = new Float32Array(C);
     let mlpSum = 0;
     for (let k = 0; k < C; k++) {
-      mlpExps[k] = Math.exp(z2[k] - maxZ2);
+      mlpExps[k] = Math.exp(z3[k] - maxZ3);
       mlpSum += mlpExps[k];
     }
     const mlpLogProbs = {};
@@ -853,41 +925,57 @@ class NaiveBayesSymptomClassifier {
 
     // Run MLP Forward Pass in explain
     const C = this.conditions.length;
-    const H = 16;
-    const z1 = new Float32Array(H);
+    const H1 = 16;
+    const H2 = 8;
+    const z1 = new Float32Array(H1);
     z1.set(this.mlpb1);
     for (const [token, x_val] of Object.entries(normQueryVector)) {
       const idx = this.vocabIndices.get(token);
       if (idx !== undefined) {
         const w1_row = this.mlpW1[idx];
-        for (let j = 0; j < H; j++) {
+        for (let j = 0; j < H1; j++) {
           z1[j] += x_val * w1_row[j];
         }
       }
     }
-    const a1 = new Float32Array(H);
-    for (let j = 0; j < H; j++) {
+    const a1 = new Float32Array(H1);
+    for (let j = 0; j < H1; j++) {
       a1[j] = Math.max(0, z1[j]);
     }
-    const z2 = new Float32Array(C);
+    const z2 = new Float32Array(H2);
     z2.set(this.mlpb2);
-    for (let j = 0; j < H; j++) {
+    for (let j = 0; j < H1; j++) {
       const a1_val = a1[j];
       if (a1_val > 0) {
         const w2_row = this.mlpW2[j];
-        for (let k = 0; k < C; k++) {
-          z2[k] += a1_val * w2_row[k];
+        for (let l = 0; l < H2; l++) {
+          z2[l] += a1_val * w2_row[l];
         }
       }
     }
-    let maxZ2 = -Infinity;
+    const a2 = new Float32Array(H2);
+    for (let l = 0; l < H2; l++) {
+      a2[l] = Math.max(0, z2[l]);
+    }
+    const z3 = new Float32Array(C);
+    z3.set(this.mlpb3);
+    for (let l = 0; l < H2; l++) {
+      const a2_val = a2[l];
+      if (a2_val > 0) {
+        const w3_row = this.mlpW3[l];
+        for (let k = 0; k < C; k++) {
+          z3[k] += a2_val * w3_row[k];
+        }
+      }
+    }
+    let maxZ3 = -Infinity;
     for (let k = 0; k < C; k++) {
-      if (z2[k] > maxZ2) maxZ2 = z2[k];
+      if (z3[k] > maxZ3) maxZ3 = z3[k];
     }
     const mlpExps = new Float32Array(C);
     let mlpSum = 0;
     for (let k = 0; k < C; k++) {
-      mlpExps[k] = Math.exp(z2[k] - maxZ2);
+      mlpExps[k] = Math.exp(z3[k] - maxZ3);
       mlpSum += mlpExps[k];
     }
     const mlpLogProbs = {};
