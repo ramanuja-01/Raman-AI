@@ -298,7 +298,7 @@ class NaiveBayesSymptomClassifier {
     const words = cleanText.split(/\s+/).filter(w => w.length > 1);
     
     const stopWords = new Set([
-      "i", "have", "a", "feel", "feeling", "with", "after", "and", "the", "my", "so", "very", "on", "of", "to", "for", "in", "is", "me", 
+      "i", "have", "a", "feel", "feeling", "with", "after", "and", "the", "my", "so", "very", "on", "of", "to", "for", "in", "is", "me", "can", "what", "not", "at", "up", "am", "do", "it", "an", "be", "no", "or", "but", "was", "were", "been", "being", "did", "does", "has", "had", "will", "would", "could", "should", "may", "might", "shall", "this", "that", "these", "those", "by", "from", "as", "into", "about", "than", "which", "who", "whom", "if", "then", "when", "where", "how", "there", "here",
       "heuchi", "laguchi", "asichi", "pura", "dehare", "deha", "hela", "ta", "hoichi", "ti", "bhal",
       // Hinglish / Romanized Hindi stop words
       "hai", "hian", "se", "ko", "ka", "ke", "ki", "tha", "thi", "he", "ho", "mera", "meri", "mujhe", "hota", "hoti", "rha", "raha", "rahi", "rhi", "hona", "sath", "aur", "pe", "par",
@@ -1896,9 +1896,20 @@ const SLM_TRAINING_CORPUS = {
     "injury cut rusty metal nail swelling redness pain infected pus",
     "skin laceration cut by rusty nail red swelling painful localized heat",
     "injury cut rusty metal nail swelling redness pain infected pus"
+  ],
+  insomnia: [
+    "difficulty falling asleep sleeplessness sleep deprivation tired waking up at night restless sleep",
+    "cannot sleep insomnia toss and turn at night waking up exhausted",
+    "rati re nida heuni sleeplessness tired throughout the day insomnia",
+    "restless sleep fatigue waking up multiple times cannot sleep",
+    "severe insomnia sleeplessness sleep aid sleep cycles disturbed",
+    "nida hauni chinta laguchi sleepless sleep deprivation tired waking up",
+    "difficulty sleeping night waking early cannot sleep fatigue",
+    "insomnia rati re nida heuni deha durbala laguchi tired easily",
+    "tossing and turning in bed restless sleep cannot fall asleep",
+    "sleepy during the day sleep deprivation waking up tired"
   ]
-};;
-;
+};
 
 const MARKOV_TRAINING_SENTENCES_EN = [
   "i understand you are feeling unwell and experiencing discomfort today",
@@ -2878,6 +2889,17 @@ const MEDICAL_KB = {
     precautions: ["Monitor daily fluid intake and output", "Avoid all nephrotoxic drugs, especially NSAIDs (Ibuprofen, Diclofenac)", "Regularly check kidney function (creatinine, eGFR) and electrolytes", "Strictly monitor blood pressure and blood sugar"],
     diet: ["Low sodium, low potassium, and low phosphorus diet", "Restrict protein intake as advised by nephrologist", "Limit fluid intake according to urine output"],
     specialist: "Nephrologist"
+  },
+  insomnia: {
+    icd11: "7A00",
+    conditions: ["Primary Insomnia", "Secondary Insomnia (Stress-Induced)", "Sleep Cycle Disturbance", "Symptomatic Sleeplessness"],
+    medications: [
+      { name: "Melatonin 3mg (Brand: Meloset, Restyl)", snomed: "387063004", dose: "3 mg orally once daily, taken 30-60 minutes before scheduled bedtime", note: "Endogenous hormone agonist. Restores systemic circadian rhythm cycles and induces natural sleep physiology with zero rebound dependency risk." },
+      { name: "Zolpidem Tartrate 5mg (Brand: Stilnox, Zolpid)", snomed: "387226008", dose: "5 mg orally once daily immediately before bedtime (maximum 10 mg)", note: "Non-benzodiazepine GABA-A receptor modulator. Induces rapid sleep onset. Use for short-term management only to avoid tolerance or dependency." }
+    ],
+    precautions: ["Practice strict sleep hygiene (no screens / blue light 1 hour before bed)", "Maintain a regular sleep and wake schedule, even on weekends", "Avoid daytime naps longer than 20 minutes", "Seek specialist consult if insomnia persists for more than 4 weeks"],
+    diet: ["Warm milk before bedtime (contains tryptophan)", "Magnesium-rich foods (bananas, almonds, pumpkin seeds)", "Avoid caffeine, tea, or chocolate after 4 PM", "Avoid heavy meals within 3 hours of sleep"],
+    specialist: "Somnologist / Sleep Specialist / Psychiatrist"
   }
 };
 
@@ -2907,7 +2929,8 @@ const KEYWORD_MAP = {
   "stroke|infarct|cerebral ischemia|hemiplegia|transient ischemic attack|tia|aphasia|face droop": "stroke",
   "hyperlipidemia|cholesterol|ldl|triglycerides|hypercholesterolemia|lipid panel": "hyperlipidemia",
   "hypothyroidism|tsh|thyroid|myxedema|goiter|thyroiditis|levothyroxine": "hypothyroidism",
-  "renal failure|kidney failure|creatinine|egfr|kidney function|uremia|ckd": "renal failure"
+  "renal failure|kidney failure|creatinine|egfr|kidney function|uremia|ckd": "renal failure",
+  "insomnia|sleep|sleepless|sleepy|restless sleep|nida heuni|nida hauni": "insomnia"
 };
 
 
@@ -10583,6 +10606,58 @@ const MCP_CLINICAL_DATASETS = {
       diet: ["High-fiber foods (oatmeal, broccoli, brown rice)", "Non-citrus fruits (bananas, melons)", "Probiotic/yoghurt", "Stay hydrated with clean water"],
       specialist: "Gastroenterologist"
     }
+  },
+  dental: {
+    conditionKey: "tooth infection",
+    conditionLabel: "Tooth Infection / Pulpitis / ଦନ୍ତ ରୋଗ",
+    corpus: [
+      "severe toothache throbbing tooth pain gum swelling",
+      "pain when chewing hot cold sensitivity dental abscess",
+      "bleeding gums painful tooth cavity pulpitis infection",
+      "danta bitha heuchi gum fuly jaichi toothache betha",
+      "throbbing jaw pain wisdom tooth infection localized swelling",
+      "cavity tooth ache dental pain gum irritation",
+      "danta betha danta ru rakta baharuche cavity bitha",
+      "ଦାନ୍ତ ବିନ୍ଧୁଛି ଏବଂ ମାଢ଼ି ଫୁଲି ଯାଇଛି",
+      "danta bitha saha gum swelling tooth cavity"
+    ],
+    kb: {
+      icd11: "DA01",
+      conditions: ["Dental Caries / Cavities", "Acute Pulpitis", "Periapical Abscess", "Gingivitis / Periodontitis"],
+      medications: [
+        { name: "Amoxicillin / Clavulanic Acid 625mg (Brand: Augmentin, Clavam)", snomed: "387525001", dose: "625 mg orally twice daily for 5-7 days", note: "Broad-spectrum penicillin antibiotic with beta-lactamase inhibitor. Eliminates typical anaerobic and aerobic odontogenic pathogens causing deep dental infections." },
+        { name: "Chlorhexidine Gluconate 0.2% Mouthwash (Brand: Hexidine, Clohex)", snomed: "387212003", dose: "Rinse 10ml in mouth for 1 minute twice daily, do not swallow", note: "Prescription antiseptic mouthwash. Directly binds to oral mucosal surfaces to provide prolonged bactericidal activity and reduce periodontal plaque." }
+      ],
+      precautions: ["Avoid hot, sweet, or extremely cold beverages during active inflammation", "Do NOT apply heat packs directly to the cheek as it can spread the infection", "Rinse mouth with warm saline water after every meal", "Schedule an urgent physical appointment with a licensed dentist"],
+      diet: ["Soft, non-spicy foods (mashed potatoes, yogurt, khichdi)", "Avoid chewing on the affected side of the mouth", "Avoid hard or sticky candies that can damage enamel"],
+      specialist: "Dentist / Oral & Maxillofacial Surgeon"
+    }
+  },
+  ophthalmology: {
+    conditionKey: "conjunctivitis",
+    conditionLabel: "Conjunctivitis / Pink Eye / ଆଖି ଧରା",
+    corpus: [
+      "eye redness sticky yellow discharge burning eyes conjunctivitis",
+      "pink eye itchy burning watery discharge sticky eyelids",
+      "swollen eyes red sclera irritation sticky discharge mornings",
+      "akhi lal padichi pani baharuche sticky discharge eye",
+      "gritty feeling in eye allergic conjunctivitis burning redness",
+      "purulent discharge from eye swollen conjunctiva irritation",
+      "akhi dhara kundu heuchi pani baharuche lal padichi",
+      "ଆଖି ଧରିଛି ଏବଂ ଆଖିରୁ ପିଚୁଟି ବାହାରୁଛି ଆଖି ଲାଲ ପଡିଛି",
+      "akhi kundu heuchi sticky discharge conjunctivitis"
+    ],
+    kb: {
+      icd11: "9A60",
+      conditions: ["Acute Bacterial Conjunctivitis", "Viral Conjunctivitis (Pink Eye)", "Allergic Conjunctivitis", "Epidemic Keratoconjunctivitis"],
+      medications: [
+        { name: "Moxifloxacin Eye Drops 0.5% (Brand: Moxicip, Vigamox)", snomed: "372737004", dose: "Instill 1 drop into the affected eye(s) 3 times daily for 5-7 days", note: "Advanced fourth-generation fluoroquinolone ophthalmic antibiotic. Inhibits bacterial DNA gyrase and topoisomerase IV, eradicating ocular pathogens rapidly." },
+        { name: "Carboxymethylcellulose 0.5% Drops (Brand: Refresh Tears, Tear Drops)", snomed: "387132005", dose: "Instill 1-2 drops as needed to relieve irritation and dryness", note: "Lubricating ophthalmic artificial tears. Physically stabilizes the tear film, flushing out inflammatory allergens and reducing dry, gritty ocular sensations." }
+      ],
+      precautions: ["Do NOT rub the eyes as it can worsen inflammation and spread infection", "Wash hands thoroughly with soap before and after administering drops", "Discard eye drop bottles 30 days after opening to prevent contamination", "Do NOT wear contact lenses until the infection is completely resolved"],
+      diet: ["Antioxidant-rich foods to support ocular health", "Maintain high systemic hydration", "Avoid foods containing high sugar or processed fats"],
+      specialist: "Ophthalmologist / Eye Specialist"
+    }
   }
 };
 
@@ -10624,12 +10699,13 @@ window.switchHubTab = function(tabName) {
 window.updateAllConditionDropdowns = function() {
   const injectSelect = document.getElementById("hubInjectCondition");
   const diarySelect = document.getElementById("diaryCondition");
+  const overrideSelect = document.getElementById("overrideSelect");
 
   const labels = {
     fever: "Fever / ଜ୍ୱର",
     headache: "Headache / ମୁଣ୍ଡବିନ୍ଧା Suspected Migraine",
     cough: "Cough / କାଶ Bronchial Risk",
-    "chest pain": "Chest Pain / ଛାତି ଯନ୍ତ୍ରଣା Ischemia",
+    "chest pain": "Chest Pain / ଛาତି ଯନ୍ତ୍ରଣା Ischemia",
     "stomach pain": "Stomach Pain / ପେଟ ବ୍ୟଥା",
     "joint pain": "Joint Pain / ଗଣ୍ଠି ବାତ",
     "skin rash": "Skin Rash / ଚର୍ମ କୁଣ୍ଡେଇ ହେବା",
@@ -10637,11 +10713,27 @@ window.updateAllConditionDropdowns = function() {
     diabetes: "Diabetes / ମଧୁମେହ Glycemia",
     "eye pain": "Eye Pain / ଆଖି ବିନ୍ଧା Ocular",
     "back pain": "Back Pain / ଅଣ୍ଟା ବିନ୍ଧା Lumbar",
+    uti: "Urinary Tract Infection / ପରିସ୍ରା ପୋଡାଜଳା",
+    vertigo: "Vertigo / ମୁଣ୍ଡ ଘୂରାଇବା",
+    anemia: "Anemia / ରକ୍ତହୀନତା",
+    tonsillitis: "Tonsillitis / ଗଳା ବସିଯିବା",
+    wound: "Wound / କ୍ଷତ sepsis risk",
+    pneumonia: "Pneumonia / ନିମୋନିଆ [pre-trained]",
+    tuberculosis: "Tuberculosis / ଯକ୍ଷ୍ମା [pre-trained]",
+    cardiomegaly: "Cardiomegaly / ହୃଦୟ ବୃଦ୍ଧି [pre-trained]",
+    "multiple sclerosis": "Multiple Sclerosis / ମଲ୍ଟିପୁଲ୍ ସ୍କ୍ଲେରୋସିସ୍ [pre-trained]",
+    stroke: "Stroke / ପକ୍ଷାଘାତ [pre-trained]",
+    hyperlipidemia: "Hyperlipidemia / ହାଇପରଲିପିଡେମିଆ [pre-trained]",
+    hypothyroidism: "Hypothyroidism / ହାଇପୋଥାଇରଏଡିଜିମ୍ [pre-trained]",
+    "renal failure": "Renal Failure / ବୃକ୍କ ଅକାମୀ [pre-trained]",
+    insomnia: "Insomnia / ଅନିଦ୍ରା [pre-trained]",
     arrhythmia: "Cardiac Arrhythmia / ଅନିୟମିତ ହୃଦସ୍ପନ୍ଦନ [MCP]",
     "bronchial asthma": "Bronchial Asthma / ଶ୍ୱାସକ୍ରିୟା ଜନିତ ସମସ୍ୟା [MCP]",
     "neuropathic pain": "Neuropathic Pain / ସ୍ନାୟୁଗତ ଯନ୍ତ୍ରଣା [MCP]",
     gerd: "Gastroesophageal Reflux / ଏସିଡିଟି [MCP]",
-    "ear infection": "Ear Infection / କାନ ସଂକ୍ରମଣ [MCP]"
+    "ear infection": "Ear Infection / କାନ ସଂକ୍ରମଣ [MCP]",
+    "tooth infection": "Tooth Infection / ଦନ୍ତ ରୋଗ [MCP]",
+    conjunctivitis: "Conjunctivitis / ଆଖି ଧରା [MCP]"
   };
 
   if (injectSelect) {
@@ -10672,15 +10764,43 @@ window.updateAllConditionDropdowns = function() {
         diabetes: "Diabetes",
         "eye pain": "Eye Pain",
         "back pain": "Back Pain",
+        uti: "UTI",
+        vertigo: "Vertigo",
+        anemia: "Anemia",
+        tonsillitis: "Tonsillitis",
+        wound: "Wound",
+        pneumonia: "Pneumonia",
+        tuberculosis: "Tuberculosis",
+        cardiomegaly: "Cardiomegaly",
+        "multiple sclerosis": "Multiple Sclerosis",
+        stroke: "Stroke",
+        hyperlipidemia: "Hyperlipidemia",
+        hypothyroidism: "Hypothyroidism",
+        "renal failure": "Renal Failure",
+        insomnia: "Insomnia",
         arrhythmia: "Cardiac Arrhythmia (MCP)",
         "bronchial asthma": "Bronchial Asthma (MCP)",
         "neuropathic pain": "Neuropathic Pain (MCP)",
         gerd: "GERD (MCP)",
-        "ear infection": "Ear Infection (MCP)"
+        "ear infection": "Ear Infection (MCP)",
+        "tooth infection": "Tooth Infection (MCP)",
+        conjunctivitis: "Conjunctivitis (MCP)"
       };
 
       opt.textContent = diaryLabels[key] || labels[key] || (key.charAt(0).toUpperCase() + key.slice(1));
       diarySelect.appendChild(opt);
+    });
+  }
+
+  if (overrideSelect) {
+    overrideSelect.innerHTML = "";
+    Object.keys(SLM_TRAINING_CORPUS).forEach(key => {
+      const opt = document.createElement("option");
+      opt.value = key;
+      const icdCode = (MEDICAL_KB[key] && MEDICAL_KB[key].icd11) ? MEDICAL_KB[key].icd11 : "N/A";
+      const cleanLabel = (labels[key] || key.charAt(0).toUpperCase() + key.slice(1)).split(" / ")[0];
+      opt.textContent = `${cleanLabel} (ICD-11: ${icdCode})`;
+      overrideSelect.appendChild(opt);
     });
   }
 };
@@ -10917,7 +11037,9 @@ const UNTRAINED_MCP_KEYWORDS = {
   cardio: ["heartbeat", "fluttering", "palpitation", "irregular pulse", "rapid pulse", "chest pounding", "arrhythmia", "chhati dhaphala", "ହୃଦସ୍ପନ୍ଦନ", "dhad dhad", "chhati dhad"],
   respiratory: ["wheezing", "asthma", "breathlessness", "difficulty breathing", "air gasping", "bronchial", "niswasa nebare kasta", "ନିଶ୍ୱାସ", "niswasa kasta"],
   neuro: ["tingling", "numbness", "pins and needles", "nerve pain", "neuropathy", "neuropathic", "goda hata tharuchi", "ଝିମଝିମ", "goda jhima"],
-  gastro: ["gerd", "acid reflux", "heartburn", "esophageal reflux", "reflux", "hyperacidity", "sour burps", "peta jaluchi", "ଏସିଡିଟି", "peta pura jaluci", "khata dhekur"]
+  gastro: ["gerd", "acid reflux", "heartburn", "esophageal reflux", "reflux", "hyperacidity", "sour burps", "peta jaluchi", "ଏସିଡିଟି", "peta pura jaluci", "khata dhekur"],
+  dental: ["tooth", "toothache", "tooth pain", "dental", "periodontitis", "gum bitha", "ଦାନ୍ତ", "danta bitha"],
+  ophthalmology: ["eye redness", "pink eye", "conjunctivitis", "eye discharge", "sticky eye", "akhi dhara", "ଆଖି", "akhi lal"]
 };
 
 function detectUntrainedMcpDataset(text) {
