@@ -35,7 +35,7 @@ flowchart TD
         %% Parallel Inference Paths
         B4 --> B5a[Multinomial Naive Bayes Classifier]
         B4 --> B5b[One-vs-Rest Linear SVM Margin]
-        B4 --> B5c[3-Layer MLP Neural Network]
+        B4 --> B5c[4-Layer MLP Neural Network]
         B3 --> B5d[Trie Sliding-Window Phrase Matcher]
         
         B5a & B5b & B5c & B5d --> B6[Hybrid Ensemble Score Fusion Layer]
@@ -70,7 +70,7 @@ flowchart TD
 | **Core Client** | HTML5 (Semantic Structure) & ES6+ Javascript | Native browser API compatibility, maximum offline speed, zero build-step latency. |
 | **Styling Engine** | Vanilla CSS3 Variables & Custom Keyframes | Sleek glassmorphic aesthetics, neon cyber borders (`#00f3ff` & `#ff00a0`), glowing animations, and private custom font-families. |
 | **Local Storage** | HTML5 IndexedDB (`RamanMedicalDB`) | Bypass standard 5MB `localStorage` limits to persist binary Base64 images and simulated radiography documents. |
-| **NLP Core** | Custom Client-side Simple Language Model (SLM) | Hybrid Ensemble: One-vs-Rest Linear SVM (SGD) + Multinomial Naive Bayes (Laplace α=1) + 3-Layer MLP Neural Network (ReLU hidden, Softmax output) + Fuzzy Trie (Levenshtein ≤1) with subword character 3-grams/4-grams and TF-IDF L2-normalized vectors. Score fusion: `svmMargin + 0.4*normNB + 0.3*normMLP + trieBoost + clinicianDelta`. |
+| **NLP Core** | Custom Client-side Simple Language Model (SLM) | Hybrid Ensemble: One-vs-Rest Linear SVM (SGD) + Multinomial Naive Bayes (Laplace α=1) + 4-Layer MLP Neural Network (ReLU hidden, Softmax output) + Fuzzy Trie (Levenshtein ≤1) with subword character 3-grams/4-grams and TF-IDF L2-normalized vectors. Score fusion: `svmMargin + 0.4*normNB + 0.3*normMLP + trieBoost + clinicianDelta`. |
 | **Generative Text** | Bigram Markov Chain Engine | Synthesizes coherent, non-repetitive empathetic clinical filler text locally in English and Odia. |
 | **Print Engine** | Native Print Layout Window CSS | Formats simulated A4 clinical prescriptions with precise tabular layouts, signatures, and stamps. |
 | **Prescription TTS** | Native HTML5 Web Speech API | Symmetrical local speech engine with smart language phonetics filters, custom speech rates, and pulsing neon visual state indicators. |
@@ -166,7 +166,7 @@ Designed to keep patient symptoms tracked securely without cloud logging.
   * Automatically repaints and clears the tooltip state as the mouse leaves.
 
 ### 10. Multi-Layer Perceptron (MLP) Neural Network
-* **Deeper 3-Layer Topology**: Upgraded from a simple 2-layer model to a deeper 3-layer feedforward network architecture (Input $\to$ Hidden 1 [16 units] $\to$ Hidden 2 [8 units] $\to$ Output [C clinical conditions]) for enhanced feature extraction and condition separation.
+* **Deep 4-Layer Topology**: Upgraded from a 3-layer model to a deep 4-layer feedforward network architecture (Input $\to$ Hidden 1 [32 units] $\to$ Hidden 2 [16 units] $\to$ Hidden 3 [8 units] $\to$ Output [C clinical conditions]) for enhanced feature extraction and condition separation.
 * **Seeded Xavier/Glorot Initialization**: Utilizes a deterministic seeded Linear Congruential Generator (LCG) to implement Xavier/Glorot weight initialization parameters. This ensures 100% reproducible weights and biases across all client browser contexts and eliminates training initialization volatility.
 * **Sparse Backpropagation**: Implements an optimized Stochastic Gradient Descent (SGD) backpropagation loop in native Javascript. It leverages input vector sparsity, only computing gradients and weights updates for non-zero features. This results in sub-millisecond execution times.
 
@@ -179,7 +179,7 @@ Designed to keep patient symptoms tracked securely without cloud logging.
 
 ## 🧬 Raman Local SLM Engine: Mathematical Formulation & Technical Specification
 
-The **Raman Local SLM (Simple Language Model)** is a client-side, 100% offline medical classification and text-generation suite designed to run in sandboxed browser threads under **2 milliseconds**. It is implemented as a **quad-model hybrid ensemble**: a **One-vs-Rest Linear SVM** (trained via SGD with hinge loss, 15 epochs, λ=0.01 regularization) fused with a **Multinomial Naive Bayes classifier** (Laplace α=1, IDF-weighted log-probabilities), a **3-Layer MLP Neural Network** (trained via SGD with cross-entropy loss, 40 epochs), and a **Fuzzy Trie** (Levenshtein distance ≤1 sliding-window phrase matcher), all operating on **L2-normalized TF-IDF feature vectors**. The ensemble is backed by a **Trigram Markov Chain** (with bigram fallback and temperature-softmax decoding) for empathetic dialog synthesis. Classification achieves **100% accuracy on 10 complex long-form clinical narratives** spanning 17 medical conditions.
+The **Raman Local SLM (Simple Language Model)** is a client-side, 100% offline medical classification and text-generation suite designed to run in sandboxed browser threads under **2 milliseconds**. It is implemented as a **quad-model hybrid ensemble**: a **One-vs-Rest Linear SVM** (trained via SGD with hinge loss, 15 epochs, λ=0.01 regularization) fused with a **Multinomial Naive Bayes classifier** (Laplace α=1, IDF-weighted log-probabilities), a **4-Layer MLP Neural Network** (trained via SGD with cross-entropy loss, 40 epochs), and a **Fuzzy Trie** (Levenshtein distance ≤1 sliding-window phrase matcher), all operating on **L2-normalized TF-IDF feature vectors**. The ensemble is backed by a **Trigram Markov Chain** (with bigram fallback and temperature-softmax decoding) for empathetic dialog synthesis. Classification achieves **100% accuracy on 10 complex long-form clinical narratives** spanning 17 medical conditions.
 
 ```mermaid
 flowchart TD
@@ -201,7 +201,7 @@ flowchart TD
     %% Inference Paths
     VEC --> D1["🧬 Path A: Naive Bayes Symptom Classification"]
     VEC --> D2["⚡ Path B: One-vs-Rest Linear SVM Margin"]
-    VEC --> D3["🧠 Path C: 3-Layer MLP Neural Network"]
+    VEC --> D3["🧠 Path C: 4-Layer MLP Neural Network"]
     C2 & C3 & C4 --> D4["🔍 Path D: Trie Sliding-Window Phrase Matcher"]
 
     %% Naive Bayes Details
@@ -220,11 +220,12 @@ flowchart TD
     end
 
     %% MLP Details
-    subgraph MLP ["Path C: 3-Layer MLP Classifier"]
-        MLP1["Layer 1: Input to Hidden 1 (H1=16)<br/>z_1 = W_1 • X + b_1 (ReLU)"]
-        MLP2["Layer 2: Hidden 1 to Hidden 2 (H2=8)<br/>z_2 = W_2 • a_1 + b_2 (ReLU)"]
-        MLP3["Layer 3: Hidden 2 to Output (C)<br/>z_3 = W_3 • a_2 + b_3 (Softmax)"]
-        D3 --> MLP1 --> MLP2 --> MLP3
+    subgraph MLP ["Path C: 4-Layer MLP Classifier"]
+        MLP1["Layer 1: Input to Hidden 1 (H1=32)<br/>z_1 = W_1 • X + b_1 (ReLU)"]
+        MLP2["Layer 2: Hidden 1 to Hidden 2 (H2=16)<br/>z_2 = W_2 • a_1 + b_2 (ReLU)"]
+        MLP3["Layer 3: Hidden 2 to Hidden 3 (H3=8)<br/>z_3 = W_3 • a_2 + b_3 (ReLU)"]
+        MLP4["Layer 4: Hidden 3 to Output (C)<br/>z_4 = W_4 • a_3 + b_4 (Softmax)"]
+        D3 --> MLP1 --> MLP2 --> MLP3 --> MLP4
     end
 
     %% Trie Matching Details
@@ -302,19 +303,22 @@ The SVM decision boundary computes a linear projection margin for each class:
 $$S_{SVM}(C_j) = \mathbf{W}_{SVM, j} \cdot \bar{\mathbf{X}} + b_{SVM, j}$$
 where $\mathbf{W}_{SVM, j}$ is the weight vector and $b_{SVM, j}$ is the bias term for condition $C_j$.
 
-#### E. Path C: 3-Layer Multi-Layer Perceptron (MLP)
-The neural network performs forward propagation mapping the input $\bar{\mathbf{X}} \in \mathbb{R}^V$ through two hidden layers to the outputs:
+#### E. Path C: 4-Layer Multi-Layer Perceptron (MLP)
+The neural network performs forward propagation mapping the input $\bar{\mathbf{X}} \in \mathbb{R}^V$ through three hidden layers to the outputs:
 1. **Layer 1**:
    $$\mathbf{z}^{(1)} = W_1 \bar{\mathbf{X}} + \mathbf{b}_1, \quad \mathbf{a}^{(1)} = \max(0, \mathbf{z}^{(1)})$$
-   where $W_1 \in \mathbb{R}^{V \times H_1}$, $\mathbf{b}_1 \in \mathbb{R}^{H_1}$, and $H_1 = 16$.
+   where $W_1 \in \mathbb{R}^{V \times H_1}$, $\mathbf{b}_1 \in \mathbb{R}^{H_1}$, and $H_1 = 32$.
 2. **Layer 2**:
    $$\mathbf{z}^{(2)} = W_2 \mathbf{a}^{(1)} + \mathbf{b}_2, \quad \mathbf{a}^{(2)} = \max(0, \mathbf{z}^{(2)})$$
-   where $W_2 \in \mathbb{R}^{H_1 \times H_2}$, $\mathbf{b}_2 \in \mathbb{R}^{H_2}$, and $H_2 = 8$.
+   where $W_2 \in \mathbb{R}^{H_1 \times H_2}$, $\mathbf{b}_2 \in \mathbb{R}^{H_2}$, and $H_2 = 16$.
 3. **Layer 3**:
-   $$\mathbf{z}^{(3)} = W_3 \mathbf{a}^{(2)} + \mathbf{b}_3$$
-   where $W_3 \in \mathbb{R}^{H_2 \times C}$, $\mathbf{b}_3 \in \mathbb{R}^C$, and $C = |\mathcal{C}|$.
+   $$\mathbf{z}^{(3)} = W_3 \mathbf{a}^{(2)} + \mathbf{b}_3, \quad \mathbf{a}^{(3)} = \max(0, \mathbf{z}^{(3)})$$
+   where $W_3 \in \mathbb{R}^{H_2 \times H_3}$, $\mathbf{b}_3 \in \mathbb{R}^{H_3}$, and $H_3 = 8$.
+4. **Layer 4**:
+   $$\mathbf{z}^{(4)} = W_4 \mathbf{a}^{(3)} + \mathbf{b}_4$$
+   where $W_4 \in \mathbb{R}^{H_3 \times C}$, $\mathbf{b}_4 \in \mathbb{R}^C$, and $C = |\mathcal{C}|$.
 The outputs are converted to a probability distribution via Softmax:
-   $$P_{MLP}(C_j) = \frac{\exp\left(z^{(3)}_j\right)}{\sum_k \exp\left(z^{(3)}_k\right)}$$
+   $$P_{MLP}(C_j) = \frac{\exp\left(z^{(4)}_j\right)}{\sum_k \exp\left(z^{(4)}_k\right)}$$
 The MLP score is the log-probability:
    $$S_{MLP}(C_j) = \ln\left(P_{MLP}(C_j) + 10^{-15}\right)$$
 We normalize the MLP scores by mean-centering:
@@ -332,13 +336,19 @@ graph LR
         H1_1["h1_1"]
         H1_2["h1_2"]
         H1_dots["..."]
-        H1_16["h1_16"]
+        H1_32["h1_32"]
     end
     subgraph H2 ["Hidden Layer 2 (ReLU)"]
         H2_1["h2_1"]
         H2_2["h2_2"]
         H2_dots["..."]
-        H2_8["h2_8"]
+        H2_16["h2_16"]
+    end
+    subgraph H3 ["Hidden Layer 3 (ReLU)"]
+        H3_1["h3_1"]
+        H3_2["h3_2"]
+        H3_dots["..."]
+        H3_8["h3_8"]
     end
     subgraph Output ["Output Layer (Softmax)"]
         O1["P_1"]
@@ -348,7 +358,8 @@ graph LR
     end
     Input --> H1
     H1 --> H2
-    H2 --> Output
+    H2 --> H3
+    H3 --> Output
 ```
 
 #### F. Seeded Deterministic Weight Initialization
@@ -362,17 +373,20 @@ $$W_{ij} = (2r - 1) \cdot L, \quad \text{where } L = \sqrt{\frac{6}{N_{in} + N_{
 The MLP is optimized using Stochastic Gradient Descent (SGD) to minimize the Cross-Entropy loss:
 $$\mathcal{L} = -\sum_k y^*_k \ln P_{MLP}(C_k)$$
 where $y^*$ is the one-hot target class vector. The backpropagation error derivatives (deltas) are:
-- Output Layer:
-  $$\delta^{(3)}_k = P_{MLP}(C_k) - y^*_k$$
+- Output Layer (Layer 4):
+  $$\delta^{(4)}_k = P_{MLP}(C_k) - y^*_k$$
+- Hidden Layer 3:
+  $$\delta^{(3)}_m = \left(\sum_k \delta^{(4)}_k W_{4,mk}\right) \cdot \mathbb{I}\left(z^{(3)}_m > 0\right)$$
 - Hidden Layer 2:
-  $$\delta^{(2)}_l = \left(\sum_k \delta^{(3)}_k W_{3,lk}\right) \cdot \mathbb{I}\left(z^{(2)}_l > 0\right)$$
+  $$\delta^{(2)}_l = \left(\sum_m \delta^{(3)}_m W_{3,lm}\right) \cdot \mathbb{I}\left(z^{(2)}_l > 0\right)$$
 - Hidden Layer 1:
   $$\delta^{(1)}_j = \left(\sum_l \delta^{(2)}_l W_{2,jl}\right) \cdot \mathbb{I}\left(z^{(1)}_j > 0\right)$$
 Gradients are backpropagated sparsely. Updates to weight matrices are skipped for zero-valued input features, maximizing efficiency:
 - Biases updates:
-  $$\mathbf{b}_d \leftarrow \mathbf{b}_d - \eta \cdot \mathbf{\delta}^{(d)} \quad \text{for } d \in \{1, 2, 3\}$$
+  $$\mathbf{b}_d \leftarrow \mathbf{b}_d - \eta \cdot \mathbf{\delta}^{(d)} \quad \text{for } d \in \{1, 2, 3, 4\}$$
 - Weights updates:
-  $$W_{3,lk} \leftarrow W_{3,lk} - \eta \cdot \delta^{(3)}_k a^{(2)}_l$$
+  $$W_{4,mk} \leftarrow W_{4,mk} - \eta \cdot \delta^{(4)}_k a^{(3)}_m$$
+  $$W_{3,lm} \leftarrow W_{3,lm} - \eta \cdot \delta^{(3)}_m a^{(2)}_l$$
   $$W_{2,jl} \leftarrow W_{2,jl} - \eta \cdot \delta^{(2)}_l a^{(1)}_j$$
   $$W_{1,vj} \leftarrow W_{1,vj} - \eta \cdot \delta^{(1)}_j X_v \quad \text{for } X_v > 0$$
 The learning rate decays dynamically per epoch $e$:
@@ -473,12 +487,14 @@ interface NaiveBayesSymptomClassifier {
   idf: { [token: string]: number };                  // Precomputed IDF weights
   docCounts: number;                                 // Total documents in corpus
   trie: Trie;                                        // In-memory phrase indexer
-  mlpW1: Array<Float32Array>;                        // Input-to-Hidden1 weights (V x 16)
-  mlpb1: Float32Array;                              // Hidden1 bias (16)
-  mlpW2: Array<Float32Array>;                        // Hidden1-to-Hidden2 weights (16 x 8)
-  mlpb2: Float32Array;                              // Hidden2 bias (8)
-  mlpW3: Array<Float32Array>;                        // Hidden2-to-Output weights (8 x C)
-  mlpb3: Float32Array;                              // Output bias (C)
+  mlpW1: Array<Float32Array>;                        // Input-to-Hidden1 weights (V x 32)
+  mlpb1: Float32Array;                              // Hidden1 bias (32)
+  mlpW2: Array<Float32Array>;                        // Hidden1-to-Hidden2 weights (32 x 16)
+  mlpb2: Float32Array;                              // Hidden2 bias (16)
+  mlpW3: Array<Float32Array>;                        // Hidden2-to-Hidden3 weights (16 x 8)
+  mlpb3: Float32Array;                              // Hidden3 bias (8)
+  mlpW4: Array<Float32Array>;                        // Hidden3-to-Output weights (8 x C)
+  mlpb4: Float32Array;                              // Output bias (C)
 }
 ```
 
@@ -664,6 +680,18 @@ To elevate RAMAN AI to state-of-the-art diagnostic and performance standards, fo
 * **Fever Classification Boundary Alignment**: Added systemic fever phrasings to the Naive Bayes training corpus to correctly categorize systemic fevers, resolving decision boundary overlap with anemia.
 * **Vague Pain Safeguard**: Implemented an automated classifier verification that overrides specific diagnoses to `null` if the query only contains generic pain descriptors, routing the user to the interactive pain localization conversational fallback.
 * **Early Out-of-Context Interception**: Refactored out-of-context check to execute before Naive Bayes classification. This blocks non-medical queries containing food-related vocabulary (like breakfast) from accidentally triggering stomach pain prescriptions.
+
+### 5. 🏥 Advanced Clinical Roadmap Integration (July 2026)
+* **MCP Multi-Agent Ingestion Hub**:
+  Integrated five new clinical datasets (`otitis`, `cardio`, `respiratory`, `neuro`, `gastro`) featuring translated Odia Unicode descriptors. Merged automated MCP pipeline handlers (`triggerMcpAutoPipeline()`) to intercept unregistered/weak symptom queries, render real-time UI telemetry, and retrain the classifier in-memory.
+* **CPU Fallback Web Worker Engine**:
+  Parallelized the heavy 16,384 vital trajectory simulation by moving it to a background Web Worker utilizing Blob URLs. Replaced slow string allocation loops with fast micro-arithmetic float-to-integer mappings, and designed a custom synchronously-resolvable thenable return to prevent V8 promise deadlocks during asynchronous browser execution.
+* **Devanagari Hindi & Hinglish Linguistic Integration**:
+  Built Romanized Hindi (Hinglish) and Devanagari suffix-stripping rules into `stemBilingualToken()`, added Hindi/Hinglish stop-word filtering, and created a `HINDI_DICT` translation template for UI cards. Calibrated `speakMessageText()` to detect Devanagari Unicode ranges and choose browser `hi-IN`/`en-IN` voice lookups for authentic regional accents.
+* **4-Layer MLP Classifier Topology**:
+  Upgraded the feedforward classifier from 3 layers to a 4-layer topology (Input $\to$ H1 [32] $\to$ H2 [16] $\to$ H3 [8] $\to$ Output [C]). Rewrote Glorot parameters initialization, sparse Stochastic Gradient Descent (SGD) backpropagation, and inference forwarding in Javascript.
+* **Full Suite Automated Verification**:
+  Upgraded automated test runner `test_slm.js` to assert the 4-layer weight dimensions and Web Worker simulation. Achieved **20/20 test suite passes** under a synchronous CLI Node.js environment.
 
 ---
 
