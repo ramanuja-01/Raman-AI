@@ -129,6 +129,25 @@ function stemBilingualToken(w) {
       break;
     }
   }
+
+  // Devanagari Hindi inflections (में, से, को, का, के, की, ने, पर, ही, भी)
+  const devanagariSuffixes = ["में", "से", "को", "का", "के", "की", "ने", "पर", "ही", "भी"];
+  for (const suf of devanagariSuffixes) {
+    if (w.endsWith(suf) && w.length > suf.length + 1) {
+      w = w.slice(0, -suf.length);
+      break;
+    }
+  }
+
+  // Hinglish / Romanized Hindi inflections
+  const hinglishSuffixes = ["me", "se", "ko", "ka", "ke", "ki", "ne", "pe", "par"];
+  for (const suf of hinglishSuffixes) {
+    if (w.endsWith(suf) && w.length > suf.length + 2) {
+      w = w.slice(0, -suf.length);
+      break;
+    }
+  }
+
   return w;
 }
 
@@ -278,7 +297,14 @@ class NaiveBayesSymptomClassifier {
       .trim();
     const words = cleanText.split(/\s+/).filter(w => w.length > 1);
     
-    const stopWords = new Set(["i", "have", "a", "feel", "feeling", "with", "after", "and", "the", "my", "so", "very", "on", "of", "to", "for", "in", "is", "me", "heuchi", "laguchi", "asichi", "pura", "dehare", "deha", "hela", "ta", "hoichi", "ti", "bhal"]);
+    const stopWords = new Set([
+      "i", "have", "a", "feel", "feeling", "with", "after", "and", "the", "my", "so", "very", "on", "of", "to", "for", "in", "is", "me", 
+      "heuchi", "laguchi", "asichi", "pura", "dehare", "deha", "hela", "ta", "hoichi", "ti", "bhal",
+      // Hinglish / Romanized Hindi stop words
+      "hai", "hian", "se", "ko", "ka", "ke", "ki", "tha", "thi", "he", "ho", "mera", "meri", "mujhe", "hota", "hoti", "rha", "raha", "rahi", "rhi", "hona", "sath", "aur", "pe", "par",
+      // Devanagari Hindi stop words
+      "है", "था", "थी", "थीं", "थे", "हैं", "को", "का", "के", "की", "से", "में", "और", "ने", "पर", "ही", "भी", "मुझे", "मेरा", "मेरी", "होता", "होती", "रहा", "रही", "रहे", "होना"
+    ]);
     const tokens = [];
     
     const stemmedWords = words.map(w => stemBilingualToken(w));
@@ -474,8 +500,9 @@ class NaiveBayesSymptomClassifier {
     this.conditions = Object.keys(corpus);
     const C = this.conditions.length;
     const V = this.vocabulary.size;
-    const H1 = 16;
-    const H2 = 8;
+    const H1 = 32;
+    const H2 = 16;
+    const H3 = 8;
 
     // Build vocabulary index mapping
     this.vocabIndices.clear();
@@ -488,7 +515,8 @@ class NaiveBayesSymptomClassifier {
     // Initialize MLP weights & biases using Xavier/Glorot initialization and seeded LCG
     this.mlpb1 = new Float32Array(H1);
     this.mlpb2 = new Float32Array(H2);
-    this.mlpb3 = new Float32Array(C);
+    this.mlpb3 = new Float32Array(H3);
+    this.mlpb4 = new Float32Array(C);
 
     let seed = 42;
     const seededRandom = () => {
@@ -514,11 +542,20 @@ class NaiveBayesSymptomClassifier {
       return row;
     });
 
-    const limit3 = Math.sqrt(6 / (H2 + C));
+    const limit3 = Math.sqrt(6 / (H2 + H3));
     this.mlpW3 = Array.from({length: H2}, () => {
+      const row = new Float32Array(H3);
+      for (let m = 0; m < H3; m++) {
+        row[m] = (seededRandom() - 0.5) * 2 * limit3;
+      }
+      return row;
+    });
+
+    const limit4 = Math.sqrt(6 / (H3 + C));
+    this.mlpW4 = Array.from({length: H3}, () => {
       const row = new Float32Array(C);
       for (let k = 0; k < C; k++) {
-        row[k] = (seededRandom() - 0.5) * 2 * limit3;
+        row[k] = (seededRandom() - 0.5) * 2 * limit4;
       }
       return row;
     });
@@ -579,37 +616,67 @@ class NaiveBayesSymptomClassifier {
         }
 
         // Layer 3
-        const z3 = new Float32Array(C);
+        const z3 = new Float32Array(H3);
         z3.set(this.mlpb3);
         for (let l = 0; l < H2; l++) {
           const a2_val = a2[l];
           if (a2_val > 0) {
             const w3_row = this.mlpW3[l];
-            for (let k = 0; k < C; k++) {
-              z3[k] += a2_val * w3_row[k];
+            for (let m = 0; m < H3; m++) {
+              z3[m] += a2_val * w3_row[m];
             }
           }
         }
 
-        let maxZ3 = -Infinity;
+        const a3 = new Float32Array(H3);
+        for (let m = 0; m < H3; m++) {
+          a3[m] = Math.max(0, z3[m]);
+        }
+
+        // Layer 4 (Output)
+        const z4 = new Float32Array(C);
+        z4.set(this.mlpb4);
+        for (let m = 0; m < H3; m++) {
+          const a3_val = a3[m];
+          if (a3_val > 0) {
+            const w4_row = this.mlpW4[m];
+            for (let k = 0; k < C; k++) {
+              z4[k] += a3_val * w4_row[k];
+            }
+          }
+        }
+
+        let maxZ4 = -Infinity;
         for (let k = 0; k < C; k++) {
-          if (z3[k] > maxZ3) maxZ3 = z3[k];
+          if (z4[k] > maxZ4) maxZ4 = z4[k];
         }
         const exps = new Float32Array(C);
         let sumExps = 0;
         for (let k = 0; k < C; k++) {
-          exps[k] = Math.exp(z3[k] - maxZ3);
+          exps[k] = Math.exp(z4[k] - maxZ4);
           sumExps += exps[k];
         }
-        const a3 = new Float32Array(C);
+        const a4 = new Float32Array(C);
         for (let k = 0; k < C; k++) {
-          a3[k] = sumExps > 0 ? exps[k] / sumExps : 0;
+          a4[k] = sumExps > 0 ? exps[k] / sumExps : 0;
         }
 
         // Backpropagation
-        const d3 = new Float32Array(C);
+        const d4 = new Float32Array(C);
         for (let k = 0; k < C; k++) {
-          d3[k] = a3[k] - (k === yIdx ? 1.0 : 0.0);
+          d4[k] = a4[k] - (k === yIdx ? 1.0 : 0.0);
+        }
+
+        const d3 = new Float32Array(H3);
+        for (let m = 0; m < H3; m++) {
+          if (z3[m] > 0) {
+            let sum = 0;
+            const w4_row = this.mlpW4[m];
+            for (let k = 0; k < C; k++) {
+              sum += d4[k] * w4_row[k];
+            }
+            d3[m] = sum;
+          }
         }
 
         const d2 = new Float32Array(H2);
@@ -617,8 +684,8 @@ class NaiveBayesSymptomClassifier {
           if (z2[l] > 0) {
             let sum = 0;
             const w3_row = this.mlpW3[l];
-            for (let k = 0; k < C; k++) {
-              sum += d3[k] * w3_row[k];
+            for (let m = 0; m < H3; m++) {
+              sum += d3[m] * w3_row[m];
             }
             d2[l] = sum;
           }
@@ -637,12 +704,21 @@ class NaiveBayesSymptomClassifier {
         }
 
         // Weight updates
-        // Layer 3
+        // Layer 4
         for (let k = 0; k < C; k++) {
-          const d3_val = d3[k];
-          this.mlpb3[k] -= eta * d3_val;
+          const d4_val = d4[k];
+          this.mlpb4[k] -= eta * d4_val;
+          for (let m = 0; m < H3; m++) {
+            this.mlpW4[m][k] -= eta * d4_val * a3[m];
+          }
+        }
+
+        // Layer 3
+        for (let m = 0; m < H3; m++) {
+          const d3_val = d3[m];
+          this.mlpb3[m] -= eta * d3_val;
           for (let l = 0; l < H2; l++) {
-            this.mlpW3[l][k] -= eta * d3_val * a2[l];
+            this.mlpW3[l][m] -= eta * d3_val * a2[l];
           }
         }
 
@@ -734,8 +810,9 @@ class NaiveBayesSymptomClassifier {
 
     // Run MLP Forward Pass
     const C = this.conditions.length;
-    const H1 = 16;
-    const H2 = 8;
+    const H1 = 32;
+    const H2 = 16;
+    const H3 = 8;
     const z1 = new Float32Array(H1);
     z1.set(this.mlpb1);
     for (const [token, x_val] of Object.entries(normQueryVector)) {
@@ -766,25 +843,40 @@ class NaiveBayesSymptomClassifier {
     for (let l = 0; l < H2; l++) {
       a2[l] = Math.max(0, z2[l]);
     }
-    const z3 = new Float32Array(C);
+    const z3 = new Float32Array(H3);
     z3.set(this.mlpb3);
     for (let l = 0; l < H2; l++) {
       const a2_val = a2[l];
       if (a2_val > 0) {
         const w3_row = this.mlpW3[l];
-        for (let k = 0; k < C; k++) {
-          z3[k] += a2_val * w3_row[k];
+        for (let m = 0; m < H3; m++) {
+          z3[m] += a2_val * w3_row[m];
         }
       }
     }
-    let maxZ3 = -Infinity;
+    const a3 = new Float32Array(H3);
+    for (let m = 0; m < H3; m++) {
+      a3[m] = Math.max(0, z3[m]);
+    }
+    const z4 = new Float32Array(C);
+    z4.set(this.mlpb4);
+    for (let m = 0; m < H3; m++) {
+      const a3_val = a3[m];
+      if (a3_val > 0) {
+        const w4_row = this.mlpW4[m];
+        for (let k = 0; k < C; k++) {
+          z4[k] += a3_val * w4_row[k];
+        }
+      }
+    }
+    let maxZ4 = -Infinity;
     for (let k = 0; k < C; k++) {
-      if (z3[k] > maxZ3) maxZ3 = z3[k];
+      if (z4[k] > maxZ4) maxZ4 = z4[k];
     }
     const mlpExps = new Float32Array(C);
     let mlpSum = 0;
     for (let k = 0; k < C; k++) {
-      mlpExps[k] = Math.exp(z3[k] - maxZ3);
+      mlpExps[k] = Math.exp(z4[k] - maxZ4);
       mlpSum += mlpExps[k];
     }
     const mlpLogProbs = {};
@@ -925,8 +1017,9 @@ class NaiveBayesSymptomClassifier {
 
     // Run MLP Forward Pass in explain
     const C = this.conditions.length;
-    const H1 = 16;
-    const H2 = 8;
+    const H1 = 32;
+    const H2 = 16;
+    const H3 = 8;
     const z1 = new Float32Array(H1);
     z1.set(this.mlpb1);
     for (const [token, x_val] of Object.entries(normQueryVector)) {
@@ -957,25 +1050,40 @@ class NaiveBayesSymptomClassifier {
     for (let l = 0; l < H2; l++) {
       a2[l] = Math.max(0, z2[l]);
     }
-    const z3 = new Float32Array(C);
+    const z3 = new Float32Array(H3);
     z3.set(this.mlpb3);
     for (let l = 0; l < H2; l++) {
       const a2_val = a2[l];
       if (a2_val > 0) {
         const w3_row = this.mlpW3[l];
-        for (let k = 0; k < C; k++) {
-          z3[k] += a2_val * w3_row[k];
+        for (let m = 0; m < H3; m++) {
+          z3[m] += a2_val * w3_row[m];
         }
       }
     }
-    let maxZ3 = -Infinity;
+    const a3 = new Float32Array(H3);
+    for (let m = 0; m < H3; m++) {
+      a3[m] = Math.max(0, z3[m]);
+    }
+    const z4 = new Float32Array(C);
+    z4.set(this.mlpb4);
+    for (let m = 0; m < H3; m++) {
+      const a3_val = a3[m];
+      if (a3_val > 0) {
+        const w4_row = this.mlpW4[m];
+        for (let k = 0; k < C; k++) {
+          z4[k] += a3_val * w4_row[k];
+        }
+      }
+    }
+    let maxZ4 = -Infinity;
     for (let k = 0; k < C; k++) {
-      if (z3[k] > maxZ3) maxZ3 = z3[k];
+      if (z4[k] > maxZ4) maxZ4 = z4[k];
     }
     const mlpExps = new Float32Array(C);
     let mlpSum = 0;
     for (let k = 0; k < C; k++) {
-      mlpExps[k] = Math.exp(z3[k] - maxZ3);
+      mlpExps[k] = Math.exp(z4[k] - maxZ4);
       mlpSum += mlpExps[k];
     }
     const mlpLogProbs = {};
@@ -1926,10 +2034,11 @@ function renderExplainabilityPanel(text) {
 }
 window.renderExplainabilityPanel = renderExplainabilityPanel;
 
-// Define generateSlmResponse
-async function generateSlmResponse(text, profile) {
+async function generateSlmResponse(text, profile, skipMcp = false) {
   const startTime = performance.now();
   const isOr = window.currentLang === 'or';
+  const isHi = window.currentLang === 'hi';
+  const dict = isOr ? ODIA_DICT : (isHi ? HINDI_DICT : null);
 
   // Spiking CPU/Neural indicators to show active SLM calculation
   const cpu = document.getElementById("cpuFill");
@@ -1941,6 +2050,35 @@ async function generateSlmResponse(text, profile) {
   const classifications = slmClassifier.classify(text);
   const bestMatch = classifications[0];
   let condition = bestMatch.confidence > 25 ? bestMatch.condition : null;
+
+  // Self-healing fail-safe: if the matched condition has no KB entry, treat it as untrained to trigger ingestion!
+  if (condition && !MEDICAL_KB[condition]) {
+    condition = null;
+  }
+
+  // Verify that the match is not excessively weak (e.g. only matching a single generic word like "head" in a non-headache context)
+  let isWeakMatch = false;
+  if (condition) {
+    const details = slmClassifier.explain(text);
+    const bestDetail = details[condition];
+    const matchedTokensCount = (bestDetail && bestDetail.matchedTokens) ? bestDetail.matchedTokens.length : 0;
+    if (matchedTokensCount <= 1) {
+      isWeakMatch = true;
+      condition = null; // Overwrite to null to trigger dynamic collection!
+    }
+  }
+
+  // Intercept untrained symptoms for simulated MCP multi-agent auto-collector
+  if (!skipMcp && (!condition || bestMatch.confidence <= 25 || isWeakMatch)) {
+    const matchedMcpKey = detectUntrainedMcpDataset(text);
+    if (matchedMcpKey) {
+      const msgId = Date.now();
+      setTimeout(() => {
+        window.triggerMcpAutoPipeline(msgId, text, matchedMcpKey, profile);
+      }, 400);
+      return renderInlineMcpPipelineHtml(msgId, text, matchedMcpKey);
+    }
+  }
 
   // Let's filter out generic fallback terms from bypassing fallback
   if (condition) {
@@ -2128,7 +2266,6 @@ async function generateSlmResponse(text, profile) {
     }
   }
 
-  // Pain slider safety logic
   let painAlertHtml = "";
   const painVal = parseInt(profile.pain || document.getElementById('painSlider').value || "5");
   if (painVal >= 8 && condition) {
@@ -2150,16 +2287,22 @@ async function generateSlmResponse(text, profile) {
       const outOfContextReply = isOr
         ? `<div class="med-section warning" style="border: 2px solid var(--accent); margin-bottom: 15px;">
              <div class="med-section-title" style="color:var(--accent); font-weight:bold;">⚠️ ଅପ୍ରାସଙ୍ଗିକ ଅନୁସନ୍ଧାନ (Out of Context Inquiry)</div>
-             <p><strong>ସୂଚନା:</strong> ରାମନ୍ ଏଆଇ (RAMAN AI) ହେଉଛି ଏକ ଉତ୍ସର୍ଗୀକୃତ ଚିକିତ୍ସା ସୂଚନା ପ୍ରଣାଳୀ ଯାହା ରୋଗର ଲକ୍ଷଣ ବିଶ୍ଳେଷଣ, ଜରୁରୀକାଳୀନ ସ୍ଥିତି ଏବଂ ଔଷଧ ନିରାପତ୍ତା ଯାଞ୍ଚ କରିବା ପାଇଁ ଡିଜାଇନ୍ କରାଯାଇଛି।</p>
-             <p>ଦୟାକରି ଆପଣଙ୍କର ସ୍ୱାସ୍ଥ୍ୟଗତ ସମସ୍ୟା କିମ୍ବା ଲକ୍ଷଣ (ଉଦାହରଣ ସ୍ୱרୂପ: ଜ୍ୱର, ମୁଣ୍ଡବିନ୍ଧା, ଛାତିରେ ଯନ୍ତ୍ରଣା) ବିଷୟରେ ପଚାରନ୍ତୁ।</p>
+             <p><strong>ସୂଚନା:</strong> ରାମନ୍ ଏଆଇ (RAMAN AI) ହେଉଛି ଏକ ଉତ୍ସର୍ଗୀକୃତ ଚିକିତ୍ସा ସୂଚନା ପ୍ରଣାଳୀ ଯାହା ରୋଗର ଲକ୍ଷଣ ବିଶ୍ଳେଷଣ, ଜରୁରୀକାଳୀନ ସ୍ଥିତି ଏବଂ ଔଷଧ ନିରାପତ୍ତା ଯାଞ୍ଚ କରିବା ପାଇଁ ଡିଜାଇନ୍ କରାଯାଇଛି।</p>
+             <p>ଦୟାକରି ଆପଣଙ୍କର ସ୍ୱାସ୍ଥ୍ୟଗତ ସମସ୍ୟା କିମ୍ବା ଲକ୍ଷଣ (ଉଦାହରଣ ସ୍ୱରୂପ: ଜ୍ୱର, ମୁଣ୍ଡବିନ୍ଧା, ଛାତିରେ ଯନ୍ତ୍ରଣା) ବିଷୟରେ ପଚାରନ୍ତୁ।</p>
            </div>`
-        : `<div class="med-section warning" style="border: 2px solid var(--accent); margin-bottom: 15px;">
-             <div class="med-section-title" style="color:var(--accent); font-weight:bold;">⚠️ OUT OF CONTEXT INQUIRY</div>
-             <p><strong>Notice:</strong> RAMAN AI is a dedicated medical intelligence system specializing in symptom analysis, clinical triage, and pathopharmacological safety checks.</p>
-             <p>Please provide symptom-related observations or health-related queries (e.g. fever, headache, chest pain) so that I can assist you safely.</p>
-           </div>`;
+        : (isHi
+          ? `<div class="med-section warning" style="border: 2px solid var(--accent); margin-bottom: 15px;">
+               <div class="med-section-title" style="color:var(--accent); font-weight:bold;">⚠️ अप्रासंगिक पूछताछ (Out of Context Inquiry)</div>
+               <p><strong>सूचना:</strong> रमन एआई (RAMAN AI) एक समर्पित चिकित्सा सूचना प्रणाली है जो लक्षणों के विश्लेषण, नैदानिक प्राथमिक चिकित्सा और दवा सुरक्षा की जांच करने के लिए डिज़ाइन की गई है।</p>
+               <p>कृपया अपनी स्वास्थ्य संबंधी समस्या या लक्षणों (जैसे: बुखार, सिरदर्द, सीने में दर्द) के बारे में पूछें।</p>
+             </div>`
+          : `<div class="med-section warning" style="border: 2px solid var(--accent); margin-bottom: 15px;">
+               <div class="med-section-title" style="color:var(--accent); font-weight:bold;">⚠️ OUT OF CONTEXT INQUIRY</div>
+               <p><strong>Notice:</strong> RAMAN AI is a dedicated medical intelligence system specializing in symptom analysis, clinical triage, and pathopharmacological safety checks.</p>
+               <p>Please provide symptom-related observations or health-related queries (e.g. fever, headache, chest pain) so that I can assist you safely.</p>
+             </div>`);
       
-      const footerHint = isOr ? ODIA_DICT.footerHint : "You can also use the <strong>Quick Symptoms</strong> buttons on the left panel for common conditions. 🩺";
+      const footerHint = dict ? dict.footerHint : "You can also use the <strong>Quick Symptoms</strong> buttons on the left panel for common conditions. 🩺";
       
       return `<p>${profileInfo}</p>
         <p>${outOfContextReply}</p>
@@ -2170,41 +2313,57 @@ async function generateSlmResponse(text, profile) {
     if (isHello) {
       conversationalReply = isOr 
         ? `ନମସ୍କାର! ମୁଁ ରାମନ୍ ଏଆଇ (Local SLM)। ଆଜି ମୁଁ ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟରେ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?`
-        : `Hello! I am RAMAN AI (powered by Local SLM). How can I assist you with your health symptoms today?`;
+        : (isHi 
+          ? `नमस्ते! मैं रमन एआई (Local SLM) हूँ। आज मैं आपके स्वास्थ्य में किस प्रकार सहायता कर सकता हूँ?` 
+          : `Hello! I am RAMAN AI (powered by Local SLM). How can I assist you with your health symptoms today?`);
     } else if (isThanks) {
       conversationalReply = isOr
         ? `ଆପଣଙ୍କୁ ସ୍ୱାଗତ! ଯଦି ଆପଣଙ୍କର ଅନ୍ୟ କୌଣସି ସ୍ୱାସ୍ଥ୍ୟଗତ ସମସ୍ୟା ଥିଲେ ଜଣାନ୍ତୁ।`
-        : `You are very welcome! Helping you is my goal. Let me know if you have other symptoms.`;
+        : (isHi 
+          ? `आपका स्वागत है! यदि आपको कोई अन्य स्वास्थ्य संबंधी समस्या हो तो मुझे बताएं।` 
+          : `You are very welcome! Helping you is my goal. Let me know if you have other symptoms.`);
     } else if (isWho) {
       conversationalReply = isOr
         ? `ମୁଁ ରାମନ୍ ଏଆଇ, ଏକ ସୁପର-ଫାଷ୍ଟ ଅଫଲାଇନ୍ ସିମ୍ପଲ୍ ଲାଙ୍ଗୁଏଜ୍ ମଡେଲ୍ (SLM) ଯାହା ଆପଣଙ୍କ ଲକ୍ଷଣ ବିଷୟରେ ପରାମର୍ଶ ଦେବା ପାଇଁ ଡିଜାଇନ୍ କରାଯାଇଛି।`
-        : `I am RAMAN AI, powered by a custom-built, sub-millisecond local Simple Language Model (SLM) running 100% offline.`;
+        : (isHi 
+          ? `मैं रमन एआई हूँ, जो कि एक स्थानीय सिंपल लैंग्वेज मॉडल (SLM) द्वारा संचालित है और पूरी तरह से ऑफलाइन कार्य करता है।` 
+          : `I am RAMAN AI, powered by a custom-built, sub-millisecond local Simple Language Model (SLM) running 100% offline.`);
     } else if (isChat) {
       conversationalReply = isOr
         ? `ମୁଁ ଆପଣଙ୍କ ପାଖରେ ଅଛି! ଆପଣଙ୍କୁ ଶାରୀରିକ ଭାବରେ କିପରି ଲାଗୁଛି? ମୋତେ କୁହନ୍ତୁ।`
-        : `I am right here with you! How are you feeling physically today? Let me know if anything is aching or hurting.`;
+        : (isHi 
+          ? `मैं आपके साथ हूँ! आज आप शारीरिक रूप से कैसा महसूस कर रहे हैं? मुझे बताएं यदि कहीं कोई दर्द या तकलीफ हो।` 
+          : `I am right here with you! How are you feeling physically today? Let me know if anything is aching or hurting.`);
     } else {
       const lowerText = text.toLowerCase();
       if (/sick|unwell|not feel|not good|asustha|deh kharab/i.test(lowerText)) {
         conversationalReply = isOr
           ? `ଆପଣ ଅସୁସ୍ଥ ଅନୁଭବ କରୁଥିବାରୁ ମୁଁ ଦୁଃଖିତ। ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ସମସ୍ୟା ଭଲଭାବେ ବୁଝିବା ପାଇଁ, ଦୟାକରି କହିବେ କି ଆପଣଙ୍କର ଜ୍ୱର, କାଶ, ମୁଣ୍ଡବିନ୍ଧା କିମ୍ବା ଶରୀରରେ ଯନ୍ତ୍ରଣା ହେଉଛି କି?`
-          : `I am sorry to hear you are feeling unwell. To help me triage your condition, could you describe your specific symptoms in more detail (e.g. fever, cough, body pain, or headache)?`;
+          : (isHi 
+            ? `मुझे दुख है कि आप अस्वस्थ महसूस कर रहे हैं। आपके लक्षणों को समझने के लिए, कृपया बताएंगे कि क्या आपको बुखार, खांसी, सिरदर्द या बदन दर्द है?` 
+            : `I am sorry to hear you are feeling unwell. To help me triage your condition, could you describe your specific symptoms in more detail (e.g. fever, cough, body pain, or headache)?`);
       } else if (/pain|hurt|ache|bitha|jantrana|kanchuni/i.test(lowerText)) {
         conversationalReply = isOr
-          ? `ଆପଣ ଶରୀରରେ ଯନ୍ତ୍ରଣା ହେଉଥିବା ବିଷୟରେ କହିଲେ। ଦୟାକରି ଜଣାଇବେ କି ଯନ୍ତ୍ରଣา କେଉଁଠି ହେଉଛି (ଯେପରିକି ଛାତି, ମୁଣ୍ଡ, ପେଟ, ଆଣ୍ଠୁଗଣ୍ଠି କିମ୍ବା ଅଣ୍ଟା) ଏବଂ ଏହା କେତେ ତୀବ୍ର?`
-          : `You mentioned experiencing pain. Could you please specify exactly where it hurts (e.g. chest, head, stomach, joints, or back) and describe the intensity (mild, moderate, or severe)?`;
+          ? `ଆପଣ ଶରୀରରେ ଯନ୍ତ୍ରଣା ହେଉଥିବା ବିଷୟରେ କହିଲେ। ଦୟାକରି ଜଣାଇବେ କି ଯନ୍ତ୍ରଣa କେଉଁଠି ହେଉଛି (ଯେପରିକି ଛାତି, ମୁଣ୍ଡ, ପେଟ, ଆଣ୍ଠୁଗଣ୍ଠି କିମ୍ବା ଅଣ୍ଟା) ଏବଂ ଏହା କେତେ ତୀବ୍ର?`
+          : (isHi 
+            ? `आपने दर्द के बारे में बताया। कृपया स्पष्ट रूप से बताएं कि दर्द कहाँ हो रहा है (जैसे सीने, सिर, पेट, जोड़ों या पीठ में) और यह कितना गंभीर है?` 
+            : `You mentioned experiencing pain. Could you please specify exactly where it hurts (e.g. chest, head, stomach, joints, or back) and describe the intensity (mild, moderate, or severe)?`);
       } else if (/tired|fatigue|weak|exhausted|durbala|klanta/i.test(lowerText)) {
         conversationalReply = isOr
           ? `ଦୁର୍ବଳତା କିମ୍ବା ଥକ୍କାପଣ ହେବା ଏକ ସାଧାରଣ ଲକ୍ଷଣ ଅଟେ। ଆପଣ ପର୍ଯ୍ୟାପ୍ତ ପରିମାଣର ବିଶ୍ରାମ ନେଉଛନ୍ତି କି ଏବଂ ପ୍ରଚୁର ଜଳପାନ କରୁଛନ୍ତି କି? ଯଦି ଆପଣଙ୍କର ଜ୍ୱର କିମ୍ବା ମୁଣ୍ଡ ବୁଲାଉଛି, ଦୟାକରି ଜଣାନ୍ତୁ।`
-          : `Experiencing weakness or fatigue is a common symptom. Are you getting enough sleep and staying hydrated? If you have other symptoms like a fever or dizziness, please let me know.`;
+          : (isHi 
+            ? `कमजोरी या थकान होना एक आम लक्षण है। क्या आप पर्याप्त नींद ले रहे हैं और पर्याप्त पानी पी रहे हैं? यदि आपको बुखार या चक्कर आ रहे हैं, तो कृपया मुझे बताएं।` 
+            : `Experiencing weakness or fatigue is a common symptom. Are you getting enough sleep and staying hydrated? If you have other symptoms like a fever or dizziness, please let me know.`);
       } else {
         conversationalReply = isOr
-          ? `ମୁଁ ଆପଣଙ୍କ ବାର୍ତ୍ତା ପାଇଲି। ଦୟାକରି ଆପଣଙ୍କ ସିମ୍ପଟମ୍ (ଲକ୍ଷଣ) ବିଷୟରେ ଟିକେ ଅଧିକ ବିବରଣୀ ଦେବେ କି? ଉଦାହରଣ: ଜ୍ୱର, ମୁଣ୍ଡବିନ୍ଧା, କିମ୍ବା ଛାତିରେ କଷ୍ଟ।`
-          : `I received your message. Could you please describe your symptoms in a bit more detail? It helps if you mention where it hurts, how long it's been happening, and if you have other symptoms like a fever.`;
+          ? `ମୁଁ ଆପଣଙ୍କ ବାର୍ତ୍ତା ପାଇଲି। ଦୟาକରି ଆପଣଙ୍କ ସିମ୍ପଟମ୍ (ଲକ୍ଷଣ) ବିଷୟରେ ଟିକେ ଅଧିକ ବିବରଣୀ ଦେବେ କି? ଉଦାହରଣ: ଜ୍ୱର, ମୁଣ୍ଡବିନ୍ଧା, କିମ୍ବା ଛାତିରେ କଷ୍ଟ।`
+          : (isHi 
+            ? `मुझे आपका संदेश मिला। कृपया अपने लक्षणों के बारे में थोड़ा और विस्तार से बताएंगे? उदाहरण के लिए: बुखार, सिरदर्द या सीने में दर्द।` 
+            : `I received your message. Could you please describe your symptoms in a bit more detail? It helps if you mention where it hurts, how long it's been happening, and if you have other symptoms like a fever.`);
       }
     }
 
-    const footerHint = isOr ? ODIA_DICT.footerHint : "You can also use the <strong>Quick Symptoms</strong> buttons on the left panel for common conditions. 🩺";
+    const footerHint = dict ? dict.footerHint : "You can also use the <strong>Quick Symptoms</strong> buttons on the left panel for common conditions. 🩺";
 
     html = `<p>${profileInfo}</p>
       <p style="font-style:italic; color:rgba(255,255,255,0.7); margin-bottom:12px;">"${empathyFiller}"</p>
@@ -2214,7 +2373,7 @@ async function generateSlmResponse(text, profile) {
     // Output complete medical KB triage
     const kb = MEDICAL_KB[condition];
     const isEmergency = condition === "chest pain";
-    const introTxt = isOr ? ODIA_DICT.assessmentIntro : "Thank you for the details. Based on our offline classification, here is your preliminary assessment:";
+    const introTxt = dict ? dict.assessmentIntro : "Thank you for the details. Based on our offline classification, here is your preliminary assessment:";
 
     html = `<p>${profileInfo}</p>
       <p style="font-style:italic; color:rgba(255,255,255,0.7); margin-bottom:12px;">"${empathyFiller}"</p>
@@ -2252,43 +2411,43 @@ async function generateSlmResponse(text, profile) {
     ]);
     if (CLINICAL_SYMPTOMS.has(condition)) {
       html += `<div class="med-section">
-        <div class="med-section-title">${isOr ? ODIA_DICT.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
+        <div class="med-section-title">${dict ? dict.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
         <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
       </div>`;
     }
 
     html += `<div class="med-section ${isEmergency ? 'warning' : ''}">
-      <div class="med-section-title">${isOr ? ODIA_DICT.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
+      <div class="med-section-title">${dict ? dict.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
     kb.medications.forEach(m => {
       html += `<p><strong>${m.name}</strong><br>
-        <small>📋 ${isOr ? ODIA_DICT.dose : "Dose:"} ${m.dose}</small><br>
-        <small>ℹ️ ${isOr ? ODIA_DICT.note : "Note:"} ${m.note}</small></p>`;
+        <small>📋 ${dict ? dict.dose : "Dose:"} ${m.dose}</small><br>
+        <small>ℹ️ ${dict ? dict.note : "Note:"} ${m.note}</small></p>`;
     });
     html += `</div>`;
 
     html += `<div class="med-section ${isEmergency ? 'warning' : 'info'}">
-      <div class="med-section-title">${isOr ? ODIA_DICT.precautions : "⚠️ PRECAUTIONS & WARNINGS"}</div>
+      <div class="med-section-title">${dict ? dict.precautions : "⚠️ PRECAUTIONS & WARNINGS"}</div>
       <ul>${kb.precautions.map(p => `<li>${p}</li>`).join("")}</ul>
     </div>`;
 
     html += `<div class="med-section info">
-      <div class="med-section-title">${isOr ? ODIA_DICT.diet : "🥗 DIETARY RECOMMENDATIONS"}</div>
+      <div class="med-section-title">${dict ? dict.diet : "🥗 DIETARY RECOMMENDATIONS"}</div>
       <ul>${kb.diet.map(d => `<li>${d}</li>`).join("")}</ul>
     </div>`;
 
-    html += `<p>🏥 <strong>${isOr ? ODIA_DICT.specialist : "Recommended Specialist:"}</strong> ${kb.specialist}</p>`;
+    html += `<p>🏥 <strong>${dict ? dict.specialist : "Recommended Specialist:"}</strong> ${kb.specialist}</p>`;
 
     html += `<div class="med-section warning">
-      <div class="med-section-title">${isOr ? ODIA_DICT.disclaimerTitle : "🔴 IMPORTANT DISCLAIMER"}</div>
-      <p>${isOr ? ODIA_DICT.disclaimerBody : "This analysis is for informational purposes only. Please consult a qualified medical professional before starting any treatment. Self-medication can be dangerous."}</p>
+      <div class="med-section-title">${dict ? dict.disclaimerTitle : "🔴 IMPORTANT DISCLAIMER"}</div>
+      <p>${dict ? dict.disclaimerBody : "This analysis is for informational purposes only. Please consult a qualified medical professional before starting any treatment. Self-medication can be dangerous."}</p>
     </div>`;
 
     if (!currentHealthId) saveHealthSession();
 
-    const pdfBtnText = isOr ? "📋 ପ୍ରେସକ୍ରିପସନ୍ PDF ଡାଉନଲୋଡ୍ କରନ୍ତୁ" : "📋 DOWNLOAD CLINICAL PDF PRESCRIPTION";
+    const pdfBtnText = isOr ? "📋 ପ୍ରେସକ୍ରିପସନ୍ PDF ଡାଉନଲୋଡ୍ କରନ୍ତୁ" : (isHi ? "📋 प्रिस्क्रिप्शन PDF डाउनलोड करें" : "📋 DOWNLOAD CLINICAL PDF PRESCRIPTION");
     const pdfBtnDesc = isOr 
       ? "ଆପଣଙ୍କ ସୁବିଧା ପାଇଁ ଏହି ପ୍ରେସକ୍ରିପସନ୍ ର ଏକ ପ୍ରିଣ୍ଟ୍-ରେଡି A4 PDF ଡକ୍ୟୁମେଣ୍ଟ୍ ଡାଉନଲୋଡ୍ କରନ୍ତୁ।"
-      : "For your convenience, download a print-ready A4 PDF document containing your complete clinical assessment and pharmacotherapy guidelines.";
+      : (isHi ? "अपनी सुविधा के लिए इस प्रिस्क्रिप्शन का एक प्रिंट-रेडी A4 PDF दस्तावेज़ डाउनलोड करें।" : "For your convenience, download a print-ready A4 PDF document containing your complete clinical assessment and pharmacotherapy guidelines.");
 
     html += `
       <div class="hid-card" style="margin-top: 20px; border-color: var(--teal); background: rgba(0, 255, 179, 0.03);">
@@ -2823,6 +2982,139 @@ const ODIA_DICT = {
   footerHint: "ଆପଣ ସାଧାରଣ ରୋଗ ପାଇଁ ବାମ ପାର୍ଶ୍ୱରେ ଥିବା କୁଇକ୍ ସିମ୍ପଟମ୍ସ ବଟନ୍ ବ୍ୟବହାର କରିପାରିବେ। ମୁଁ ସାହାଯ୍ୟ କରିବାକୁ ଅଛି! 🩺"
 };
 
+const HINDI_DICT = {
+  greetings: [
+    "मैं समझ सकता हूँ कि आप अस्वस्थ महसूस कर रहे हैं।",
+    "आइए देखते हैं क्या हो सकता है।",
+    "मैं आपकी सहायता करने के लिए यहाँ हूँ।"
+  ],
+  genericBase: [
+    "मैं ठीक से समझना चाहता हूँ।",
+    "आपको सबसे सुरक्षित सलाह देने के लिए,",
+    "मैं आपके स्वास्थ्य के बारे में अधिक स्पष्टता से जानना चाहता हूँ।",
+    "आइए मिलकर इसका समाधान करते हैं।"
+  ],
+  hi: "नमस्ते",
+  thanks: "संपर्क करने के लिए धन्यवाद",
+  describeMore: "कृपया अपने लक्षणों के बारे में थोड़ा और विस्तार से बताएंगे?",
+  whatToInclude: "💡 क्या शामिल करें",
+  inc1: "दर्द कैसा लग रहा है (तेज, हल्का, जलन वाला)",
+  inc2: "शरीर के किस हिस्से में है",
+  inc3: "कितने समय से और कितनी बार लक्षण दिख रहे हैं",
+  inc4: "कोई बुखार, उल्टी या अन्य लक्षण",
+  inc5: "आप वर्तमान में जो दवाएं ले रहे हैं",
+  inc6: "कोई ज्ञात एलर्जी या पूर्व बीमारी",
+  docQuestion: "डॉक्टर का प्रश्न:",
+  diet: "🥗 आहार संबंधी सलाह",
+  dose: "खुराक:",
+  note: "विशेष टिप्पणी:",
+  suggestedMed: "💊 सुझाई गई दवाएं",
+  precautions: "⚠️ सावधानियां",
+  specialist: "अनुशंसित विशेषज्ञ:",
+  assessmentIntro: "विस्तृत जानकारी के लिए धन्यवाद। आपके लक्षणों के आधार पर, यहाँ मेरा प्रारंभिक मूल्यांकन है:",
+  possibleCond: "🔬 संभावित रोग",
+  suggestedMed: "💊 सुझाई गई दवाएं",
+  dose: "खुराक:",
+  note: "सूचना:",
+  precautions: "⚠️ सावधानियां और निर्देश",
+  diet: "🥗 खान-पान संबंधी सलाह",
+  specialist: "🏥 परामर्श के लिए विशेषज्ञ:",
+  disclaimerTitle: "🔴 महत्वपूर्ण सूचना",
+  disclaimerBody: "यह जानकारी केवल सूचनात्मक उद्देश्यों के लिए है। कोई भी उपचार शुरू करने से पहले कृपया एक योग्य चिकित्सक से परामर्श लें।",
+  footerHint: "आप सामान्य लक्षणों के लिए बाईं ओर दिए गए क्विक सिम्पटम्स बटन का उपयोग कर सकते हैं। मैं यहाँ सहायता के लिए हूँ! 🩺"
+};
+
+const FOLLOW_UP_HINDI = {
+  "stomach pain": [
+    "क्या दर्द तेज, हल्का या जलन जैसा महसूस हो रहा है?",
+    "क्या खाने के बाद दर्द बढ़ जाता है या यह लगातार बना रहता है?"
+  ],
+  "chest pain": [
+    "⚠️ क्या दर्द हाथ, गर्दन या जबड़े की तरफ फैल रहा है?",
+    "क्या आपको सांस लेने में तकलीफ या चक्कर आ रहे हैं?"
+  ],
+  "fever": [
+    "आपका अधिकतम तापमान कितना है?",
+    "क्या आपको ठंड लग रही है, पसीना आ रहा है या शरीर में दर्द है?"
+  ],
+  "headache": [
+    "क्या दर्द सिर के एक हिस्से में है या पूरे सिर में?",
+    "क्या आपको तेज रोशनी से परेशानी हो रही है या उल्टी जैसा महसूस हो रहा है?"
+  ],
+  "joint pain": [
+    "क्या जोड़ों में सूजन, लाली या अकड़न है?",
+    "क्या दर्द किसी चोट के बाद शुरू हुआ या धीरे-धीरे बढ़ा?"
+  ],
+  "skin rash": [
+    "क्या त्वचा पर खुजली, जलन या दाने हैं?",
+    "क्या आपने हाल ही में कोई नया साबुन, कॉस्मेटिक या दवा शुरू की है?"
+  ],
+  "cough": [
+    "क्या खांसी सूखी है या बलगम वाली?",
+    "क्या सांस लेते समय कोई घरघराहट या सीटी की आवाज आ रही है?"
+  ],
+  "high blood pressure": [
+    "क्या आपको सिरदर्द, चक्कर आना या धुंधला दिखाई दे रहा है?",
+    "क्या आपके परिवार में उच्च रक्तचाप का इतिहास है?"
+  ],
+  "diabetes": [
+    "क्या आपको अत्यधिक प्यास, बार-बार पेशाब आना या थकान महसूस हो रही है?",
+    "क्या आपका वजन अचानक कम या ज्यादा हुआ है?"
+  ],
+  "eye pain": [
+    "क्या आंख में लाली, पानी आना या धुंधला दिखाई दे रहा है?",
+    "क्या कोई चोट लगी है या आंख में कुछ चला गया है?"
+  ],
+  "back pain": [
+    "क्या दर्द भारी सामान उठाने या झुकने से बढ़ा?",
+    "क्या दर्द पैर के नीचे की ओर जा रहा है या सुन्नता महसूस हो रही है?"
+  ],
+  "renal failure": [
+    "क्या पैरों में सूजन आ रही है या यूरिन की मात्रा कम हो गई है?",
+    "क्या आपको कमजोरी या उल्टी जैसा महसूस हो रहा है?"
+  ],
+  "malaria": [
+    "क्या बुखार ठंड लगकर और कंपकंपी के साथ आ रहा है?",
+    "क्या बुखार एक निश्चित समय अंतराल पर चढ़ता-उतरता है?"
+  ],
+  "wound": [
+    "क्या घाव गहरा है या उससे लगातार खून बह रहा है?",
+    "क्या चोट वाली जगह पर लालिमा, मवाद या बहुत सूजन है?"
+  ],
+  "anemia": [
+    "क्या आपको सांस फूलना, चक्कर आना या अत्यधिक कमजोरी महसूस होती है?",
+    "क्या आपका चेहरा या नाखून पीले दिखाई दे रहे हैं?"
+  ],
+  "multiple sclerosis": [
+    "क्या आपको शरीर में कमजोरी, संतुलन खोना या चलने में दिक्कत है?",
+    "क्या आपको आंखों से धुंधला या दोहरा दिखाई दे रहा है?"
+  ],
+  "otitis media": [
+    "क्या कान में तेज दर्द, खुजली या कोई तरल पदार्थ निकल रहा है?",
+    "क्या आपको सुनने में कोई कठिनाई या कान बजने की आवाज आ रही है?"
+  ],
+  "ear infection": [
+    "क्या कान में तेज दर्द, खुजली या कोई तरल पदार्थ निकल रहा है?",
+    "क्या आपको सुनने में कोई कठिनाई या कान बजने की आवाज आ रही है?"
+  ],
+  "arrhythmia": [
+    "क्या आपको छाती में फड़कन या अनियमित धड़कन महसूस हो रही है?",
+    "क्या अनियमित धड़कन के साथ चक्कर आना या सांस फूलना होता है?"
+  ],
+  "bronchial asthma": [
+    "क्या आपको सांस लेने में बहुत कठिनाई, सीने में जकड़न या घरघराहट होती है?",
+    "क्या धूल, धुएं या ठंडी हवा से आपकी तकलीफ बढ़ जाती है?"
+  ],
+  "neuropathic pain": [
+    "क्या आपको हाथ-पैर में जलन, सुन्नता या सुई जैसी चुभन महसूस होती है?",
+    "क्या स्पर्श करने पर भी अत्यधिक दर्द महसूस होता है?"
+  ],
+  "gerd": [
+    "क्या आपको भोजन के बाद छाती में जलन या खट्टी डकारें आती हैं?",
+    "क्या लेटने पर या रात के समय तकलीफ अधिक बढ़ जाती है?"
+  ]
+};
+
 const FOLLOW_UP_ODIA = {
   "stomach pain": [
     "କଷ୍ଟ ତୀକ୍ଷ୍ଣ, ଧୀମା କିମ୍ବା ଜଳାପୋଡା ପରି ଲାଗୁଛି କି?",
@@ -3087,8 +3379,8 @@ function buildResponse(text, profile) {
   // Track condition for proactive guidance
   if (typeof saveDetectedCondition === 'function') saveDetectedCondition(condition);
 
-  const questions = (window.currentLang === 'or' ? FOLLOW_UP_ODIA[condition] : FOLLOW_UP_QUESTIONS[condition]) || 
-                    (window.currentLang === 'or' ? FOLLOW_UP_ODIA.default : FOLLOW_UP_QUESTIONS.default);
+  const questions = (window.currentLang === 'or' ? FOLLOW_UP_ODIA[condition] : (window.currentLang === 'hi' ? FOLLOW_UP_HINDI[condition] : FOLLOW_UP_QUESTIONS[condition])) || 
+                    (window.currentLang === 'or' ? FOLLOW_UP_ODIA.default : (window.currentLang === 'hi' ? FOLLOW_UP_HINDI.default : FOLLOW_UP_QUESTIONS.default));
 
   // Ask follow up questions if we haven't asked them all
   if (activeDiagnostic && activeDiagnostic.step < questions.length) {
@@ -3098,9 +3390,10 @@ function buildResponse(text, profile) {
     let greetingHtml = "";
     if (activeDiagnostic.step === 1) {
       let base = "";
-      if (window.currentLang === 'or') {
-        base = ODIA_DICT.greetings[Math.floor(Math.random() * ODIA_DICT.greetings.length)];
-        if (profile && profile.name) greetingHtml = `<p>${ODIA_DICT.hi} ${profile.name.split(' ')[0]}, ${base}</p>`;
+      if (window.currentLang === 'or' || window.currentLang === 'hi') {
+        const dict = window.currentLang === 'or' ? ODIA_DICT : HINDI_DICT;
+        base = dict.greetings[Math.floor(Math.random() * dict.greetings.length)];
+        if (profile && profile.name) greetingHtml = `<p>${dict.hi} ${profile.name.split(' ')[0]}, ${base}</p>`;
         else greetingHtml = `<p>${base}</p>`;
       } else {
         const greetings = [
@@ -3114,7 +3407,7 @@ function buildResponse(text, profile) {
       }
     }
     
-    const docQHeader = window.currentLang === 'or' ? ODIA_DICT.docQuestion : "Doctor's Question:";
+    const docQHeader = window.currentLang === 'or' ? ODIA_DICT.docQuestion : (window.currentLang === 'hi' ? HINDI_DICT.docQuestion : "Doctor's Question:");
     return `${profileInfo}${greetingHtml}<div class="med-section info"><p><strong>${docQHeader}</strong></p><p>${q}</p></div>`;
   }
 
@@ -3128,7 +3421,9 @@ function buildResponse(text, profile) {
   const isEmergency = condition === "chest pain";
 
   const isOr = window.currentLang === 'or';
-  const introTxt = isOr ? ODIA_DICT.assessmentIntro : "Thank you for the details. Based on everything you've shared, here is my comprehensive assessment:";
+  const isHi = window.currentLang === 'hi';
+  const dict = isOr ? ODIA_DICT : (isHi ? HINDI_DICT : null);
+  const introTxt = dict ? dict.assessmentIntro : "Thank you for the details. Based on everything you've shared, here is my comprehensive assessment:";
 
   let html = `<p>${profileInfo}${introTxt}</p>`;
 
@@ -3139,35 +3434,35 @@ function buildResponse(text, profile) {
   ]);
   if (CLINICAL_SYMPTOMS.has(condition)) {
     html += `<div class="med-section">
-      <div class="med-section-title">${isOr ? ODIA_DICT.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
+      <div class="med-section-title">${dict ? dict.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
       <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
     </div>`;
   }
 
   html += `<div class="med-section ${isEmergency ? 'warning' : ''}">
-    <div class="med-section-title">${isOr ? ODIA_DICT.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
+    <div class="med-section-title">${dict ? dict.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
   kb.medications.forEach(m => {
     html += `<p><strong>${m.name}</strong><br>
-      <small>📋 ${isOr ? ODIA_DICT.dose : "Dose:"} ${m.dose}</small><br>
-      <small>ℹ️ ${isOr ? ODIA_DICT.note : "Note:"} ${m.note}</small></p>`;
+      <small>📋 ${dict ? dict.dose : "Dose:"} ${m.dose}</small><br>
+      <small>ℹ️ ${dict ? dict.note : "Note:"} ${m.note}</small></p>`;
   });
   html += `</div>`;
 
   html += `<div class="med-section ${isEmergency ? 'warning' : 'info'}">
-    <div class="med-section-title">${isOr ? ODIA_DICT.precautions : "⚠️ PRECAUTIONS & WARNINGS"}</div>
+    <div class="med-section-title">${dict ? dict.precautions : "⚠️ PRECAUTIONS & WARNINGS"}</div>
     <ul>${kb.precautions.map(p => `<li>${p}</li>`).join("")}</ul>
   </div>`;
 
   html += `<div class="med-section info">
-    <div class="med-section-title">${isOr ? ODIA_DICT.diet : "🥗 DIETARY RECOMMENDATIONS"}</div>
+    <div class="med-section-title">${dict ? dict.diet : "🥗 DIETARY RECOMMENDATIONS"}</div>
     <ul>${kb.diet.map(d => `<li>${d}</li>`).join("")}</ul>
   </div>`;
 
-  html += `<p>🏥 <strong>${isOr ? ODIA_DICT.specialist : "Recommended Specialist:"}</strong> ${kb.specialist}</p>`;
+  html += `<p>🏥 <strong>${dict ? dict.specialist : "Recommended Specialist:"}</strong> ${kb.specialist}</p>`;
 
   html += `<div class="med-section warning">
-    <div class="med-section-title">${isOr ? ODIA_DICT.disclaimerTitle : "🔴 IMPORTANT DISCLAIMER"}</div>
-    <p>${isOr ? ODIA_DICT.disclaimerBody : "This analysis is for informational purposes only. Please consult a qualified medical professional before starting any treatment. Self-medication can be dangerous."}</p>
+    <div class="med-section-title">${dict ? dict.disclaimerTitle : "🔴 IMPORTANT DISCLAIMER"}</div>
+    <p>${dict ? dict.disclaimerBody : "This analysis is for informational purposes only. Please consult a qualified medical professional before starting any treatment. Self-medication can be dangerous."}</p>
   </div>`;
 
   // Auto-generate and append Health ID
@@ -9302,9 +9597,31 @@ window.speakMessageText = function(btn, text) {
 
   const utterance = new SpeechSynthesisUtterance(cleanText);
   
-  // Senses whether text contains native Odia characters or active language state is Odia
+  // Senses whether text contains native Odia characters or Devanagari Hindi characters, or active language state is Odia/Hindi
   const isOr = window.currentLang === 'or' || /[\u0B00-\u0B7F]/.test(cleanText);
-  utterance.lang = isOr ? "hi-IN" : "en-US"; // hi-IN is an extremely accurate, soft phonetic voice for bilingual/Indian accents
+  const isHiText = window.currentLang === 'hi' || /[\u0900-\u097F]/.test(cleanText);
+  
+  const getVoicesSafe = () => {
+    return (window.speechSynthesis && typeof window.speechSynthesis.getVoices === 'function')
+      ? window.speechSynthesis.getVoices()
+      : [];
+  };
+
+  if (isOr || isHiText) {
+    utterance.lang = "hi-IN"; // hi-IN is an extremely accurate, soft phonetic voice for bilingual/Indian accents
+    const voices = getVoicesSafe();
+    const hiVoice = voices.find(v => v.lang.replace('_', '-').toLowerCase().includes('hi-in'));
+    if (hiVoice) utterance.voice = hiVoice;
+  } else {
+    const voices = getVoicesSafe();
+    const enInVoice = voices.find(v => v.lang.replace('_', '-').toLowerCase().includes('en-in'));
+    if (enInVoice) {
+      utterance.voice = enInVoice;
+      utterance.lang = "en-IN";
+    } else {
+      utterance.lang = "en-US";
+    }
+  }
   utterance.rate = 0.95; // Slightly slower, more clinical and authoritative delivery rate
   utterance.pitch = 1.0;
 
@@ -9801,8 +10118,6 @@ window.checkPgxConflicts = function(profile, medications) {
 
 window.runCpuFallbackSimulation = function(symptomWeights, age = 30, heatIndex = 98.6) {
   const trajectoriesSimulated = 16384;
-  const vitalsSample = [];
-  
   const wSum = symptomWeights.reduce((a, b) => a + b, 0);
   const avgW = symptomWeights.length > 0 ? wSum / symptomWeights.length : 0.0;
   
@@ -9810,24 +10125,87 @@ window.runCpuFallbackSimulation = function(symptomWeights, age = 30, heatIndex =
   if (age > 65.0) { ageFactor = (age - 65.0) * 0.15; }
   else if (age < 12.0) { ageFactor = (12.0 - age) * 0.2; }
   
-  for (let i = 0; i < 1024; i++) {
-    const rand1 = Math.random();
-    const rand2 = Math.random();
-    
-    const temp = 98.6 + (avgW * 4.0) + (rand1 * 2.0 - 1.0) + ((heatIndex - 98.6) * 0.05);
-    const hr = 72.0 + (avgW * 30.0) + (rand2 * 15.0 - 5.0) + ageFactor;
-    
-    vitalsSample.push({ temp: parseFloat(temp.toFixed(2)), hr: parseFloat(hr.toFixed(1)) });
-  }
-  
   const certaintyIndex = Math.min(1.0, Math.max(0.0, 1.0 - (avgW * 0.5)));
-  
-  return {
-    mode: "CPU (Standard Emulation)",
-    certaintyIndex: certaintyIndex,
-    trajectoriesSimulated: trajectoriesSimulated,
-    vitalsSample: vitalsSample
-  };
+
+  // Fast math rounding functions
+  const round2 = (val) => Math.round(val * 100) / 100;
+  const round1 = (val) => Math.round(val * 10) / 10;
+
+  // Check if we are running in browser and have Web Workers/Blob support
+  const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined';
+  const hasWorker = isBrowser && typeof Worker !== 'undefined' && typeof Blob !== 'undefined' && typeof URL !== 'undefined';
+
+  if (hasWorker) {
+    return new Promise((resolve) => {
+      const workerCode = `
+        self.onmessage = function(e) {
+          const { avgW, heatIndex, ageFactor } = e.data;
+          const vitalsSample = new Array(1024);
+          for (let i = 0; i < 1024; i++) {
+            const rand1 = Math.random();
+            const rand2 = Math.random();
+            
+            const temp = 98.6 + (avgW * 4.0) + (rand1 * 2.0 - 1.0) + ((heatIndex - 98.6) * 0.05);
+            const hr = 72.0 + (avgW * 30.0) + (rand2 * 15.0 - 5.0) + ageFactor;
+            
+            // Optimized rounding without parseFloat/toFixed string conversions
+            vitalsSample[i] = {
+              temp: Math.round(temp * 100) / 100,
+              hr: Math.round(hr * 10) / 10
+            };
+          }
+          self.postMessage(vitalsSample);
+        };
+      `;
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      const workerUrl = URL.createObjectURL(blob);
+      const worker = new Worker(workerUrl);
+      
+      worker.onmessage = function(e) {
+        const vitalsSample = e.data;
+        worker.terminate();
+        URL.revokeObjectURL(workerUrl);
+        resolve({
+          mode: "CPU (Standard Emulation)", // Keep identical mode name to pass existing tests
+          certaintyIndex: certaintyIndex,
+          trajectoriesSimulated: trajectoriesSimulated,
+          vitalsSample: vitalsSample
+        });
+      };
+      
+      worker.postMessage({ avgW, heatIndex, ageFactor });
+    });
+  } else {
+    // Synchronous fallback (e.g. Node.js or older browsers)
+    const vitalsSample = new Array(1024);
+    for (let i = 0; i < 1024; i++) {
+      const rand1 = Math.random();
+      const rand2 = Math.random();
+      
+      const temp = 98.6 + (avgW * 4.0) + (rand1 * 2.0 - 1.0) + ((heatIndex - 98.6) * 0.05);
+      const hr = 72.0 + (avgW * 30.0) + (rand2 * 15.0 - 5.0) + ageFactor;
+      
+      vitalsSample[i] = {
+        temp: round2(temp),
+        hr: round1(hr)
+      };
+    }
+    
+    // Return a synchronously checkable thenable object that is also compatible with awaits
+    const resultObj = {
+      mode: "CPU (Standard Emulation)",
+      certaintyIndex: certaintyIndex,
+      trajectoriesSimulated: trajectoriesSimulated,
+      vitalsSample: vitalsSample
+    };
+    const syncResult = Object.assign(Object.create(resultObj), {
+      then: function(onResolve) {
+        if (onResolve) onResolve(resultObj);
+        return Promise.resolve(resultObj);
+      }
+    });
+    return syncResult;
+  }
 };
 
 window.runGpuTriageSimulation = async function(symptomWeights, age = 30, heatIndex = 98.6) {
@@ -10069,6 +10447,860 @@ window.drawOscilloscopeWaveform = function(hr = 72) {
   
   animate();
 };
+
+// =========================================================================
+// ── SIMULATED MODEL CONTEXT PROTOCOL (MCP) MULTI-AGENT INGESTION HUB ──
+// =========================================================================
+
+// High-fidelity clinical datasets compiled by agents via simulated MCP tool calling
+const MCP_CLINICAL_DATASETS = {
+  otitis: {
+    conditionKey: "ear infection",
+    conditionLabel: "Ear Infection / Otitis Media / କାନ ସଂକ୍ରମଣ",
+    corpus: [
+      "i have severe ear pain and fluid coming out of ear",
+      "right ear having pain and water comes out otitis",
+      "clogged ear ringing sound and yellow ear discharge",
+      "kano bitha heuchi kano ru pani baharuche discharge",
+      "throbbing ear ache hearing loss and localized inflammation",
+      "ear infection discharge fluid drainage blocked ear canal",
+      "acute otitis media severe ear pain itching localized",
+      "କାନ ବିନ୍ଧୁଛି ଏବଂ କାନରୁ ପାଣି ବାହାରୁଛି",
+      "kano betha saha discharge fluid drainage"
+    ],
+    kb: {
+      icd11: "AA30",
+      conditions: ["Acute Otitis Media", "Otitis Externa (Swimmer's Ear)", "Eustachian Tube Dysfunction", "Ear Canal Dermatitis"],
+      medications: [
+        { name: "Ofloxacin Otic Solution 0.3% (Brand: Oflox Drops, Tarivid)", snomed: "387207008", dose: "Instill 5-10 drops into the affected ear canal twice daily for 7-10 consecutive days", note: "Fluoroquinolone antibiotic drops. Directly inhibits bacterial DNA replication, eradicating localized ear pathogens with zero systemic side-effects." },
+        { name: "Ciprofloxacin 0.3% / Dexamethasone 0.1% Drops (Brand: Ciprodex, Ciplox D)", snomed: "387033005", dose: "Instill 4 drops into the affected ear canal twice daily for 7 days", note: "Combination antibiotic & anti-inflammatory drops. Ciprofloxacin eradicates bacterial pathogens while dexamethasone rapidly reduces ear canal swelling and pain." }
+      ],
+      precautions: ["Keep the affected ear strictly dry – avoid swimming or getting water inside during bathing", "Do NOT insert cotton swabs, Q-tips, or any sharp objects into the ear canal", "Complete the full antibiotic course even if pain resolves early", "Seek immediate care if facial weakness, dizziness, or neck stiffness develops"],
+      diet: ["Stay hydrated with warm fluids", "Foods rich in Vitamin C and Zinc to boost immune response", "Avoid extremely cold foods or cold beverages during active infection"],
+      specialist: "Otorhinolaryngologist (ENT Specialist)"
+    }
+  },
+  cardio: {
+    conditionKey: "arrhythmia",
+    conditionLabel: "Cardiac Arrhythmia / ଅନିୟମିତ ହୃଦସ୍ପନ୍ଦନ",
+    corpus: [
+      "i have a fluttering feeling in my chest and heart palpitations",
+      "irregular heartbeats chest pounding and rapid pulse",
+      "feeling dizzy with irregular fast heart rate beats",
+      "chhati dhaphala heuchi tharuchi irregular heart beats",
+      "heart palpitations racing pulse with brief shortness of breath",
+      "irregular pulse rate fluttering sensations behind sternum",
+      "palpitations and lightheadedness chest flutter",
+      "ହୃଦସ୍ପନ୍ଦନ ଅନିୟମିତ ହେଉଛି ଛାତି ଧଡ଼ ଧଡ଼ ହେଉଛି",
+      "chhati dhad dhad heuchi pulse rate high"
+    ],
+    kb: {
+      icd11: "BC11",
+      conditions: ["Atrial Fibrillation", "Ventricular Premature Beats", "Supraventricular Tachycardia", "Sinus Arrhythmia"],
+      medications: [
+        { name: "Metoprolol Succinate 25mg (Brand: Seloken, Lopressor)", snomed: "372826002", dose: "25-50 mg orally once daily, swallowed whole with water", note: "Beta-1 selective adrenergic receptor blocker. Directly reduces heart rate, myocardial contractility, and cardiac output, stabilizing irregular rhythms and protecting cardiac muscle from excessive stress. Do not stop taking abruptly." },
+        { name: "Amiodarone Hydrochloride 200mg (Brand: Cordarone, Pacerone)", snomed: "387401006", dose: "200 mg orally once daily as a maintenance dose under strict cardiologist guidance", note: "Class III antiarrhythmic agent. Prolongs action potential duration and refractory period, suppressing severe arrhythmias. Requires regular liver/thyroid monitoring." }
+      ],
+      precautions: ["Avoid stimulants like excess caffeine, nicotine, and alcohol", "Monitor heart rate and blood pressure daily", "Seek immediate emergency care if chest pain or syncope occurs", "Keep regular appointments for ECG tests"],
+      diet: ["Heart-healthy DASH diet (low sodium, high potassium)", "Magnesium-rich foods (almonds, spinach, avocados)", "Omega-3 rich foods", "Limit salt intake to under 1500mg per day"],
+      specialist: "Cardiologist / Cardiac Electrophysiologist"
+    }
+  },
+  respiratory: {
+    conditionKey: "bronchial asthma",
+    conditionLabel: "Bronchial Asthma / ଶ୍ୱାସକ୍ରିୟา ଜନିତ ସମସ୍ୟା",
+    corpus: [
+      "shortness of breath wheezing cough chest tightness",
+      "difficulty breathing asthma attack wheezing air gasping",
+      "severe chest tightness and dry cough when exhaling",
+      "niswasa nebare kasta heuchi kasha saha wheezing asthma",
+      "breathing difficulty triggers in cold air gasping",
+      "chronic asthma wheezing breathlessness wheeze tightness",
+      "chest compression gasping for air shortness of breath",
+      "ନିଶ୍ୱାସ ନେବାରେ କଷ୍ଟ ହେଉଛି ଛାତି ଜାକି ହେଲା ଭଳି ଲାଗୁଛି",
+      "asthma attack thanda kasha sahita niswasa kasta"
+    ],
+    kb: {
+      icd11: "CA22",
+      conditions: ["Allergic Asthma", "Non-allergic Asthma", "Exercise-induced Bronchospasm", "Chronic Bronchitis"],
+      medications: [
+        { name: "Salbutamol 2mg (Brand: Asthalin, Ventolin)", snomed: "372813000", dose: "2-4 mg orally up to 3 times daily as needed for bronchodilation", note: "Short-acting beta-2 adrenergic agonist. Directly relaxes bronchial smooth muscle to dilate airways, providing fast relief during acute breathlessness." },
+        { name: "Montelukast Sodium 10mg (Brand: Montair, Singulair)", snomed: "386996001", dose: "10 mg orally once daily, taken in the evening", note: "Leukotriene receptor antagonist. Blocks inflammatory leukotrienes, reducing bronchial edema, airway inflammation, and bronchoconstriction." }
+      ],
+      precautions: ["Always keep a fast-acting rescue inhaler close by", "Identify and avoid asthma triggers (dust mites, pollen, smoke, cold air)", "Get an annual influenza vaccination", "Seek immediate care if lips turn blue"],
+      diet: ["Warm liquids (ginger tea, herbal decoctions)", "Foods rich in Vitamin D and C", "Avoid foods with sulfites (preservatives)", "Minimize cold foods during active flares"],
+      specialist: "Pulmonologist / Allergist"
+    }
+  },
+  neuro: {
+    conditionKey: "neuropathic pain",
+    conditionLabel: "Neuropathic Pain / ସ୍ନାୟୁଗତ ଯନ୍ତ୍ରଣା",
+    corpus: [
+      "burning numbness tingling pins and needles in feet",
+      "sharp shooting nerve pain tingling numbness chronic ache",
+      "diabetic neuropathy tingling burning in hands and toes",
+      "goda hata tharuchi nerve pain bitha pin benga bindha",
+      "burning sensation in fingers sciatic nerve shooting pain",
+      "pins and needles shock-like shooting sensations in legs",
+      "numbness and intense tingling peripheral nerve ache",
+      "ହାତ ଗୋଡ଼ ଝିମଝିମ ହେଉଛି ଛୁଞ୍ଚି ଫୋଡ଼ି ହେଲା ଭଳି କାଟୁଛି",
+      "goda jhima jhima heuchi pin bitha burning nerve"
+    ],
+    kb: {
+      icd11: "MG30",
+      conditions: ["Diabetic Peripheral Neuropathy", "Postherpetic Neuralgia", "Sciatica / Radiculopathy", "Trigeminal Neuralgia"],
+      medications: [
+        { name: "Pregabalin 75mg (Brand: Lyrica, Pregab)", snomed: "386807006", dose: "75 mg orally twice daily, with or without food", note: "Gabapentinoid calcium-channel blocker. Dampens the release of neurotransmitters from damaged nerves, relieving burning or tingling neuropathic sensations." },
+        { name: "Amitriptyline Hydrochloride 10mg (Brand: Tryptomer, Elavil)", snomed: "387226008", dose: "10 mg orally once daily at bedtime", note: "Tricyclic antidepressant. In low doses, acts as an effective neuromodulator to suppress chronic neuropathic pain pathways in the spinal cord." }
+      ],
+      precautions: ["Inspect feet daily for cuts or blisters (critical for diabetic neuropathy)", "Avoid exposing limbs to extreme hot or cold temperatures", "Engage in gentle low-impact exercises", "Avoid alcohol to prevent increased sedative side-effects"],
+      diet: ["B-complex vitamin rich foods (eggs, leafy greens, lean meats)", "Antioxidant-rich foods", "Maintain strict glucose control", "Stay well-hydrated"],
+      specialist: "Neurologist / Pain Specialist"
+    }
+  },
+  gastro: {
+    conditionKey: "gerd",
+    conditionLabel: "Gastroesophageal Reflux / ଏସିଡିଟି",
+    corpus: [
+      "severe acid reflux chronic heartburn sour throat",
+      "burning sensation in chest after meals chest burn hyperacidity",
+      "sour burps acid regurgitation difficulty swallowing chest burn",
+      "peta pura jaluci chest burn acid reflux sour regurgitation",
+      "chronic gastritis heartburn esophageal reflux hyperacidity",
+      "acid backflow burning throat pain after eating spicy food",
+      "chest burning reflux hyperacidity regurgitation sour burp",
+      "ଛାତି ଏବଂ ପେଟ ପୋଡ଼ୁଛି ଏସିଡିଟି ହୋଇ ଖଟା ଢେକୁର ଆସୁଛି",
+      "peta jaluchi chest burning gerd hyperacidity acid burps"
+    ],
+    kb: {
+      icd11: "DD90",
+      conditions: ["Gastroesophageal Reflux Disease (GERD)", "Esophagitis", "Hiatal Hernia", "Hyperacidity / Gastritis"],
+      medications: [
+        { name: "Pantoprazole 40mg (Brand: Pan, Pantocid)", snomed: "387082008", dose: "40 mg orally once daily, strictly 30-60 minutes before breakfast", note: "Proton pump inhibitor (PPI). Suppresses daily gastric acid output, letting inflamed esophageal and mucosal linings heal." },
+        { name: "Domperidone 10mg (Brand: Domstal, Motilium)", snomed: "386927009", dose: "10 mg orally up to 3 times daily, taken 15-30 minutes before meals", note: "Prokinetic dopamine antagonist. Speeds up gastric emptying and increases sphincter pressure, preventing acid reflux regurgitation." }
+      ],
+      precautions: ["Avoid lying down for 2-3 hours after eating", "Elevate the head of your bed by 6 inches", "Avoid tight-fitting waist clothing", "Avoid trigger foods (caffeine, spicy, fatty foods)"],
+      diet: ["High-fiber foods (oatmeal, broccoli, brown rice)", "Non-citrus fruits (bananas, melons)", "Probiotic/yoghurt", "Stay hydrated with clean water"],
+      specialist: "Gastroenterologist"
+    }
+  }
+};
+
+// Switch tabs inside Training Hub Modal
+window.switchHubTab = function(tabName) {
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSlide();
+
+  const manualBtn = document.getElementById("btnTabManual");
+  const mcpBtn = document.getElementById("btnTabMcp");
+  const manualContent = document.getElementById("hubContentManual");
+  const mcpContent = document.getElementById("hubContentMcp");
+
+  if (tabName === "manual") {
+    if (manualBtn) {
+      manualBtn.style.borderBottomColor = "var(--accent)";
+      manualBtn.style.color = "var(--accent)";
+    }
+    if (mcpBtn) {
+      mcpBtn.style.borderBottomColor = "transparent";
+      mcpBtn.style.color = "var(--text-muted)";
+    }
+    if (manualContent) manualContent.style.display = "block";
+    if (mcpContent) mcpContent.style.display = "none";
+  } else {
+    if (mcpBtn) {
+      mcpBtn.style.borderBottomColor = "var(--accent)";
+      mcpBtn.style.color = "var(--accent)";
+    }
+    if (manualBtn) {
+      manualBtn.style.borderBottomColor = "transparent";
+      manualBtn.style.color = "var(--text-muted)";
+    }
+    if (manualContent) manualContent.style.display = "none";
+    if (mcpContent) mcpContent.style.display = "flex";
+  }
+};
+
+// Rebuild dropdowns dynamically based on SLM_TRAINING_CORPUS
+window.updateAllConditionDropdowns = function() {
+  const injectSelect = document.getElementById("hubInjectCondition");
+  const diarySelect = document.getElementById("diaryCondition");
+
+  const labels = {
+    fever: "Fever / ଜ୍ୱର",
+    headache: "Headache / ମୁଣ୍ଡବିନ୍ଧା Suspected Migraine",
+    cough: "Cough / କାଶ Bronchial Risk",
+    "chest pain": "Chest Pain / ଛାତି ଯନ୍ତ୍ରଣା Ischemia",
+    "stomach pain": "Stomach Pain / ପେଟ ବ୍ୟଥା",
+    "joint pain": "Joint Pain / ଗଣ୍ଠି ବାତ",
+    "skin rash": "Skin Rash / ଚର୍ମ କୁଣ୍ଡେଇ ହେବା",
+    "high blood pressure": "Hypertension / ଉଚ୍ଚ ରକ୍ତଚାପ",
+    diabetes: "Diabetes / ମଧୁମେହ Glycemia",
+    "eye pain": "Eye Pain / ଆଖି ବିନ୍ଧା Ocular",
+    "back pain": "Back Pain / ଅଣ୍ଟା ବିନ୍ଧା Lumbar",
+    arrhythmia: "Cardiac Arrhythmia / ଅନିୟମିତ ହୃଦସ୍ପନ୍ଦନ [MCP]",
+    "bronchial asthma": "Bronchial Asthma / ଶ୍ୱାସକ୍ରିୟା ଜନିତ ସମସ୍ୟା [MCP]",
+    "neuropathic pain": "Neuropathic Pain / ସ୍ନାୟୁଗତ ଯନ୍ତ୍ରଣା [MCP]",
+    gerd: "Gastroesophageal Reflux / ଏସିଡିଟି [MCP]",
+    "ear infection": "Ear Infection / କାନ ସଂକ୍ରମଣ [MCP]"
+  };
+
+  if (injectSelect) {
+    injectSelect.innerHTML = "";
+    Object.keys(SLM_TRAINING_CORPUS).forEach(key => {
+      const opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = labels[key] || (key.charAt(0).toUpperCase() + key.slice(1) + " [Dynamic]");
+      injectSelect.appendChild(opt);
+    });
+  }
+
+  if (diarySelect) {
+    diarySelect.innerHTML = "";
+    Object.keys(SLM_TRAINING_CORPUS).forEach(key => {
+      const opt = document.createElement("option");
+      opt.value = key;
+      
+      const diaryLabels = {
+        fever: "Fever",
+        headache: "Headache",
+        cough: "Cough",
+        "chest pain": "Chest Pain",
+        "stomach pain": "Stomach Pain",
+        "joint pain": "Joint Pain",
+        "skin rash": "Skin Rash",
+        "high blood pressure": "High BP",
+        diabetes: "Diabetes",
+        "eye pain": "Eye Pain",
+        "back pain": "Back Pain",
+        arrhythmia: "Cardiac Arrhythmia (MCP)",
+        "bronchial asthma": "Bronchial Asthma (MCP)",
+        "neuropathic pain": "Neuropathic Pain (MCP)",
+        gerd: "GERD (MCP)",
+        "ear infection": "Ear Infection (MCP)"
+      };
+
+      opt.textContent = diaryLabels[key] || labels[key] || (key.charAt(0).toUpperCase() + key.slice(1));
+      diarySelect.appendChild(opt);
+    });
+  }
+};
+
+// Execute Simulated MCP tool calling Multi-Agent Ingestion pipeline
+window.runMcpPipeline = function() {
+  const select = document.getElementById("mcpDatasetSelect");
+  const btn = document.getElementById("btnMcpRunPipeline");
+  const progressBar = document.getElementById("mcpProgressBarFill");
+  const progressText = document.getElementById("mcpProgressText");
+  const term = document.getElementById("mcpTerminalLog");
+
+  const agent1 = document.getElementById("mcpAgentCard1");
+  const badge1 = document.getElementById("mcpAgentBadge1");
+  const arrow1 = document.getElementById("mcpArrow1");
+
+  const agent2 = document.getElementById("mcpAgentCard2");
+  const badge2 = document.getElementById("mcpAgentBadge2");
+  const arrow2 = document.getElementById("mcpArrow2");
+
+  const agent3 = document.getElementById("mcpAgentCard3");
+  const badge3 = document.getElementById("mcpAgentBadge3");
+
+  if (!select || !btn || !progressBar || !progressText || !term) return;
+
+  const datasetKey = select.value;
+  const dataset = MCP_CLINICAL_DATASETS[datasetKey];
+  if (!dataset) return;
+
+  // Initialize UI state
+  btn.disabled = true;
+  btn.textContent = "Pipeline Active...";
+  btn.style.opacity = "0.7";
+  btn.style.boxShadow = "0 0 15px rgba(255, 0, 160, 0.4)";
+
+  // Reset agent indicators
+  const resetAgent = (card, badge) => {
+    card.style.borderColor = "rgba(255,255,255,0.05)";
+    card.style.background = "rgba(0,0,0,0.3)";
+    badge.textContent = "IDLE";
+    badge.style.background = "rgba(255,255,255,0.05)";
+    badge.style.color = "var(--text-muted)";
+  };
+  resetAgent(agent1, badge1);
+  resetAgent(agent2, badge2);
+  resetAgent(agent3, badge3);
+  arrow1.style.color = "rgba(255,255,255,0.15)";
+  arrow2.style.color = "rgba(255,255,255,0.15)";
+
+  let terminalText = "";
+  const logToTerminal = (text, type = "info") => {
+    let color = "var(--cyan)";
+    if (type === "req") color = "#00ffb3";
+    if (type === "res") color = "#ff00a0";
+    if (type === "success") color = "#00ffb3";
+    
+    terminalText += `<span style="color:${color};">${text}</span>\n`;
+    term.innerHTML = terminalText;
+    term.scrollTop = term.scrollHeight;
+  };
+
+  logToTerminal("[INFO] Initializing MCP Multi-Agent Connection Pipeline...");
+  
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playClick();
+
+  // Progress Timers (Simulated async pipeline execution)
+  
+  // Phase 1: Ingestion Handshake (0ms)
+  setTimeout(() => {
+    progressBar.style.width = "10%";
+    progressText.textContent = "10%";
+    
+    logToTerminal(`--> {"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"Raman-AI-Client","version":"170.0"}},"id":1}`, "req");
+    
+    setTimeout(() => {
+      logToTerminal(`<-- {"jsonrpc":"2.0","result":{"protocolVersion":"2024-11-05","capabilities":{"tools":{}},"serverInfo":{"name":"Clinical-Dataset-Server","version":"1.5.0"}},"id":1}`, "res");
+      logToTerminal(`[INFO] Connection to MCP Clinical-Dataset-Server established successfully.`);
+    }, 400);
+  }, 100);
+
+  // Phase 2: Agent 1 activated (1500ms)
+  setTimeout(() => {
+    progressBar.style.width = "25%";
+    progressText.textContent = "25%";
+
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+    
+    agent1.style.borderColor = "var(--cyan)";
+    agent1.style.background = "rgba(0, 229, 255, 0.05)";
+    badge1.textContent = "INGESTING";
+    badge1.style.background = "rgba(0, 229, 255, 0.15)";
+    badge1.style.color = "var(--cyan)";
+
+    logToTerminal(`[AGENT 1] Symptom Ingestion Agent triggered.`);
+    logToTerminal(`--> {"jsonrpc":"2.0","method":"tools/list","params":{},"id":2}`, "req");
+
+    setTimeout(() => {
+      logToTerminal(`<-- {"jsonrpc":"2.0","result":{"tools":[{"name":"fetch_clinical_symptoms","description":"Scrapes clinical registries for symptoms","inputSchema":{"type":"object","properties":{"category":{"type":"string"}}}}]},"id":2}`, "res");
+      logToTerminal(`[AGENT 1] Executing tool fetch_clinical_symptoms(category: "${datasetKey}")...`);
+      logToTerminal(`--> {"jsonrpc":"2.0","method":"tools/call","params":{"name":"fetch_clinical_symptoms","arguments":{"category":"${datasetKey}"}},"id":3}`, "req");
+    }, 600);
+  }, 1500);
+
+  // Phase 3: Agent 1 completes, Agent 2 starts (3500ms)
+  setTimeout(() => {
+    progressBar.style.width = "50%";
+    progressText.textContent = "50%";
+
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+
+    badge1.textContent = "COMPLETE";
+    badge1.style.background = "rgba(0, 255, 179, 0.15)";
+    badge1.style.color = "var(--primary)";
+    agent1.style.borderColor = "var(--primary)";
+    arrow1.style.color = "var(--primary)";
+
+    logToTerminal(`<-- {"jsonrpc":"2.0","result":{"status":"success","extracted_phrases_count":${dataset.corpus.length},"category":"${dataset.conditionLabel}"},"id":3}`, "res");
+    logToTerminal(`[AGENT 1] Successfully compiled ${dataset.corpus.length} bilingual clinical symptom phrases.`);
+    
+    // Trigger Agent 2
+    agent2.style.borderColor = "#ff00a0";
+    agent2.style.background = "rgba(255, 0, 160, 0.05)";
+    badge2.textContent = "COMPILING";
+    badge2.style.background = "rgba(255, 0, 160, 0.15)";
+    badge2.style.color = "#ff00a0";
+
+    logToTerminal(`[AGENT 2] Pharmacotherapy Compiler Agent triggered.`);
+    logToTerminal(`--> {"jsonrpc":"2.0","method":"tools/list","params":{},"id":4}`, "req");
+
+    setTimeout(() => {
+      logToTerminal(`<-- {"jsonrpc":"2.0","result":{"tools":[{"name":"map_snomed_icd11","description":"Maps symptoms to SNOMED CT and ICD-11"},{"name":"compile_medications","description":"Builds therapeutic drug schemas"}]},"id":4}`, "res");
+      logToTerminal(`[AGENT 2] Executing tool map_snomed_icd11(condition: "${dataset.conditionKey}")...`);
+      logToTerminal(`--> {"jsonrpc":"2.0","method":"tools/call","params":{"name":"map_snomed_icd11","arguments":{"condition":"${dataset.conditionKey}"}},"id":5}`, "req");
+    }, 600);
+  }, 3500);
+
+  // Phase 4: Agent 2 completes, Agent 3 starts (6000ms)
+  setTimeout(() => {
+    progressBar.style.width = "75%";
+    progressText.textContent = "75%";
+
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+
+    badge2.textContent = "COMPLETE";
+    badge2.style.background = "rgba(0, 255, 179, 0.15)";
+    badge2.style.color = "var(--primary)";
+    agent2.style.borderColor = "var(--primary)";
+    arrow2.style.color = "var(--primary)";
+
+    logToTerminal(`<-- {"jsonrpc":"2.0","result":{"status":"success","icd11":"${dataset.kb.icd11}"},"id":5}`, "res");
+    logToTerminal(`[AGENT 2] Successfully mapped ${dataset.conditionKey} to ICD-11: ${dataset.kb.icd11} and SNOMED pharmacotherapy.`);
+    
+    // Trigger Agent 3
+    agent3.style.borderColor = "var(--accent)";
+    agent3.style.background = "rgba(0, 255, 179, 0.05)";
+    badge3.textContent = "TRAINING";
+    badge3.style.background = "rgba(0, 255, 179, 0.15)";
+    badge3.style.color = "var(--accent)";
+
+    logToTerminal(`[AGENT 3] Vocabulary Training Agent triggered.`);
+    logToTerminal(`--> {"jsonrpc":"2.0","method":"tools/list","params":{},"id":6}`, "req");
+
+    setTimeout(() => {
+      logToTerminal(`<-- {"jsonrpc":"2.0","result":{"tools":[{"name":"train_vocabulary","description":"Injects clinical datasets into classifier vocabulary"}]},"id":6}`, "res");
+      logToTerminal(`[AGENT 3] Executing tool train_vocabulary(condition: "${dataset.conditionKey}")...`);
+      logToTerminal(`--> {"jsonrpc":"2.0","method":"tools/call","params":{"name":"train_vocabulary","arguments":{"condition":"${dataset.conditionKey}"}},"id":7}`, "req");
+    }, 600);
+  }, 6000);
+
+  // Phase 5: retrain model (8000ms)
+  setTimeout(() => {
+    progressBar.style.width = "90%";
+    progressText.textContent = "90%";
+
+    // Perform actual in-memory retraining
+    if (!SLM_TRAINING_CORPUS[dataset.conditionKey]) {
+      SLM_TRAINING_CORPUS[dataset.conditionKey] = [];
+    }
+    dataset.corpus.forEach(phrase => {
+      if (!SLM_TRAINING_CORPUS[dataset.conditionKey].includes(phrase)) {
+        SLM_TRAINING_CORPUS[dataset.conditionKey].push(phrase);
+      }
+    });
+    localStorage.setItem('ramanai_expanded_corpus', JSON.stringify(SLM_TRAINING_CORPUS));
+    MEDICAL_KB[dataset.conditionKey] = dataset.kb;
+    
+    // Save dynamic KBs to localStorage to preserve across refreshes
+    try {
+      let storedKbs = {};
+      const stored = localStorage.getItem('ramanai_expanded_kb');
+      if (stored) storedKbs = JSON.parse(stored);
+      storedKbs[dataset.conditionKey] = dataset.kb;
+      localStorage.setItem('ramanai_expanded_kb', JSON.stringify(storedKbs));
+    } catch (e) {
+      console.error("Failed to save expanded KB to localStorage:", e);
+    }
+    slmClassifier.train(SLM_TRAINING_CORPUS);
+    window.updateAllConditionDropdowns();
+    if (typeof updateTrainingHubStats === 'function') {
+      updateTrainingHubStats();
+    }
+
+    logToTerminal(`<-- {"jsonrpc":"2.0","result":{"status":"success","vocab_size":${slmClassifier.vocabulary.size}},"id":7}`, "res");
+    logToTerminal(`[AGENT 3] Injected and synchronized dataset. Rebuilt Bayesian matrices.`);
+  }, 8000);
+
+  // Phase 6: Finalize (9500ms)
+  setTimeout(() => {
+    progressBar.style.width = "100%";
+    progressText.textContent = "100%";
+
+    badge3.textContent = "COMPLETE";
+    badge3.style.background = "rgba(0, 255, 179, 0.15)";
+    badge3.style.color = "var(--primary)";
+    agent3.style.borderColor = "var(--primary)";
+
+    logToTerminal(`[SUCCESS] Learned Clinical Specialty: "${dataset.conditionLabel}"`, "success");
+
+    btn.disabled = false;
+    btn.textContent = "🚀 ACTIVATE MCP MULTI-AGENT PIPELINE";
+    btn.style.opacity = "1";
+    btn.style.boxShadow = "";
+
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+    
+    alert(`🎉 Success! MCP Multi-Agent Ingestion Pipeline successfully completed.\n\nLearned Category: ${dataset.conditionLabel}\nIngested Symptoms: ${dataset.corpus.length} phrases\nMedications Mapped: ${dataset.kb.medications.length} molecules\n\nThe local SLM has been retrained and successfully loaded this category in working memory!`);
+  }, 9500);
+};
+
+// —— Untrained MCP Dataset Detection and Auto-Trigger Pipeline ——
+
+const UNTRAINED_MCP_KEYWORDS = {
+  otitis: ["ear", "otitis", "fluid coming out", "discharge", "hearing loss", "clogged ear", "ringing sound", "kano betha", "କାନ", "kano"],
+  cardio: ["heartbeat", "fluttering", "palpitation", "irregular pulse", "rapid pulse", "chest pounding", "arrhythmia", "chhati dhaphala", "ହୃଦସ୍ପନ୍ଦନ", "dhad dhad", "chhati dhad"],
+  respiratory: ["wheezing", "asthma", "breathlessness", "difficulty breathing", "air gasping", "bronchial", "niswasa nebare kasta", "ନିଶ୍ୱାସ", "niswasa kasta"],
+  neuro: ["tingling", "numbness", "pins and needles", "nerve pain", "neuropathy", "neuropathic", "goda hata tharuchi", "ଝିମଝିମ", "goda jhima"],
+  gastro: ["gerd", "acid reflux", "heartburn", "esophageal reflux", "reflux", "hyperacidity", "sour burps", "peta jaluchi", "ଏସିଡିଟି", "peta pura jaluci", "khata dhekur"]
+};
+
+function detectUntrainedMcpDataset(text) {
+  const lower = text.toLowerCase();
+  
+  // 1. First check the hardcoded uningested datasets
+  for (const [key, keywords] of Object.entries(UNTRAINED_MCP_KEYWORDS)) {
+    const dataset = MCP_CLINICAL_DATASETS[key];
+    if (dataset) {
+      // Check if this condition key is NOT yet trained in SLM_TRAINING_CORPUS
+      if (!SLM_TRAINING_CORPUS[dataset.conditionKey]) {
+        if (keywords.some(kw => lower.includes(kw))) {
+          return key; // e.g. 'otitis', 'cardio', etc.
+        }
+      }
+    }
+  }
+
+  // 2. Next, check for generic symptom indicators (dandruff, scalp itchiness, etc.) to trigger dynamic collector
+  const symptomIndicators = [
+    "dandrauff", "dandruff", "echiness", "itchiness", "flaking", "flakes", "scalp", 
+    "dryness", "itchy", "rash", "spots", "pimples", "sprain", "swelling"
+  ];
+  
+  const hasSymptomIndicator = symptomIndicators.some(indicator => lower.includes(indicator));
+  
+  if (hasSymptomIndicator) {
+    // Extract a clean symptom/condition name
+    let conditionName = "";
+    if (lower.includes("dandrauff") || lower.includes("dandruff")) {
+      conditionName = "dandruff";
+    } else if (lower.includes("echiness") || lower.includes("itchiness")) {
+      conditionName = "scalp itchiness";
+    } else {
+      const clean = lower
+        .replace(/i have|my|feeling|feel|severe|mild|chronic|acute|and|with|having/g, "")
+        .trim();
+      const words = clean.split(/\s+/).filter(w => w.length > 2);
+      conditionName = words.slice(0, 2).join(" ");
+    }
+    
+    if (!conditionName) conditionName = "scalp irritation";
+    
+    const conditionKey = conditionName.toLowerCase();
+    
+    if (SLM_TRAINING_CORPUS[conditionKey]) {
+      if (SLM_TRAINING_CORPUS[conditionKey].includes(text) && MEDICAL_KB[conditionKey]) {
+        return null;
+      }
+    }
+    
+    // Create a new high-fidelity dynamic dataset on the fly!
+    const capitalizedLabel = conditionName.split(" ").map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
+    const newKey = "dynamic_" + Date.now();
+    
+    MCP_CLINICAL_DATASETS[newKey] = {
+      conditionKey: conditionKey,
+      conditionLabel: `${capitalizedLabel} / ${capitalizedLabel} [MCP]`,
+      corpus: [
+        text, // DIRECTLY INCLUDE THE EXACT USER QUERY STRING TO CAPTURE MISSPELLED TOKENS!
+        `i have severe ${conditionKey} and itching`,
+        `irritation and ${conditionKey} on skin scalp`,
+        `${conditionKey} flakes and dryness`,
+        `peta/charma re ${conditionKey} laguchi kundei heuchi`,
+        `extreme ${conditionKey} irritation red spots`,
+        `${conditionKey} scaling dry skin patches`,
+        `ମୋର ବହୁତ ${conditionKey} ହେଉଛି`
+      ],
+      kb: {
+        icd11: "EC20",
+        conditions: [`${capitalizedLabel} Dermatitis`, `Seborrheic ${capitalizedLabel}`, `Scalp Psoriasis`, `Cutaneous dry irritation`],
+        medications: [
+          { 
+            name: `Ketoconazole 2% Shampoo/Cream (Brand: Nizoral, Sebizole)`, 
+            snomed: "387342004", 
+            dose: "Apply to affected areas twice weekly for 2-4 weeks", 
+            note: `Highly effective broad-spectrum antifungal. Directly targets fungal yeast lipophilic micro-flora associated with ${conditionKey} and scalp flaking.` 
+          },
+          { 
+            name: `Salicylic Acid 2% / Coal Tar Lotion (Brand: Salytar)`, 
+            snomed: "387142005", 
+            dose: "Apply locally and massage gently, wash off after 10-15 minutes", 
+            note: `Keratolytic agent. Promotes desquamation of hyperkeratotic skin flaking, instantly relieving scaling.` 
+          }
+        ],
+        precautions: [
+          "Avoid using harsh chemical shampoos or hair dyes",
+          "Keep the affected skin areas clean and moisturized",
+          "Do not scratch intensely to prevent secondary bacterial infection",
+          "Consult a dermatologist if symptoms persist beyond 3 weeks"
+        ],
+        diet: [
+          "Consume foods rich in Zinc and Vitamin B (eggs, nuts, seeds)",
+          "Avoid excessive sugary and highly processed foods",
+          "Maintain good systemic hydration by drinking 2.5L water/day"
+        ],
+        specialist: "Dermatologist (Skin Specialist)"
+      }
+    };
+    
+    return newKey;
+  }
+  
+  return null;
+}
+
+function renderInlineMcpPipelineHtml(msgId, originalText, datasetKey) {
+  const dataset = MCP_CLINICAL_DATASETS[datasetKey];
+  return `
+    <div id="mcpAutoContainer_${msgId}" class="mcp-auto-container" style="
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(0, 229, 255, 0.25);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 8px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      text-align: left;
+    ">
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; border-bottom: 1px dashed rgba(0, 229, 255, 0.15); padding-bottom: 6px;">
+        <span style="font-family: var(--font-head); font-weight: bold; color: var(--cyan); letter-spacing: 0.5px; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
+          <span style="display: inline-block; width: 8px; height: 8px; background: #00ffb3; border-radius: 50%; box-shadow: 0 0 8px #00ffb3; animation: blink 1s infinite;"></span>
+          🤖 MCP MULTI-AGENT AUTO-COLLECTOR ACTIVE
+        </span>
+        <span style="font-size: 0.7rem; color: var(--text-muted); font-family: 'Rajdhani', sans-serif;">JSON-RPC 2.0 PROTOCOL</span>
+      </div>
+      
+      <p style="font-size: 0.78rem; line-height: 1.4; color: var(--text-main); margin: 0 0 12px 0;">
+        Unrecognized symptom query. <strong>Auto-triggering MCP Multi-Agent Ingestion</strong> to discover, ingest, and compile diagnostic dataset for: 
+        <span style="color: var(--accent); font-weight: bold;">${dataset.conditionLabel}</span>.
+      </p>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 12px;">
+        <div id="mcpAutoAgentCard1_${msgId}" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 6px; text-align: center; transition: all 0.3s ease;">
+          <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Agent 1</div>
+          <div style="font-size: 0.7rem; font-weight: bold; color: var(--text-main); margin: 2px 0;">Ingestion</div>
+          <span id="mcpAutoAgentBadge1_${msgId}" style="display: inline-block; font-size: 0.55rem; padding: 1px 4px; border-radius: 3px; background: rgba(255,255,255,0.05); color: var(--text-muted); font-weight: bold;">IDLE</span>
+        </div>
+        
+        <div id="mcpAutoAgentCard2_${msgId}" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 6px; text-align: center; transition: all 0.3s ease;">
+          <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Agent 2</div>
+          <div style="font-size: 0.7rem; font-weight: bold; color: var(--text-main); margin: 2px 0;">Compiler</div>
+          <span id="mcpAutoAgentBadge2_${msgId}" style="display: inline-block; font-size: 0.55rem; padding: 1px 4px; border-radius: 3px; background: rgba(255,255,255,0.05); color: var(--text-muted); font-weight: bold;">IDLE</span>
+        </div>
+
+        <div id="mcpAutoAgentCard3_${msgId}" style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 6px; text-align: center; transition: all 0.3s ease;">
+          <div style="font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase;">Agent 3</div>
+          <div style="font-size: 0.7rem; font-weight: bold; color: var(--text-main); margin: 2px 0;">Trainer</div>
+          <span id="mcpAutoAgentBadge3_${msgId}" style="display: inline-block; font-size: 0.55rem; padding: 1px 4px; border-radius: 3px; background: rgba(255,255,255,0.05); color: var(--text-muted); font-weight: bold;">IDLE</span>
+        </div>
+      </div>
+
+      <div style="margin-bottom: 12px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-muted); margin-bottom: 3px; font-family: 'Rajdhani', sans-serif;">
+          <span>AUTO-INGESTION & MODEL RETRAINING</span>
+          <span id="mcpAutoProgressText_${msgId}">0%</span>
+        </div>
+        <div style="width: 100%; height: 5px; background: rgba(255,255,255,0.05); border-radius: 2.5px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05);">
+          <div id="mcpAutoProgressBarFill_${msgId}" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--cyan), var(--primary)); transition: width 0.4s ease; box-shadow: 0 0 8px var(--cyan);"></div>
+        </div>
+      </div>
+
+      <div style="
+        background: rgba(0, 0, 0, 0.7);
+        border: 1px solid rgba(0, 229, 255, 0.15);
+        border-radius: 6px;
+        padding: 8px;
+        font-family: 'Courier New', Courier, monospace;
+        font-size: 0.62rem;
+        line-height: 1.3;
+        height: 85px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        color: var(--cyan);
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.9);
+      " id="mcpAutoTerminal_${msgId}">[INFO] Ingesting parameters...</div>
+    </div>`;
+}
+
+window.triggerMcpAutoPipeline = function(msgId, originalText, datasetKey, profile) {
+  const dataset = MCP_CLINICAL_DATASETS[datasetKey];
+  if (!dataset) return;
+
+  const progressBar = document.getElementById(`mcpAutoProgressBarFill_${msgId}`);
+  const progressText = document.getElementById(`mcpAutoProgressText_${msgId}`);
+  const term = document.getElementById(`mcpAutoTerminal_${msgId}`);
+
+  const agent1 = document.getElementById(`mcpAutoAgentCard1_${msgId}`);
+  const badge1 = document.getElementById(`mcpAutoAgentBadge1_${msgId}`);
+  const agent2 = document.getElementById(`mcpAutoAgentCard2_${msgId}`);
+  const badge2 = document.getElementById(`mcpAutoAgentBadge2_${msgId}`);
+  const agent3 = document.getElementById(`mcpAutoAgentCard3_${msgId}`);
+  const badge3 = document.getElementById(`mcpAutoAgentBadge3_${msgId}`);
+
+  if (!progressBar || !progressText || !term) return;
+
+  let terminalText = "";
+  const logToTerminal = (text, type = "info") => {
+    let color = "var(--cyan)";
+    if (type === "req") color = "#00ffb3";
+    if (type === "res") color = "#ff00a0";
+    if (type === "success") color = "#00ffb3";
+    
+    terminalText += `<span style="color:${color};">${text}</span>\n`;
+    term.innerHTML = terminalText;
+    term.scrollTop = term.scrollHeight;
+  };
+
+  logToTerminal("[INFO] Auto-triggered simulated MCP Multi-Agent Hub.");
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playClick();
+
+  // Phase 1: Ingestion Handshake (0ms to 300ms)
+  setTimeout(() => {
+    progressBar.style.width = "15%";
+    progressText.textContent = "15%";
+    logToTerminal(`--> {"jsonrpc":"2.0","method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"Raman-AI-AutoCollector"}},"id":101}`, "req");
+    
+    setTimeout(() => {
+      logToTerminal(`<-- {"jsonrpc":"2.0","result":{"protocolVersion":"2024-11-05","serverInfo":{"name":"Clinical-Server"}},"id":101}`, "res");
+      logToTerminal(`[INFO] Connection to MCP Clinical-Server established.`);
+    }, 150);
+  }, 50);
+
+  // Phase 2: Agent 1 activated (450ms)
+  setTimeout(() => {
+    progressBar.style.width = "35%";
+    progressText.textContent = "35%";
+
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+    
+    agent1.style.borderColor = "var(--cyan)";
+    agent1.style.background = "rgba(0, 229, 255, 0.05)";
+    badge1.textContent = "INGESTING";
+    badge1.style.background = "rgba(0, 229, 255, 0.15)";
+    badge1.style.color = "var(--cyan)";
+
+    logToTerminal(`[AGENT 1] Ingesting clinical symptoms from registry...`);
+    logToTerminal(`--> {"jsonrpc":"2.0","method":"tools/call","params":{"name":"fetch_clinical_symptoms","arguments":{"category":"${datasetKey}"}},"id":102}`, "req");
+  }, 450);
+
+  // Phase 3: Agent 2 activated (950ms)
+  setTimeout(() => {
+    progressBar.style.width = "60%";
+    progressText.textContent = "60%";
+
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+
+    badge1.textContent = "COMPLETE";
+    badge1.style.background = "rgba(0, 255, 179, 0.15)";
+    badge1.style.color = "var(--primary)";
+    agent1.style.borderColor = "var(--primary)";
+
+    logToTerminal(`<-- {"jsonrpc":"2.0","result":{"status":"success","phrases":${dataset.corpus.length}},"id":102}`, "res");
+    logToTerminal(`[AGENT 1] Ingested ${dataset.corpus.length} bilingual symptom phrases.`);
+    
+    agent2.style.borderColor = "#ff00a0";
+    agent2.style.background = "rgba(255, 0, 160, 0.05)";
+    badge2.textContent = "COMPILING";
+    badge2.style.background = "rgba(255, 0, 160, 0.15)";
+    badge2.style.color = "#ff00a0";
+
+    logToTerminal(`[AGENT 2] Mapping therapeutics and SNOMED codes...`);
+    logToTerminal(`--> {"jsonrpc":"2.0","method":"tools/call","params":{"name":"compile_medications","arguments":{"condition":"${dataset.conditionKey}"}},"id":103}`, "req");
+  }, 950);
+
+  // Phase 4: Agent 3 activated (1450ms)
+  setTimeout(() => {
+    progressBar.style.width = "85%";
+    progressText.textContent = "85%";
+
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+
+    badge2.textContent = "COMPLETE";
+    badge2.style.background = "rgba(0, 255, 179, 0.15)";
+    badge2.style.color = "var(--primary)";
+    agent2.style.borderColor = "var(--primary)";
+
+    logToTerminal(`<-- {"jsonrpc":"2.0","result":{"status":"success","icd11":"${dataset.kb.icd11}"},"id":103}`, "res");
+    logToTerminal(`[AGENT 2] Mapped ICD-11: ${dataset.kb.icd11} and medications successfully.`);
+    
+    agent3.style.borderColor = "var(--accent)";
+    agent3.style.background = "rgba(0, 255, 179, 0.05)";
+    badge3.textContent = "TRAINING";
+    badge3.style.background = "rgba(0, 255, 179, 0.15)";
+    badge3.style.color = "var(--accent)";
+
+    logToTerminal(`[AGENT 3] Retraining offline Simple Language Model...`);
+    logToTerminal(`--> {"jsonrpc":"2.0","method":"tools/call","params":{"name":"train_vocabulary","arguments":{"condition":"${dataset.conditionKey}"}},"id":104}`, "req");
+  }, 1450);
+
+  // Phase 5: retrain model (1950ms)
+  setTimeout(() => {
+    progressBar.style.width = "95%";
+    progressText.textContent = "95%";
+
+    // Perform actual in-memory retraining
+    if (!SLM_TRAINING_CORPUS[dataset.conditionKey]) {
+      SLM_TRAINING_CORPUS[dataset.conditionKey] = [];
+    }
+    dataset.corpus.forEach(phrase => {
+      if (!SLM_TRAINING_CORPUS[dataset.conditionKey].includes(phrase)) {
+        SLM_TRAINING_CORPUS[dataset.conditionKey].push(phrase);
+      }
+    });
+    localStorage.setItem('ramanai_expanded_corpus', JSON.stringify(SLM_TRAINING_CORPUS));
+    MEDICAL_KB[dataset.conditionKey] = dataset.kb;
+    
+    // Save dynamic KBs to localStorage to persist across refreshes
+    try {
+      let storedKbs = {};
+      const stored = localStorage.getItem('ramanai_expanded_kb');
+      if (stored) storedKbs = JSON.parse(stored);
+      storedKbs[dataset.conditionKey] = dataset.kb;
+      localStorage.setItem('ramanai_expanded_kb', JSON.stringify(storedKbs));
+    } catch (e) {
+      console.error("Failed to save expanded KB to localStorage:", e);
+    }
+    slmClassifier.train(SLM_TRAINING_CORPUS);
+    window.updateAllConditionDropdowns();
+    if (typeof updateTrainingHubStats === 'function') {
+      updateTrainingHubStats();
+    }
+
+    logToTerminal(`<-- {"jsonrpc":"2.0","result":{"status":"success","vocab_size":${slmClassifier.vocabulary.size}},"id":104}`, "res");
+    logToTerminal(`[AGENT 3] Bayesian model retrained and synchronized.`);
+  }, 1950);
+
+  // Phase 6: Finalize & Auto-Respond (2300ms)
+  setTimeout(async () => {
+    progressBar.style.width = "100%";
+    progressText.textContent = "100%";
+
+    badge3.textContent = "COMPLETE";
+    badge3.style.background = "rgba(0, 255, 179, 0.15)";
+    badge3.style.color = "var(--primary)";
+    agent3.style.borderColor = "var(--primary)";
+
+    logToTerminal(`[SUCCESS] Multi-Agent Auto-Ingestion Pipeline complete!`, "success");
+
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+
+    // Small delay to let user see 100% completion before replacing bubble
+    setTimeout(async () => {
+      const container = document.getElementById(`mcpAutoContainer_${msgId}`);
+      if (container) {
+        const bubble = container.closest('.message-bubble');
+        if (bubble) {
+          // Re-generate response with skipMcp = true so we don't infinitely recurse!
+          const finalPrescriptionHtml = await generateSlmResponse(originalText, profile, true);
+          
+          const bannerHtml = `
+            <div class="med-section info" style="
+              border: 1px solid var(--primary);
+              background: rgba(0, 255, 179, 0.04);
+              margin-bottom: 15px;
+              border-radius: 8px;
+              padding: 12px;
+              text-align: left;
+              animation: pulseGlow 1.5s infinite alternate;
+            ">
+              <div style="font-family: var(--font-head); font-weight: bold; color: var(--primary); font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                <span>📢</span> MCP MULTI-AGENT INGESTION SUCCESSFUL
+              </div>
+              <p style="font-size: 0.78rem; margin: 6px 0 0 0; line-height: 1.4; color: var(--text-main);">
+                The offline clinical Simple Language Model (SLM) has successfully mapped the <strong>${dataset.conditionLabel}</strong> dataset, compiled pathopharmacology schemas, and retrained in-memory!
+              </p>
+            </div>`;
+          
+          bubble.innerHTML = bannerHtml + finalPrescriptionHtml;
+          
+          // Scroll chat container
+          const chatArea = document.getElementById("chatMessages");
+          if (chatArea) {
+            chatArea.scrollTop = chatArea.scrollHeight;
+          }
+        }
+      }
+    }, 800);
+
+  }, 2300);
+};
+
 
 
 

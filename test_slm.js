@@ -1160,13 +1160,15 @@ async function runTest(name, fn) {
   await runTest("Offline SLM Neural Layers (MLP) & Typo Tolerance (Character N-Grams)", async () => {
     let ok = true;
 
-    // 1. Verify neural weights initialization and structure of the 3-layer MLP
+    // 1. Verify neural weights initialization and structure of the 4-layer MLP
     ok = assert(slmClassifier.mlpW1.length > 0, "MLP Layer 1 weights successfully initialized.") && ok;
-    ok = assert(slmClassifier.mlpW2.length === 16 && slmClassifier.mlpW2[0].length === 8, "MLP Layer 2 weights successfully initialized (16 x 8).") && ok;
-    ok = assert(slmClassifier.mlpW3.length === 8 && slmClassifier.mlpW3[0].length === slmClassifier.conditions.length, "MLP Layer 3 weights successfully initialized (8 x C).") && ok;
-    ok = assert(slmClassifier.mlpb1 instanceof Float32Array && slmClassifier.mlpb1.length === 16, "MLP Hidden 1 bias is Float32Array of size 16.") && ok;
-    ok = assert(slmClassifier.mlpb2 instanceof Float32Array && slmClassifier.mlpb2.length === 8, "MLP Hidden 2 bias is Float32Array of size 8.") && ok;
-    ok = assert(slmClassifier.mlpb3 instanceof Float32Array && slmClassifier.mlpb3.length === slmClassifier.conditions.length, "MLP Output bias is successfully initialized.") && ok;
+    ok = assert(slmClassifier.mlpW2.length === 32 && slmClassifier.mlpW2[0].length === 16, "MLP Layer 2 weights successfully initialized (32 x 16).") && ok;
+    ok = assert(slmClassifier.mlpW3.length === 16 && slmClassifier.mlpW3[0].length === 8, "MLP Layer 3 weights successfully initialized (16 x 8).") && ok;
+    ok = assert(slmClassifier.mlpW4.length === 8 && slmClassifier.mlpW4[0].length === slmClassifier.conditions.length, "MLP Layer 4 weights successfully initialized (8 x C).") && ok;
+    ok = assert(slmClassifier.mlpb1 instanceof Float32Array && slmClassifier.mlpb1.length === 32, "MLP Hidden 1 bias is Float32Array of size 32.") && ok;
+    ok = assert(slmClassifier.mlpb2 instanceof Float32Array && slmClassifier.mlpb2.length === 16, "MLP Hidden 2 bias is Float32Array of size 16.") && ok;
+    ok = assert(slmClassifier.mlpb3 instanceof Float32Array && slmClassifier.mlpb3.length === 8, "MLP Hidden 3 bias is Float32Array of size 8.") && ok;
+    ok = assert(slmClassifier.mlpb4 instanceof Float32Array && slmClassifier.mlpb4.length === slmClassifier.conditions.length, "MLP Output bias is successfully initialized.") && ok;
     
     // 2. Verify subword character n-gram extraction in tokenize()
     const sampleTokenize = slmClassifier.tokenize("diabetes");
