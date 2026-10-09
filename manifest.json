@@ -1,0 +1,20 @@
+{
+  "name": "RAMAN AI – Medical Intelligence System",
+  "short_name": "RAMAN AI",
+  "description": "Offline Client-Side Medical Intelligence & Diagnostic Sandbox (Experiment No. 170)",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050d1a",
+  "theme_color": "#00e5ff",
+  "categories": ["medical", "health", "utilities"],
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

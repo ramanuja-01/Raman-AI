@@ -2,15 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#00e5ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RAMAN AI" />
   <title>RAMAN AI – Experiment No. 170 | Medical Intelligence System</title>
   <meta name="description" content="RAMAN AI Experiment No. 170 – Advanced AI medical assistant with symptom analysis, image recognition, and voice input." />
+  <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="style.css" />
   <link rel="stylesheet" href="session_mgr.css" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
 </head>
 <body>
 
@@ -974,7 +980,7 @@
       <!-- ===== SIDEBAR ===== -->
       <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
       <aside class="sidebar" id="sidebar">
-        <div class="sidebar-section">
+        <div class="sidebar-section" data-mobile-tab="profile">
           <div class="sidebar-heading">PATIENT PROFILE</div>
           <div class="profile-card">
             <div class="profile-avatar" id="profileAvatar">
@@ -1069,7 +1075,7 @@
         </div>
 
         <!-- Markov Generation Temperature Slider -->
-        <div class="sidebar-section">
+        <div class="sidebar-section" data-mobile-tab="profile">
           <div class="sidebar-heading">🧠 Conversational Empathy Temp</div>
           <div class="pain-meter" style="padding: 10px 0;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
@@ -1084,7 +1090,7 @@
         </div>
 
         <!-- Pain Level -->
-        <div class="sidebar-section">
+        <div class="sidebar-section" data-mobile-tab="profile">
           <div class="sidebar-heading">PAIN LEVEL METER</div>
           <div class="pain-meter">
             <div class="pain-display">
@@ -1099,7 +1105,7 @@
         </div>
 
         <!-- Symptom & Vitals Tracker Diary -->
-        <div class="sidebar-section">
+        <div class="sidebar-section" data-mobile-tab="vault">
           <div class="sidebar-heading">📈 LOCAL RECOVERY DIARY</div>
           <div class="diary-widget" style="background: rgba(0,229,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
             <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; text-align: center;">
@@ -1167,7 +1173,7 @@
         </div>
 
         <!-- Anatomical Symptom Scanner -->
-        <div class="sidebar-section">
+        <div class="sidebar-section" data-mobile-tab="anatomy">
           <div class="sidebar-heading">📈 ANATOMICAL DIAGNOSTIC SCANNER</div>
           <div class="anatomical-scanner-widget">
             <div class="anatomical-scanner-title-row">
@@ -1181,24 +1187,30 @@
             </div>
 
             <!-- Dynamic Cyber HUD Canvases for WebGPU/CPU Vitals Density Scatterplot & ECG Oscilloscope -->
-            <div class="hud-canvases-wrapper" style="margin-top: 8px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px;">
-              <div class="hud-canvas-block">
-                <div class="hud-canvas-title" style="font-family: var(--font-ui); font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 4px; padding: 0 2px; text-transform: uppercase; letter-spacing: 0.5px;">
-                  <span>⚡ Vital Density Progression</span>
-                  <span style="color: var(--cyan);">WebGPU Active</span>
+            <details class="hud-accordion-card" id="hudAccordionCard" open>
+              <summary class="hud-accordion-summary">
+                <span>⚡ LIVE BIO-TELEMETRY HUD CANVASES</span>
+                <span class="hud-accordion-chevron">▼</span>
+              </summary>
+              <div class="hud-canvases-wrapper" style="margin-top: 8px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px;">
+                <div class="hud-canvas-block">
+                  <div class="hud-canvas-title" style="font-family: var(--font-ui); font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 4px; padding: 0 2px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <span>⚡ Vital Density Progression</span>
+                    <span style="color: var(--cyan);">WebGPU Active</span>
+                  </div>
+                  <canvas id="progressionCanvas" width="300" height="200" class="hud-neon-canvas" style="width: 100%; display: block; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.1), inset 0 0 8px rgba(0, 229, 255, 0.15); cursor: crosshair;"></canvas>
                 </div>
-                <canvas id="progressionCanvas" width="300" height="200" class="hud-neon-canvas" style="width: 100%; display: block; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.1), inset 0 0 8px rgba(0, 229, 255, 0.15); cursor: crosshair;"></canvas>
-              </div>
-              <div class="hud-canvas-block">
-                <div class="hud-canvas-title" style="font-family: var(--font-ui); font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 4px; padding: 0 2px; text-transform: uppercase; letter-spacing: 0.5px;">
-                  <span>❤️ Real-Time ECG Oscilloscope</span>
-                  <span style="color: var(--teal); animation: pulseGlow 1.5s infinite alternate;">Live HUD</span>
+                <div class="hud-canvas-block">
+                  <div class="hud-canvas-title" style="font-family: var(--font-ui); font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 4px; padding: 0 2px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <span>❤️ Real-Time ECG Oscilloscope</span>
+                    <span style="color: var(--teal); animation: pulseGlow 1.5s infinite alternate;">Live HUD</span>
+                  </div>
+                  <canvas id="oscilloscopeCanvas" width="300" height="100" class="hud-neon-canvas" style="width: 100%; display: block; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 255, 179, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 255, 179, 0.1), inset 0 0 8px rgba(0, 255, 179, 0.15);"></canvas>
                 </div>
-                <canvas id="oscilloscopeCanvas" width="300" height="100" class="hud-neon-canvas" style="width: 100%; display: block; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 255, 179, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 255, 179, 0.1), inset 0 0 8px rgba(0, 255, 179, 0.15);"></canvas>
               </div>
-            </div>
+            </details>
 
-            <svg viewBox="0 0 150 200" class="anatomical-map-svg" style="width: 100%; max-width: 140px; margin: 0 auto; display: block; filter: drop-shadow(0 0 5px rgba(0, 243, 255, 0.25));">
+            <svg viewBox="0 0 150 200" class="anatomical-map-svg" style="width: 100%; max-width: 170px; margin: 0 auto; display: block; filter: drop-shadow(0 0 5px rgba(0, 243, 255, 0.25));">
               <!-- Radial Glow and Linear Scan Definitions -->
               <defs>
                 <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
@@ -1281,10 +1293,24 @@
                 <line x1="0" y1="-16" x2="0" y2="16" stroke="var(--cyan)" stroke-width="0.5" opacity="0.5" />
               </g>
             </svg>
+
+            <!-- Touch-Optimized Organ Chips Carousel -->
+            <div class="anatomical-chips-carousel" id="anatomicalChipsCarousel">
+              <button type="button" class="organ-chip" data-symptom="headache" onclick="window.handleOrganChipClick(this)">🤕 Head / ମୁଣ୍ଡ</button>
+              <button type="button" class="organ-chip" data-symptom="eye pain" onclick="window.handleOrganChipClick(this)">👁️ Eyes / ଆଖି</button>
+              <button type="button" class="organ-chip" data-symptom="cough" onclick="window.handleOrganChipClick(this)">🗣️ Throat / କାଶ</button>
+              <button type="button" class="organ-chip" data-symptom="chest pain" onclick="window.handleOrganChipClick(this)">💔 Chest / ଛାତି</button>
+              <button type="button" class="organ-chip" data-symptom="high blood pressure" onclick="window.handleOrganChipClick(this)">❤️ Heart / ରକ୍ତଚାପ</button>
+              <button type="button" class="organ-chip" data-symptom="stomach pain" onclick="window.handleOrganChipClick(this)">🤢 Stomach / ପେଟ</button>
+              <button type="button" class="organ-chip" data-symptom="back pain" onclick="window.handleOrganChipClick(this)">🔩 Back / ଅଣ୍ଟା</button>
+              <button type="button" class="organ-chip" data-symptom="diabetes" onclick="window.handleOrganChipClick(this)">🩸 Metabolic / ମଧୁମେହ</button>
+              <button type="button" class="organ-chip" data-symptom="skin rash" onclick="window.handleOrganChipClick(this)">🩹 Skin / ଚର୍ମ</button>
+              <button type="button" class="organ-chip" data-symptom="joint pain" onclick="window.handleOrganChipClick(this)">🦵 Joints / ଗଣ୍ଠି</button>
+            </div>
           </div>
         </div>
 
-        <div class="sidebar-section">
+        <div class="sidebar-section" data-mobile-tab="anatomy">
           <div class="sidebar-heading">QUICK SYMPTOMS</div>
           <div class="quick-symptoms">
             <button class="symptom-tag" data-symptom="I have a severe headache and fever of 101°F">🤕 Headache + Fever</button>
@@ -1300,7 +1326,7 @@
           </div>
         </div>
 
-        <div class="sidebar-section">
+        <div class="sidebar-section" data-mobile-tab="profile">
           <div class="sidebar-heading">AI CAPABILITIES</div>
           <ul class="capabilities-list">
             <li><span class="cap-dot"></span>Symptom Analysis</li>
@@ -1317,7 +1343,7 @@
         </div>
 
         <!-- ===== MEDICAL VAULT ===== -->
-        <div class="sidebar-section" id="vaultSection">
+        <div class="sidebar-section" id="vaultSection" data-mobile-tab="vault">
           <div class="sidebar-heading" style="display:flex;align-items:center;justify-content:space-between;">
             <span>📁 MEDICAL VAULT</span>
             <span class="vault-count" id="vaultCount">0 docs</span>
@@ -1326,7 +1352,7 @@
           <div id="vaultEmpty" class="vault-empty">No documents yet.<br>Upload prescriptions, lab reports,<br>X-rays or MRI scans to get started.</div>
         </div>
         <!-- Mobile-Only Sidebar Actions -->
-        <div class="sidebar-section mobile-only-sidebar-action" style="margin-top: 15px;">
+        <div class="sidebar-section mobile-only-sidebar-action" data-mobile-tab="profile" style="margin-top: 15px;">
           <div class="sidebar-heading">SYSTEM ACTIONS</div>
           <div style="display: flex; flex-direction: column; gap: 8px;">
             <button class="btn-session-mgr" onclick="openApiSettings()" style="width: 100% !important; justify-content: center; height: 36px; border-radius: 8px;">
@@ -1338,7 +1364,7 @@
           </div>
         </div>
 
-        <div class="disclaimer-box">
+        <div class="disclaimer-box" data-mobile-tab="profile">
           <div class="disclaimer-icon">⚠️</div>
           <p>RAMAN AI provides informational suggestions only. Always consult a licensed physician for medical decisions.</p>
         </div>
@@ -1413,6 +1439,20 @@
 
         <!-- Input Area -->
         <div class="chat-input-area">
+          <!-- Mobile Quick Symptoms Horizontal Scroller -->
+          <div class="quick-symptoms-scroller" id="quickSymptomsScroller">
+            <button type="button" class="symptom-tag" data-symptom="I have a severe headache and fever of 101°F">🤕 Headache + Fever</button>
+            <button type="button" class="symptom-tag" data-symptom="I am experiencing chest pain and shortness of breath">💔 Chest Pain</button>
+            <button type="button" class="symptom-tag" data-symptom="I have a persistent cough with mucus">🫁 Cough</button>
+            <button type="button" class="symptom-tag" data-symptom="I have stomach pain and nausea">🤢 Stomach Pain</button>
+            <button type="button" class="symptom-tag" data-symptom="I have joint pain and swelling in my knees">🦵 Joint Pain</button>
+            <button type="button" class="symptom-tag" data-symptom="I have a skin rash and itching all over my body">🩹 Skin Rash</button>
+            <button type="button" class="symptom-tag" data-symptom="I have high blood pressure and dizziness">💊 Hypertension</button>
+            <button type="button" class="symptom-tag" data-symptom="I have diabetes and my blood sugar is high">🩸 Diabetes</button>
+            <button type="button" class="symptom-tag" data-symptom="I have eye pain and blurred vision">👁️ Eye Problems</button>
+            <button type="button" class="symptom-tag" data-symptom="I have back pain and difficulty moving">🔩 Back Pain</button>
+          </div>
+
           <!-- Media Toolbar -->
           <div class="media-toolbar">
             <button class="media-btn" id="btnCamera" title="Open Camera">
@@ -1462,6 +1502,28 @@
       </main>
 
     </div><!-- end main-layout -->
+
+    <!-- ===== 4-TAB THUMB-ZONE BOTTOM NAVIGATION BAR ===== -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile Navigation">
+      <button class="nav-tab-btn active" id="navBtnConsult" onclick="switchMobileTab('consult')" role="tab" aria-selected="true">
+        <span class="nav-tab-icon">💬</span>
+        <span class="nav-tab-label">CONSULT</span>
+      </button>
+      <button class="nav-tab-btn" id="navBtnAnatomy" onclick="switchMobileTab('anatomy')" role="tab" aria-selected="false">
+        <span class="nav-tab-icon">🗺️</span>
+        <span class="nav-tab-label">ANATOMY</span>
+      </button>
+      <button class="nav-tab-btn" id="navBtnVault" onclick="switchMobileTab('vault')" role="tab" aria-selected="false">
+        <span class="nav-tab-icon">📁</span>
+        <span class="nav-tab-label">VAULT</span>
+        <span class="nav-tab-badge" id="navVaultBadge" style="display:none;">0</span>
+      </button>
+      <button class="nav-tab-btn" id="navBtnProfile" onclick="switchMobileTab('profile')" role="tab" aria-selected="false">
+        <span class="nav-tab-icon">👤</span>
+        <span class="nav-tab-label">PROFILE</span>
+      </button>
+    </nav>
+  </div><!-- end appContainer -->
   <!-- ===== CLINICAL MEDICAL DICTIONARY MODAL ===== -->
   <div class="session-panel-backdrop" id="clinicalDictBackdrop" onclick="closeClinicalDictModal()" style="display:none; z-index: 10000;"></div>
   <div class="tutorial-modal" id="clinicalDictModal" style="display:none; max-width: 600px; width: 90%; z-index: 10001; border: 2px solid var(--accent); box-shadow: 0 0 25px rgba(0, 243, 255, 0.25);">
@@ -1551,5 +1613,14 @@
   </div>
 
   <script src="app.js?v=10"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').catch(function(err) {
+          console.warn('[SW] Offline worker registration notice:', err);
+        });
+      });
+    }
+  </script>
 </body>
 </html>

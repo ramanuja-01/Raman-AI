@@ -4331,14 +4331,20 @@ function renderVault() {
   const empty = document.getElementById('vaultEmpty');
   const count = document.getElementById('vaultCount');
   if (!list) return;
+  const navBadge = document.getElementById('navVaultBadge');
   if (!vaultData.length) {
     list.innerHTML = '';
     empty.style.display = 'block';
     count.textContent = '0 docs';
+    if (navBadge) navBadge.style.display = 'none';
     return;
   }
   empty.style.display = 'none';
   count.textContent = vaultData.length + ' doc' + (vaultData.length > 1 ? 's' : '');
+  if (navBadge) {
+    navBadge.textContent = vaultData.length;
+    navBadge.style.display = 'inline-block';
+  }
   list.innerHTML = vaultData.map(v => {
     const b = VAULT_BADGE[v.type] || VAULT_BADGE.general;
     return `<div class="vault-item" data-id="${v.id}" style="cursor:pointer;">
@@ -6329,6 +6335,7 @@ window.transitionToApp = function(sessionRestored = false) {
     if (typeof scheduleGuidance === 'function') scheduleGuidance(true);
     if (typeof bindTunerEvents === 'function') bindTunerEvents();
     if (typeof bindConsultationEvents === 'function') bindConsultationEvents();
+    if (typeof initAnatomicalScanner === 'function') initAnatomicalScanner();
     
     // If we already have a Health ID from a prior session, show it in header
     if (currentHealthId) {
@@ -9464,18 +9471,18 @@ window.renderDiaryChart = function(hoveredPoint) {
   if (!canvas.isInteractiveListenersAttached) {
     canvas.isInteractiveListenersAttached = true;
     
-    canvas.addEventListener('mousemove', function(e) {
+    function handlePointerPos(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
+      const posX = clientX - rect.left;
+      const posY = clientY - rect.top;
       
       let closestPt = null;
-      let minDistance = 15; // Hitbox radius 15px
+      let minDistance = 24; // Hitbox radius 24px for finger/touch precision
       
       if (canvas.plottedPoints) {
         canvas.plottedPoints.forEach(pt => {
-          const dx = mouseX - pt.x;
-          const dy = mouseY - pt.y;
+          const dx = posX - pt.x;
+          const dy = posY - pt.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist < minDistance) {
             minDistance = dist;
@@ -9489,11 +9496,31 @@ window.renderDiaryChart = function(hoveredPoint) {
       } else {
         window.renderDiaryChart(null);
       }
+    }
+
+    canvas.addEventListener('mousemove', function(e) {
+      handlePointerPos(e.clientX, e.clientY);
     });
     
     canvas.addEventListener('mouseleave', function() {
       window.renderDiaryChart(null);
     });
+
+    canvas.addEventListener('touchstart', function(e) {
+      if (e.touches && e.touches.length > 0) {
+        handlePointerPos(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchmove', function(e) {
+      if (e.touches && e.touches.length > 0) {
+        handlePointerPos(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    }, { passive: true });
+
+    canvas.addEventListener('touchend', function() {
+      setTimeout(() => window.renderDiaryChart(null), 1500);
+    }, { passive: true });
   }
 };
 
@@ -9504,6 +9531,7 @@ setTimeout(() => {
 
 // ── Interactive SVG Anatomical Scanner ──────────────────
 function initAnatomicalScanner() {
+  window.initAnatomicalScanner = initAnatomicalScanner;
   const hotspots = document.querySelectorAll(".map-hotspot");
   const activeScanZone = document.getElementById("activeScanZone");
   
@@ -9578,9 +9606,92 @@ function initAnatomicalScanner() {
       // Auto-submit the symptom query after short animation delay
       setTimeout(() => {
         sendMessage();
+        // On mobile viewports, smoothly switch to Consult tab so user sees the result immediately
+        if (window.innerWidth <= 900 && typeof window.switchMobileTab === 'function') {
+          setTimeout(() => {
+            window.switchMobileTab('consult');
+          }, 350);
+        }
       }, 300);
     });
   });
+
+  document.querySelectorAll(".organ-chip").forEach(chip => {
+    chip.addEventListener("click", function() {
+      if (typeof window.handleOrganChipClick === 'function') {
+        window.handleOrganChipClick(this);
+      }
+    });
+  });
+}
+
+// Global Organ Chip Touch & Tab Router Handler
+window.handleOrganChipClick = function(chip) {
+  if (window.BioTelemetrySFX && typeof window.BioTelemetrySFX.playClick === 'function') {
+    try { window.BioTelemetrySFX.playClick(); } catch(e){}
+  }
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try { navigator.vibrate(20); } catch(e){}
+  }
+  try {
+    const sym = chip.getAttribute("data-symptom");
+    const targetHotspot = document.querySelector(`.map-hotspot[data-symptom="${sym}"]`);
+    if (targetHotspot) {
+      if (typeof targetHotspot.click === 'function') {
+        targetHotspot.click();
+      } else {
+        targetHotspot.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+      }
+    }
+  } catch(err) {}
+  if (typeof window.switchMobileTab === 'function') {
+    window.switchMobileTab('consult');
+  }
+};
+
+// ── Mobile 4-Tab Navigation & View Switcher ─────────────────
+window.switchMobileTab = function(tabName) {
+  if (window.BioTelemetrySFX && typeof window.BioTelemetrySFX.playDataTick === 'function') {
+    window.BioTelemetrySFX.playDataTick();
+  }
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    try { navigator.vibrate(15); } catch(e){}
+  }
+
+  if (typeof document !== 'undefined' && document.body && typeof document.body.setAttribute === 'function') {
+    document.body.setAttribute('data-active-tab', tabName);
+  }
+
+  const tabs = ['consult', 'anatomy', 'vault', 'profile'];
+  tabs.forEach(t => {
+    const btnId = 'navBtn' + t.charAt(0).toUpperCase() + t.slice(1);
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      if (t === tabName) {
+        btn.classList.add('active');
+        if (typeof btn.setAttribute === 'function') btn.setAttribute('aria-selected', 'true');
+      } else {
+        btn.classList.remove('active');
+        if (typeof btn.setAttribute === 'function') btn.setAttribute('aria-selected', 'false');
+      }
+    }
+  });
+
+  // Trigger high-DPI chart redraws when entering Vault or Anatomy tabs
+  if ((tabName === 'vault' || tabName === 'anatomy') && typeof window.renderDiaryChart === 'function') {
+    if (typeof requestAnimationFrame === 'function') {
+      requestAnimationFrame(window.renderDiaryChart);
+    } else {
+      window.renderDiaryChart();
+    }
+  }
+};
+
+// Set default active mobile tab on DOM readiness
+if (typeof document !== 'undefined' && document.body && typeof document.body.getAttribute === 'function' && !document.body.getAttribute('data-active-tab')) {
+  if (typeof document.body.setAttribute === 'function') {
+    document.body.setAttribute('data-active-tab', 'consult');
+  }
 }
 
 // Register anatomical scanner on load
