@@ -1127,10 +1127,14 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
 }
 
 .mobile-menu-btn {
-  background: none; border: 1px solid var(--border); color: var(--cyan);
-  cursor: pointer; padding: 6px; display: none; border-radius: 8px;
-  transition: all 0.2s; align-items: center; justify-content: center;
-  min-width: var(--min-tap-target); min-height: var(--min-tap-target);
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
 }
 .mobile-menu-btn:hover { color: #fff; border-color: var(--cyan); }
 
@@ -1251,6 +1255,16 @@ details[open] .hud-accordion-chevron {
    RESPONSIVE BREAKPOINTS ENGINE
    ============================================================== */
 
+/* Intermediate desktop/tablet responsive adjustments to prevent header wrap */
+@media (max-width: 1200px) {
+  #chipTime, .bio-mode-chip { display: none !important; }
+}
+
+@media (max-width: 1050px) {
+  .header-center { display: none !important; }
+  .session-chip { display: none !important; }
+}
+
 @media (max-width: 900px) {
   .header-center { display: none !important; }
   .header-badge { display: none !important; }
@@ -1266,8 +1280,13 @@ details[open] .hud-accordion-chevron {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
+    flex-wrap: nowrap !important;
   }
-  .mobile-menu-btn { display: none !important; }
+  .mobile-menu-btn, #mobileMenuBtn {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
 
   /* Vital chips single row */
   .vital-chips {
@@ -1304,6 +1323,8 @@ details[open] .hud-accordion-chevron {
     letter-spacing: 1px !important;
     cursor: pointer !important;
     box-shadow: 0 0 10px rgba(0, 229, 255, 0.2) !important;
+    white-space: nowrap !important;
+    flex-shrink: 0 !important;
   }
 
   /* Theme toggle on mobile: sleek 36px circle */
@@ -1708,7 +1729,7 @@ details[open] .hud-accordion-chevron {
 @media (max-width: 380px) {
   .app-header { padding: 6px 10px; }
   .header-title { font-size: 1.0rem; }
-  .chat-messages { padding: 10px 10px calc(var(--bottom-nav-height) + 88px) !important; }
+  .chat-messages { padding: 10px 10px 16px !important; }
   .organ-chip { flex: 1 1 100%; }
 }
 

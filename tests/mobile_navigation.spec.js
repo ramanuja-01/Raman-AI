@@ -156,6 +156,12 @@ test.describe('Mobile Navigation & Touch Interactions', () => {
 
     const themeToggle = page.locator('#btnThemeToggle');
     await expect(themeToggle).toBeVisible();
+
+    // Verify desktop-only header options are hidden to prevent mobile header overflow
+    await expect(page.locator('#btnApiSettings')).toBeHidden();
+    await expect(page.locator('#btnTrainingHub')).toBeHidden();
+    await expect(page.locator('#btnHelp')).toBeHidden();
+    await expect(page.locator('#btnSessionMgr')).toBeHidden();
   });
 
   test('should open and dismiss Mobile Quick Control Sheet bottom drawer', async ({ page, isMobile }) => {

@@ -13,8 +13,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="session_mgr.css" />
+  <link rel="stylesheet" href="style.css?v=2.1" />
+  <link rel="stylesheet" href="session_mgr.css?v=2.1" />
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="apple-touch-icon" href="favicon.svg" />
 </head>
@@ -143,9 +143,6 @@
     <!-- ===== HEADER ===== -->
     <header class="app-header">
       <div class="header-left">
-        <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()" style="display:none;">
-          <span style="font-size: 1.2rem;">☰</span>
-        </button>
         <div class="header-logo-wrap">
           <div class="header-cross">✚</div>
           <div class="header-pulse"></div>
@@ -223,7 +220,7 @@
             <span>🗂</span> SESSION
           </button>
           <!-- Mobile Quick Controls Button -->
-          <button class="btn-session-mgr btn-mobile-controls" id="btnMobileControls" onclick="openMobileControlSheet()" title="Quick Controls & Settings" aria-label="System Tools and Controls" style="display:none;"><span>⚙️</span> <span class="btn-ctrl-text">MORE</span></button>
+          <button class="btn-session-mgr btn-mobile-controls" id="btnMobileControls" onclick="openMobileControlSheet()" title="Quick Controls & Settings" aria-label="System Tools and Controls" style="display:none;"><span>⚙️</span> <span class="btn-ctrl-text">OPTIONS</span></button>
         </div>
       </div>
     </header>
@@ -1708,11 +1705,11 @@
     </div>
   </div>
 
-  <script src="app.js?v=10"></script>
+  <script src="app.js?v=2.1"></script>
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
-        navigator.serviceWorker.register('./sw.js').catch(function(err) {
+        navigator.serviceWorker.register('./sw.js').then(function(reg){ if(reg) reg.update(); }).catch(function(err) {
           console.warn('[SW] Offline worker registration notice:', err);
         });
       });
