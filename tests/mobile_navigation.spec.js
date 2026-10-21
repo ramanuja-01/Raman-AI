@@ -136,4 +136,59 @@ test.describe('Mobile Navigation & Touch Interactions', () => {
     expect(hasCanvasContext).toBe(true);
   });
 
+  test('should display 52px single-row mobile header without spillage', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'Mobile-specific test');
+
+    await loadRamanApp(page);
+
+    const header = page.locator('.app-header');
+    await expect(header).toBeVisible();
+
+    const box = await header.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.height).toBeLessThanOrEqual(56);
+
+    const oldMenuBtn = page.locator('#mobileMenuBtn');
+    await expect(oldMenuBtn).toBeHidden();
+
+    const moreBtn = page.locator('#btnMobileControls');
+    await expect(moreBtn).toBeVisible();
+
+    const themeToggle = page.locator('#btnThemeToggle');
+    await expect(themeToggle).toBeVisible();
+  });
+
+  test('should open and dismiss Mobile Quick Control Sheet bottom drawer', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'Mobile-specific test');
+
+    await loadRamanApp(page);
+
+    const moreBtn = page.locator('#btnMobileControls');
+    await moreBtn.click();
+
+    const sheet = page.locator('#mobileControlSheet');
+    await expect(sheet).toHaveClass(/open/);
+    await expect(sheet).toBeVisible();
+
+    const backdrop = page.locator('#mobileControlBackdrop');
+    await expect(backdrop).toBeVisible();
+
+    const closeBtn = page.locator('#mobileControlSheet .sheet-close-btn');
+    await closeBtn.click();
+
+    await expect(sheet).not.toHaveClass(/open/);
+  });
+
+  test('should configure 16px font on inputs to prevent iOS Safari auto-zoom', async ({ page, isMobile }) => {
+    test.skip(!isMobile, 'Mobile-specific test');
+
+    await loadRamanApp(page);
+
+    const userInput = page.locator('#userInput');
+    const fontSize = await userInput.evaluate((el) => {
+      return parseFloat(window.getComputedStyle(el).fontSize);
+    });
+    expect(fontSize).toBeGreaterThanOrEqual(16);
+  });
+
 });

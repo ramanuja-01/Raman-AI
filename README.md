@@ -712,9 +712,11 @@ To elevate RAMAN AI to state-of-the-art diagnostic and performance standards, fo
 * **Responsive Multi-Viewport Architecture**:
   Engineered full mobile responsiveness for viewports down to 320px–480px smartphones, foldables, and tablets without desktop regression:
   * Dynamic `100dvh` layout sizing with iOS notch and home-indicator protection (`env(safe-area-inset-*)`).
+  * Strict 52px single-row mobile header with Quick Controls Drawer (`#mobileControlSheet`), eliminating multi-line button wraps and sidebar deadlocks.
   * 4-tab mobile bottom navigation (`#mobileBottomNav`) switching smoothly between **Consult**, **Vitals**, **Diary**, and **Records**.
   * Horizontal touch-scrollable **Organ Chips Carousel** and **Quick Symptoms Scroller** enabling rapid clinical triage with one thumb.
-  * Collapsible Clinical HUD accordion preserving screen real estate on mobile devices.
+  * Collapsible Clinical HUD accordion and collapsible Session Restore widget preserving viewport height.
+  * Unified single-row capsule input row (`#chatInputRow`) with iOS Safari auto-zoom prevention (`16px font-size`).
   * Touch-friendly Diary Canvas with passive scrubbing handlers and WCAG 2.1 AA minimum 44px tap targets (`touch-action: manipulation`).
 * **Offline-First PWA Capabilities**:
   * Deployed `manifest.json` with standalone display mode, `#00e5ff` theme accents, and full metadata.

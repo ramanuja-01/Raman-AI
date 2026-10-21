@@ -222,6 +222,8 @@
           <button class="btn-session-mgr" id="btnSessionMgr" onclick="toggleSessionPanel()">
             <span>🗂</span> SESSION
           </button>
+          <!-- Mobile Quick Controls Button -->
+          <button class="btn-session-mgr btn-mobile-controls" id="btnMobileControls" onclick="openMobileControlSheet()" title="Quick Controls & Settings" aria-label="System Tools and Controls" style="display:none;"><span>⚙️</span> <span class="btn-ctrl-text">MORE</span></button>
         </div>
       </div>
     </header>
@@ -1403,20 +1405,25 @@
                     <li>🎥 <strong>Analyze</strong> symptom videos in real-time</li>
                     <li>🎙 <strong>Listen</strong> to your voice description</li>
                   </ul>
-                  <p>Please fill in your <strong>Patient Profile</strong> on the left, then describe your symptoms below. You can also 📎 upload a photo or 🎙 use voice input! 🩺</p>
+                  <p><span class="desktop-guidance">Please fill in your <strong>Patient Profile</strong> on the left, then describe your symptoms below. You can also 📎 upload a photo or 🎙 use voice input! 🩺</span><span class="mobile-guidance">Tap <strong>Profile</strong> or <strong>Anatomy</strong> below to log vitals, or describe symptoms below to begin! 🩺</span></p>
                   <div style="margin-top:15px; display:flex; gap:10px; flex-wrap: wrap; align-items: center;">
                     <button class="btn-consult" id="btnStartConsultation" style="background:var(--accent); border:none; padding:8px 16px; border-radius:6px; font-weight:bold; color:#0f172a; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px; transition:all 0.3s; box-shadow:0 0 10px rgba(0,255,179,0.3);">💬 START HUMAN-LIKE CLINICAL CONSULTATION</button>
                   </div>
                   
                   <!-- Inside-app Returning Patient Session Restore Box -->
-                  <div class="welcome-restore-box" style="margin-top: 24px; padding: 16px 20px; border-radius: 12px; border: 1px dashed rgba(0, 229, 255, 0.3); background: rgba(0, 229, 255, 0.02); max-width: 440px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-                    <div style="font-family: var(--font-ui); font-size: 0.65rem; letter-spacing: 2px; color: var(--cyan); margin-bottom: 10px; font-weight: bold;">🔐 RETURNING PATIENT? RESTORE PREVIOUS SESSION</div>
-                    <div style="display:flex; gap:8px;">
-                      <input type="text" id="welcomeHidInput" placeholder="Enter Health ID e.g. RMN-A3F9K2" maxlength="12" style="flex:1; padding:8px 12px; background:rgba(0,0,0,0.55); border:1px solid rgba(0, 229, 255, 0.2); border-radius:6px; color:white; font-family:var(--font-ui); font-size:0.8rem; letter-spacing:1px; outline:none; text-transform:uppercase; transition: all 0.25s ease;" />
-                      <button id="welcomeHidBtn" style="padding:8px 16px; border-radius:6px; background:linear-gradient(135deg, var(--blue), var(--cyan)); border:none; color:var(--bg-deep); font-family:var(--font-ui); font-weight:bold; font-size:0.75rem; cursor:pointer; transition:all 0.25s ease; white-space:nowrap; box-shadow: 0 2px 8px rgba(0, 229, 255, 0.2);">↩ RESTORE</button>
+                  <details class="welcome-restore-details" id="welcomeRestoreDetails">
+                    <summary class="welcome-restore-summary">
+                      <span>🔐 RETURNING PATIENT? RESTORE PREVIOUS SESSION</span>
+                      <span class="restore-chevron">▾</span>
+                    </summary>
+                    <div class="welcome-restore-body">
+                      <div class="welcome-restore-input-row">
+                        <input type="text" id="welcomeHidInput" placeholder="Enter Health ID e.g. RMN-A3F9K2" maxlength="12" />
+                        <button id="welcomeHidBtn">↩ RESTORE</button>
+                      </div>
+                      <div id="welcomeHidError"></div>
                     </div>
-                    <div id="welcomeHidError" style="margin-top: 8px; font-size: 0.72rem; color: var(--red-warn); min-height: 14px; transition: all 0.2s ease;"></div>
-                  </div>
+                  </details>
                 </div>
               </div>
               <div class="msg-reactions" data-msgid="welcome">
@@ -1453,7 +1460,8 @@
             <button type="button" class="symptom-tag" data-symptom="I have back pain and difficulty moving">🔩 Back Pain</button>
           </div>
 
-          <!-- Media Toolbar -->
+          <div class="chat-input-row" id="chatInputRow">
+<!-- Media Toolbar -->
           <div class="media-toolbar">
             <button class="media-btn" id="btnCamera" title="Open Camera">
               <span>📷</span>
@@ -1494,6 +1502,7 @@
               </button>
             </div>
           </div>
+          </div><!-- end chat-input-row -->
           <div class="input-hint" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
             <span>Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line · 📷 Upload medical images for AI visual analysis</span>
             <span style="color: var(--accent); font-weight: bold; font-family: var(--font-head); font-size: 0.68rem; letter-spacing: 0.5px;">🏥 ENGINE & UI DESIGNED BY RAMANUJA PATHY</span>
@@ -1524,6 +1533,93 @@
       </button>
     </nav>
   </div><!-- end appContainer -->
+  <!-- ===== MOBILE QUICK CONTROL SHEET (BOTTOM DRAWER) ===== -->
+  <div class="session-panel-backdrop mobile-control-backdrop" id="mobileControlBackdrop" onclick="closeMobileControlSheet()" style="display:none; z-index: 950;"></div>
+  <div class="mobile-control-sheet" id="mobileControlSheet">
+    <div class="sheet-drag-handle" onclick="closeMobileControlSheet()"></div>
+    <div class="sheet-header">
+      <div class="sheet-title-group">
+        <span class="sheet-icon">⚙️</span>
+        <span class="sheet-title">SYSTEM TOOLS &amp; CONTROLS</span>
+      </div>
+      <button class="sheet-close-btn" onclick="closeMobileControlSheet()" aria-label="Close Controls">✕</button>
+    </div>
+    <div class="sheet-body">
+      <!-- Active Session Status Badge -->
+      <div class="sheet-status-card">
+        <div class="sheet-status-row">
+          <div class="status-dot"></div>
+          <span class="sheet-status-text">SYSTEM ONLINE · EXPERIMENT № 170</span>
+        </div>
+        <div class="sheet-hid-preview">
+          <span class="sheet-hid-lbl">ACTIVE HEALTH ID</span>
+          <span class="sheet-hid-code" id="sheetHidCode">NO ACTIVE SESSION</span>
+        </div>
+      </div>
+
+      <!-- Quick Tools Grid -->
+      <div class="sheet-tools-grid">
+        <button type="button" class="sheet-tool-btn" onclick="openApiSettings(); closeMobileControlSheet();">
+          <span class="tool-icon">⚙️</span>
+          <div class="tool-info">
+            <strong>API SETTINGS</strong>
+            <small>AI Model Providers &amp; Keys</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn highlight" onclick="openTrainingHub(); closeMobileControlSheet();">
+          <span class="tool-icon">🧠</span>
+          <div class="tool-info">
+            <strong>SLM TRAINING HUB</strong>
+            <small>Offline Neural Diagnostic Models</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn" onclick="openClinicalDictModal(); closeMobileControlSheet();">
+          <span class="tool-icon">📖</span>
+          <div class="tool-info">
+            <strong>CLINICAL DICTIONARY</strong>
+            <small>Medical Terms, Drugs &amp; Codes</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn" onclick="toggleSessionPanel(); closeMobileControlSheet();">
+          <span class="tool-icon">🗂️</span>
+          <div class="tool-info">
+            <strong>SESSION MANAGER</strong>
+            <small>Backup, Export &amp; Restore ID</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn" onclick="openTutorial(); closeMobileControlSheet();">
+          <span class="tool-icon">❓</span>
+          <div class="tool-info">
+            <strong>HELP &amp; SYSTEM MANUAL</strong>
+            <small>Technical Specs &amp; Guide</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn" id="sheetAudioBtn" onclick="window.toggleBioTelemetryAudio(); updateSheetAudioLabel();">
+          <span class="tool-icon" id="sheetAudioIcon">🔊</span>
+          <div class="tool-info">
+            <strong id="sheetAudioLabel">SOUND: ON</strong>
+            <small>Bio-Telemetry Audio SFX</small>
+          </div>
+        </button>
+      </div>
+
+      <!-- Quick Language Selection Row -->
+      <div class="sheet-lang-row">
+        <span class="sheet-lang-label">🌐 INTERFACE LANGUAGE:</span>
+        <select id="sheetLangSelect" class="lang-select" onchange="window.currentLang = this.value; const d=document.getElementById('langSelect'); if(d) d.value=this.value;">
+          <option value="en">English (EN)</option>
+          <option value="or">ଓଡ଼ିଆ (Odia)</option>
+          <option value="hi">हिंदी (Hindi)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== CLINICAL MEDICAL DICTIONARY MODAL ===== -->
   <div class="session-panel-backdrop" id="clinicalDictBackdrop" onclick="closeClinicalDictModal()" style="display:none; z-index: 10000;"></div>
   <div class="tutorial-modal" id="clinicalDictModal" style="display:none; max-width: 600px; width: 90%; z-index: 10001; border: 2px solid var(--accent); box-shadow: 0 0 25px rgba(0, 243, 255, 0.25);">

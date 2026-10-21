@@ -2538,10 +2538,15 @@ window._splashTimer = setTimeout(() => {
   if (splashPercentEl) splashPercentEl.textContent = "100%";
 }, 4800);
 
-// ── Mobile Sidebar Toggle ──────────────────────────────────
+// ── Mobile Sidebar / Controls Toggle ───────────────────────────
 function toggleSidebar() {
+  if (window.innerWidth <= 900) {
+    openMobileControlSheet();
+    return;
+  }
   const sidebar = document.getElementById('sidebar');
   const backdrop = document.getElementById('sidebarBackdrop');
+  if (!sidebar || !backdrop) return;
   sidebar.classList.toggle('open');
   backdrop.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
 }
@@ -2549,9 +2554,67 @@ function toggleSidebar() {
 function closeSidebar() {
   const sidebar = document.getElementById('sidebar');
   const backdrop = document.getElementById('sidebarBackdrop');
-  sidebar.classList.remove('open');
-  backdrop.style.display = 'none';
+  if (sidebar) sidebar.classList.remove('open');
+  if (backdrop) backdrop.style.display = 'none';
+  closeMobileControlSheet();
 }
+
+// ── Mobile Quick Control Sheet Handlers ────────────────────────
+function openMobileControlSheet() {
+  const sheet = document.getElementById('mobileControlSheet');
+  const backdrop = document.getElementById('mobileControlBackdrop');
+  if (sheet && backdrop) {
+    backdrop.style.display = 'block';
+    requestAnimationFrame(() => {
+      sheet.classList.add('open');
+      backdrop.classList.add('open');
+    });
+    // Sync current Health ID
+    try {
+      const activeHid = localStorage.getItem('ramanai_active_hid') || (window.currentSession && window.currentSession.hid) || '---';
+      const previewEl = document.getElementById('sheetHidCode');
+      if (previewEl) {
+        previewEl.textContent = activeHid !== '---' ? activeHid : 'NO ACTIVE SESSION';
+      }
+    } catch(e){}
+    // Sync audio button label
+    updateSheetAudioLabel();
+    // Sync language dropdown
+    const mainLang = document.getElementById('langSelect');
+    const sheetLang = document.getElementById('sheetLangSelect');
+    if (mainLang && sheetLang) {
+      sheetLang.value = mainLang.value;
+    }
+  }
+  if (window.BioTelemetrySFX && typeof window.BioTelemetrySFX.playSlide === 'function') {
+    try { window.BioTelemetrySFX.playSlide(); } catch(e){}
+  }
+}
+
+function closeMobileControlSheet() {
+  const sheet = document.getElementById('mobileControlSheet');
+  const backdrop = document.getElementById('mobileControlBackdrop');
+  if (sheet) sheet.classList.remove('open');
+  if (backdrop) {
+    backdrop.classList.remove('open');
+    setTimeout(() => { backdrop.style.display = 'none'; }, 250);
+  }
+}
+
+function updateSheetAudioLabel() {
+  const audioBtn = document.getElementById('btnAudioToggle');
+  const sheetLabel = document.getElementById('sheetAudioLabel');
+  const sheetIcon = document.getElementById('sheetAudioIcon');
+  if (audioBtn && sheetLabel && sheetIcon) {
+    const isMuted = audioBtn.textContent.includes('OFF') || (window.BioTelemetrySFX && window.BioTelemetrySFX.isMuted);
+    sheetLabel.textContent = isMuted ? 'SOUND: OFF' : 'SOUND: ON';
+    sheetIcon.textContent = isMuted ? '🔇' : '🔊';
+  }
+}
+
+window.openMobileControlSheet = openMobileControlSheet;
+window.closeMobileControlSheet = closeMobileControlSheet;
+window.updateSheetAudioLabel = updateSheetAudioLabel;
 
 // ── Tutorial Modal Toggle ──────────────────────────────────
 function openTutorial() {
