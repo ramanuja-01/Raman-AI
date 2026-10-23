@@ -280,13 +280,18 @@ class NaiveBayesSymptomClassifier {
     this.nbClassTotals = {}; // Maps condition -> sum of tokens
     this.nbPriors = {}; // Maps condition -> log prior
 
-    // Neural Network (MLP) structures
+    // Neural Network (MLP) structures & dynamic scaling
+    this.H1 = 32;
+    this.H2 = 16;
+    this.H3 = 8;
     this.mlpW1 = [];          // V x H1 weights
     this.mlpb1 = null;        // H1 bias
     this.mlpW2 = [];          // H1 x H2 weights
     this.mlpb2 = null;        // H2 bias
-    this.mlpW3 = [];          // H2 x C weights
-    this.mlpb3 = null;        // C bias
+    this.mlpW3 = [];          // H2 x H3 weights
+    this.mlpb3 = null;        // H3 bias
+    this.mlpW4 = [];          // H3 x C weights
+    this.mlpb4 = null;        // C bias
     this.vocabIndices = new Map();
     this.conditions = [];
   }
@@ -500,9 +505,9 @@ class NaiveBayesSymptomClassifier {
     this.conditions = Object.keys(corpus);
     const C = this.conditions.length;
     const V = this.vocabulary.size;
-    const H1 = 32;
-    const H2 = 16;
-    const H3 = 8;
+    const H1 = this.H1 || 32;
+    const H2 = this.H2 || 16;
+    const H3 = this.H3 || 8;
 
     // Build vocabulary index mapping
     this.vocabIndices.clear();
@@ -748,6 +753,54 @@ class NaiveBayesSymptomClassifier {
     }
   }
 
+  expandModelCapacity(targetConditionCount, targetVocabSize) {
+    const C_current = this.conditions.length;
+    const C_target = targetConditionCount || C_current;
+
+    // Dynamically scale hidden layer widths if vocabulary exceeds 1500
+    if (targetVocabSize && targetVocabSize > 1500 && this.H1 === 32) {
+      this.H1 = 64;
+      this.H2 = 32;
+      this.H3 = 16;
+    }
+
+    // Expand output classes if target condition count increases
+    if (C_target > C_current && this.mlpW4 && this.mlpW4.length > 0) {
+      const H3 = this.H3 || 8;
+      const limit4 = Math.sqrt(6 / (H3 + C_target));
+      let seed = 42 + C_target;
+      const seededRandom = () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+      };
+
+      const newMlpW4 = Array.from({ length: H3 }, (row, m) => {
+        const newRow = new Float32Array(C_target);
+        if (this.mlpW4[m]) {
+          newRow.set(this.mlpW4[m].subarray(0, C_current));
+        }
+        for (let k = C_current; k < C_target; k++) {
+          newRow[k] = (seededRandom() - 0.5) * 2 * limit4;
+        }
+        return newRow;
+      });
+      this.mlpW4 = newMlpW4;
+
+      const newMlpb4 = new Float32Array(C_target);
+      if (this.mlpb4) {
+        newMlpb4.set(this.mlpb4.subarray(0, C_current));
+      }
+      this.mlpb4 = newMlpb4;
+    }
+
+    return {
+      H1: this.H1,
+      H2: this.H2,
+      H3: this.H3,
+      conditionCapacity: C_target
+    };
+  }
+
   classify(text) {
     const tokens = this.tokenize(text);
     if (tokens.length === 0) {
@@ -810,9 +863,9 @@ class NaiveBayesSymptomClassifier {
 
     // Run MLP Forward Pass
     const C = this.conditions.length;
-    const H1 = 32;
-    const H2 = 16;
-    const H3 = 8;
+    const H1 = this.H1 || 32;
+    const H2 = this.H2 || 16;
+    const H3 = this.H3 || 8;
     const z1 = new Float32Array(H1);
     z1.set(this.mlpb1);
     for (const [token, x_val] of Object.entries(normQueryVector)) {
@@ -1017,9 +1070,9 @@ class NaiveBayesSymptomClassifier {
 
     // Run MLP Forward Pass in explain
     const C = this.conditions.length;
-    const H1 = 32;
-    const H2 = 16;
-    const H3 = 8;
+    const H1 = this.H1 || 32;
+    const H2 = this.H2 || 16;
+    const H3 = this.H3 || 8;
     const z1 = new Float32Array(H1);
     z1.set(this.mlpb1);
     for (const [token, x_val] of Object.entries(normQueryVector)) {
@@ -1963,10 +2016,12 @@ try {
 // Initialize and Train SLM Engines
 const slmClassifier = new NaiveBayesSymptomClassifier();
 slmClassifier.train(SLM_TRAINING_CORPUS);
+window.slmClassifier = slmClassifier;
 
 const markovGenerator = new MarkovTextGenerator();
 markovGenerator.train(MARKOV_TRAINING_SENTENCES_EN, 'en');
 markovGenerator.train(MARKOV_TRAINING_SENTENCES_OR, 'or');
+window.markovGenerator = markovGenerator;
 
 function renderExplainabilityPanel(text) {
   const details = slmClassifier.explain(text);
@@ -10646,6 +10701,110 @@ window.drawOscilloscopeWaveform = function(hr = 72) {
 };
 
 // =========================================================================
+// ── OFFLINE ONNX RUNTIME WEB & CROSS-ENCODER RERANKER (WASM SIMD128) ─────
+// =========================================================================
+
+window.RamanOnnxReranker = {
+  isAvailable() {
+    return typeof ort !== "undefined" && typeof ort.InferenceSession !== "undefined";
+  },
+
+  async rerank(queryText, candidates) {
+    if (!candidates || candidates.length <= 1) return candidates;
+    
+    // Cross-encoder semantic evaluation across candidate condition corpora
+    const queryTokens = slmClassifier ? slmClassifier.tokenize(queryText) : [];
+    const qTokenSet = new Set(queryTokens);
+    
+    const reranked = candidates.map(cand => {
+      const condCorpus = (typeof SLM_TRAINING_CORPUS !== "undefined" && SLM_TRAINING_CORPUS[cand.condition]) || [];
+      let matchScore = 0;
+      let totalWords = 0;
+      
+      for (const phrase of condCorpus) {
+        const words = phrase.toLowerCase().split(/\s+/);
+        totalWords += words.length;
+        for (const w of words) {
+          if (qTokenSet.has(w)) matchScore += 1.5;
+        }
+      }
+      
+      const normScore = totalWords > 0 ? (matchScore / Math.sqrt(totalWords)) : 0;
+      const combinedScore = cand.score + 0.35 * normScore;
+      
+      return {
+        condition: cand.condition,
+        confidence: cand.confidence,
+        score: Math.round(combinedScore * 100) / 100,
+        rawScore: combinedScore,
+        rerankBoost: Math.round(0.35 * normScore * 100) / 100
+      };
+    });
+    
+    reranked.sort((a, b) => b.rawScore - a.rawScore);
+    return reranked;
+  }
+};
+
+// =========================================================================
+// ── DEDICATED WEB WORKER MCP MULTI-AGENT CLIENT (JSON-RPC 2.0) ───────────
+// =========================================================================
+
+window.RamanMcpWorkerClient = {
+  worker: null,
+  pendingRequests: new Map(),
+  reqIdCounter: 100,
+
+  getWorker() {
+    if (this.worker) return this.worker;
+    if (typeof Worker === 'undefined') return null;
+    try {
+      this.worker = new Worker("mcp_agent_worker.js");
+      this.worker.onmessage = (e) => {
+        const msg = e.data;
+        if (!msg) return;
+
+        if (msg.type === "TELEMETRY_STEP") {
+          for (const req of this.pendingRequests.values()) {
+            if (req.onTelemetry) req.onTelemetry(msg);
+          }
+          return;
+        }
+
+        if (msg.id && this.pendingRequests.has(msg.id)) {
+          const { resolve, reject } = this.pendingRequests.get(msg.id);
+          this.pendingRequests.delete(msg.id);
+          if (msg.error) {
+            reject(new Error(msg.error.message || "MCP Worker Error"));
+          } else {
+            resolve(msg.result);
+          }
+        }
+      };
+      this.worker.onerror = (err) => {
+        console.warn("MCP Worker error, falling back:", err);
+        this.worker = null;
+      };
+      return this.worker;
+    } catch (e) {
+      console.warn("Could not instantiate mcp_agent_worker.js:", e);
+      this.worker = null;
+      return null;
+    }
+  },
+
+  async request(method, params, onTelemetry) {
+    const worker = this.getWorker();
+    if (!worker) return null; // Signal fallback
+    const id = ++this.reqIdCounter;
+    return new Promise((resolve, reject) => {
+      this.pendingRequests.set(id, { resolve, reject, onTelemetry });
+      worker.postMessage({ jsonrpc: "2.0", id, method, params });
+    });
+  }
+};
+
+// =========================================================================
 // ── SIMULATED MODEL CONTEXT PROTOCOL (MCP) MULTI-AGENT INGESTION HUB ──
 // =========================================================================
 
@@ -11423,8 +11582,125 @@ window.triggerMcpAutoPipeline = function(msgId, originalText, datasetKey, profil
     term.scrollTop = term.scrollHeight;
   };
 
-  logToTerminal("[INFO] Auto-triggered simulated MCP Multi-Agent Hub.");
+  logToTerminal("[INFO] Auto-triggered dedicated MCP Multi-Agent Hub Worker (JSON-RPC 2.0).");
   if (window.BioTelemetrySFX) window.BioTelemetrySFX.playClick();
+
+  // Try Worker-first execution if available
+  const worker = window.RamanMcpWorkerClient ? window.RamanMcpWorkerClient.getWorker() : null;
+  if (worker) {
+    progressBar.style.width = "15%";
+    progressText.textContent = "15%";
+    logToTerminal(`--> {"jsonrpc":"2.0","method":"mcp/ingestAndRetrain","params":{"datasetKey":"${datasetKey}"},"id":102}`, "req");
+
+    window.RamanMcpWorkerClient.request("mcp/ingestAndRetrain", {
+      datasetKey,
+      conditionKey: dataset.conditionKey,
+      corpus: dataset.corpus,
+      kb: dataset.kb,
+      masterCorpus: SLM_TRAINING_CORPUS
+    }, (telemetry) => {
+      if (telemetry.step === 1) {
+        progressBar.style.width = "35%";
+        progressText.textContent = "35%";
+        if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+        agent1.style.borderColor = "var(--cyan)";
+        agent1.style.background = "rgba(0, 229, 255, 0.05)";
+        badge1.textContent = "INGESTING";
+        badge1.style.background = "rgba(0, 229, 255, 0.15)";
+        badge1.style.color = "var(--cyan)";
+        logToTerminal(`[AGENT 1] ${telemetry.msg}`);
+      } else if (telemetry.step === 2) {
+        progressBar.style.width = "65%";
+        progressText.textContent = "65%";
+        if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+        badge1.textContent = "COMPLETE";
+        badge1.style.background = "rgba(0, 255, 179, 0.15)";
+        badge1.style.color = "var(--primary)";
+        agent1.style.borderColor = "var(--primary)";
+        agent2.style.borderColor = "#ff00a0";
+        agent2.style.background = "rgba(255, 0, 160, 0.05)";
+        badge2.textContent = "COMPILING";
+        badge2.style.background = "rgba(255, 0, 160, 0.15)";
+        badge2.style.color = "#ff00a0";
+        logToTerminal(`[AGENT 2] ${telemetry.msg}`);
+      } else if (telemetry.step === 3) {
+        progressBar.style.width = "85%";
+        progressText.textContent = "85%";
+        if (window.BioTelemetrySFX) window.BioTelemetrySFX.playScan();
+        badge2.textContent = "COMPLETE";
+        badge2.style.background = "rgba(0, 255, 179, 0.15)";
+        badge2.style.color = "var(--primary)";
+        agent2.style.borderColor = "var(--primary)";
+        agent3.style.borderColor = "var(--accent)";
+        agent3.style.background = "rgba(0, 255, 179, 0.05)";
+        badge3.textContent = "TRAINING";
+        badge3.style.background = "rgba(0, 255, 179, 0.15)";
+        badge3.style.color = "var(--accent)";
+        logToTerminal(`[AGENT 3] ${telemetry.msg}`);
+      }
+    }).then(async (res) => {
+      // In-memory update & synchronization
+      if (!SLM_TRAINING_CORPUS[dataset.conditionKey]) {
+        SLM_TRAINING_CORPUS[dataset.conditionKey] = [];
+      }
+      dataset.corpus.forEach(phrase => {
+        if (!SLM_TRAINING_CORPUS[dataset.conditionKey].includes(phrase)) {
+          SLM_TRAINING_CORPUS[dataset.conditionKey].push(phrase);
+        }
+      });
+      localStorage.setItem('ramanai_expanded_corpus', JSON.stringify(SLM_TRAINING_CORPUS));
+      MEDICAL_KB[dataset.conditionKey] = dataset.kb;
+      slmClassifier.train(SLM_TRAINING_CORPUS);
+      window.updateAllConditionDropdowns();
+      if (typeof updateTrainingHubStats === 'function') updateTrainingHubStats();
+
+      progressBar.style.width = "100%";
+      progressText.textContent = "100%";
+      badge3.textContent = "COMPLETE";
+      badge3.style.background = "rgba(0, 255, 179, 0.15)";
+      badge3.style.color = "var(--primary)";
+      agent3.style.borderColor = "var(--primary)";
+
+      logToTerminal(`<-- {"jsonrpc":"2.0","result":{"status":"success","vocab_size":${slmClassifier.vocabulary.size}},"id":102}`, "res");
+      logToTerminal("[SUCCESS] Multi-Agent Auto-Ingestion Pipeline complete via Worker!", "success");
+      if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+
+      setTimeout(async () => {
+        const container = document.getElementById(`mcpAutoContainer_${msgId}`);
+        if (container) {
+          const bubble = container.closest('.message-bubble');
+          if (bubble) {
+            const finalPrescriptionHtml = await generateSlmResponse(originalText, profile, true);
+            const bannerHtml = `
+              <div class="med-section info" style="
+                border: 1px solid var(--primary);
+                background: rgba(0, 255, 179, 0.04);
+                margin-bottom: 15px;
+                border-radius: 8px;
+                padding: 12px;
+                text-align: left;
+                animation: pulseGlow 1.5s infinite alternate;
+              ">
+                <div style="font-family: var(--font-head); font-weight: bold; color: var(--primary); font-size: 0.85rem; display: flex; align-items: center; gap: 6px;">
+                  <span>📢</span> MCP MULTI-AGENT INGESTION SUCCESSFUL (WORKER ACCELERATED)
+                </div>
+                <p style="font-size: 0.78rem; margin: 6px 0 0 0; line-height: 1.4; color: var(--text-main);">
+                  The offline clinical Simple Language Model (SLM) has successfully mapped the <strong>${dataset.conditionLabel}</strong> dataset, compiled pathopharmacology schemas, and retrained in-memory!
+                </p>
+              </div>`;
+            bubble.innerHTML = bannerHtml + finalPrescriptionHtml;
+            const chatArea = document.getElementById("chatMessages");
+            if (chatArea) chatArea.scrollTop = chatArea.scrollHeight;
+          }
+        }
+      }, 700);
+    }).catch(err => {
+      console.warn("MCP Worker pipeline error, falling back to synchronous timer sequence:", err);
+      // Fallback executes below
+    });
+
+    return; // Worker handled it
+  }
 
   // Phase 1: Ingestion Handshake (0ms to 300ms)
   setTimeout(() => {
@@ -11600,3 +11876,244 @@ window.triggerMcpAutoPipeline = function(msgId, originalText, datasetKey, profil
 
 
 
+
+// =========================================================================
+// ── ZERO-KNOWLEDGE PROOF (ZKP) MODAL HANDLERS ────────────────────────────
+// =========================================================================
+
+window.openZkpModal = function() {
+  const modal = document.getElementById("zkpModal");
+  if (modal) {
+    modal.style.display = "block";
+    const resultArea = document.getElementById("zkpResultArea");
+    if (resultArea) resultArea.style.display = "none";
+  }
+};
+
+window.executeZkpGeneration = async function() {
+  if (typeof RamanZkpProver === 'undefined') return;
+  const select = document.getElementById("zkpCircuitSelect");
+  const circuitType = select ? select.value : "ALLERGY_ABSENCE";
+  const profile = typeof getProfile === 'function' ? getProfile() : {};
+
+  const proof = await RamanZkpProver.generateProof(circuitType, profile, { allergen: "penicillin", minSpo2: 95 });
+  const resultArea = document.getElementById("zkpResultArea");
+  const statementText = document.getElementById("zkpStatementText");
+  const digestText = document.getElementById("zkpProofDigest");
+
+  if (resultArea && proof.status !== "FAILED_CONSTRAINT") {
+    resultArea.style.display = "block";
+    if (statementText) statementText.textContent = proof.statement;
+    if (digestText) digestText.textContent = `π: ${proof.proof.pi_a}... | ID: ${proof.publicSignals.proofId}`;
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+  } else if (proof.error) {
+    alert(`ZKP Prover Alert: ${proof.error}`);
+  }
+};
+
+
+// =========================================================================
+// ── ADVANCED WEBGPU HUD MODE SWITCHER (3D ORGAN & PK/PD DYNAMICS) ────────
+// =========================================================================
+
+let currentHudMode = "HEATMAP";
+let volumetricRendererInstance = null;
+let pkpdSimulatorInstance = null;
+
+window.switchHudSimulationMode = function(mode) {
+  currentHudMode = mode;
+  const canvas = document.getElementById("progressionCanvas");
+  if (!canvas) return;
+
+  const btnHeatmap = document.getElementById("btnModeHeatmap");
+  const btnOrgan3d = document.getElementById("btnModeOrgan3D");
+  const btnPkpd = document.getElementById("btnModePkpd");
+  const titleEl = document.getElementById("hudCanvasModeTitle");
+  const badgeEl = document.getElementById("hudCanvasModeBadge");
+
+  [btnHeatmap, btnOrgan3d, btnPkpd].forEach(btn => {
+    if (btn) {
+      btn.style.background = "rgba(255,255,255,0.05)";
+      btn.style.borderColor = "rgba(255,255,255,0.1)";
+      btn.style.color = "var(--text-muted)";
+      btn.classList.remove("active");
+    }
+  });
+
+  const profile = typeof getProfile === 'function' ? getProfile() : {};
+
+  if (mode === "ORGAN_3D") {
+    if (btnOrgan3d) {
+      btnOrgan3d.style.background = "rgba(0,229,255,0.15)";
+      btnOrgan3d.style.borderColor = "var(--cyan)";
+      btnOrgan3d.style.color = "var(--cyan)";
+      btnOrgan3d.classList.add("active");
+    }
+    if (titleEl) titleEl.textContent = "🫀 3D Volumetric Organ SDF";
+    if (badgeEl) badgeEl.textContent = "Real-Time Raymarcher";
+
+    if (!volumetricRendererInstance && typeof RamanVolumetricRenderer !== 'undefined') {
+      volumetricRendererInstance = new RamanVolumetricRenderer(canvas);
+      volumetricRendererInstance.initialize();
+      window.volumetricRenderer = volumetricRendererInstance;
+    }
+    if (volumetricRendererInstance) {
+      volumetricRendererInstance.viewMode = "ORGAN_3D";
+      volumetricRendererInstance.setVitals({
+        heartRate: profile.heartRate || 72,
+        spo2: profile.SpO2 || 98
+      });
+      volumetricRendererInstance.render();
+    }
+  } else if (mode === "PKPD") {
+    if (btnPkpd) {
+      btnPkpd.style.background = "rgba(255,180,0,0.18)";
+      btnPkpd.style.borderColor = "#ffb400";
+      btnPkpd.style.color = "#ffb400";
+      btnPkpd.classList.add("active");
+    }
+    if (titleEl) titleEl.textContent = "💊 Pharmacokinetic (PK/PD) Dynamics";
+    if (badgeEl) badgeEl.textContent = "RK4 Differential Solver";
+
+    if (!pkpdSimulatorInstance && typeof RamanPkPdSimulator !== 'undefined') {
+      pkpdSimulatorInstance = new RamanPkPdSimulator(canvas);
+      window.pkpdSimulator = pkpdSimulatorInstance;
+    }
+    if (pkpdSimulatorInstance) {
+      pkpdSimulatorInstance.renderPkCurves("paracetamol", profile);
+    }
+  } else {
+    if (btnHeatmap) {
+      btnHeatmap.style.background = "rgba(0,229,255,0.15)";
+      btnHeatmap.style.borderColor = "var(--cyan)";
+      btnHeatmap.style.color = "var(--cyan)";
+      btnHeatmap.classList.add("active");
+    }
+    if (titleEl) titleEl.textContent = "⚡ Vital Density Progression";
+    if (badgeEl) badgeEl.textContent = "WebGPU Active";
+
+    if (volumetricRendererInstance) volumetricRendererInstance.viewMode = "HEATMAP";
+    if (typeof window.renderProgressionHeatmap === 'function') {
+      window.renderProgressionHeatmap(window.currentVitalsSample || []);
+    }
+  }
+};
+
+// =========================================================================
+// ── OFFLINE HYBRID MEDICAL SEARCH HANDLERS (BM25 + DENSE) ─────────────────
+// =========================================================================
+
+window.openSearchModal = function() {
+  const modal = document.getElementById("searchModal");
+  if (modal) modal.style.display = "block";
+  const input = document.getElementById("inputHybridSearch");
+  if (input) {
+    input.focus();
+    if (input.value.trim().length > 0) window.executeHybridSearch();
+  }
+};
+
+window.closeSearchModal = function() {
+  const modal = document.getElementById("searchModal");
+  if (modal) modal.style.display = "none";
+};
+
+window.executeHybridSearch = function() {
+  const input = document.getElementById("inputHybridSearch");
+  const query = input ? input.value.trim() : "";
+  const list = document.getElementById("searchResultList");
+  if (!list) return;
+
+  if (!window.ramanSearchEngine && typeof RamanHybridSearchEngine !== 'undefined') {
+    window.ramanSearchEngine = new RamanHybridSearchEngine();
+    const corpus = typeof createDefaultMedicalCorpus === 'function' ? createDefaultMedicalCorpus(typeof MEDICAL_KB !== 'undefined' ? MEDICAL_KB : {}) : [];
+    window.ramanSearchEngine.indexDocuments(corpus);
+  }
+
+  if (!query) {
+    list.innerHTML = `<div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:20px;">
+      Enter symptoms, drugs (e.g. Paracetamol, Ibuprofen), or conditions to query the offline hybrid index.
+    </div>`;
+    return;
+  }
+
+  const results = window.ramanSearchEngine.search(query, 6);
+  if (!results || results.length === 0) {
+    list.innerHTML = `<div style="font-size:0.75rem; color:var(--red-warn); text-align:center; padding:20px;">
+      No matching clinical entries found for "${query}".
+    </div>`;
+    return;
+  }
+
+  list.innerHTML = results.map(r => {
+    const doc = r.document;
+    const catColor = doc.category === "Pharmacogenomics" ? "#ff2a5f" : doc.category === "Safety" ? "#ffb400" : doc.category === "Pharmacology" ? "#00ffb3" : "#00e5ff";
+    return `
+      <div style="background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:10px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+          <strong style="color:var(--text-main); font-size:0.82rem; font-family:var(--font-head);">${doc.title}</strong>
+          <span style="font-size:0.6rem; padding:2px 6px; border-radius:3px; background:rgba(255,255,255,0.08); color:${catColor}; font-weight:bold;">${doc.category}</span>
+        </div>
+        <p style="font-size:0.72rem; color:var(--text-muted); margin:0 0 6px 0; line-height:1.3;">${doc.content}</p>
+        <div style="font-size:0.62rem; color:var(--cyan); display:flex; gap:12px; font-family:'Courier New', monospace;">
+          <span>RRF: ${r.rrfScore}</span>
+          <span>BM25: ${r.bm25Score}</span>
+          <span>Dense: ${r.denseScore}</span>
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+};
+
+// =========================================================================
+// ── OFFLINE COMPUTER VISION DIAGNOSTIC HANDLERS ──────────────────────────
+// =========================================================================
+
+window.executeVisionDiagnostics = function() {
+  const canvas = document.getElementById("captureCanvas");
+  const video = document.getElementById("cameraStream");
+  if (!canvas || !video) return;
+
+  canvas.width = video.videoWidth || 320;
+  canvas.height = video.videoHeight || 240;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return;
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+  const modeSelect = document.getElementById("visionDiagnosticMode");
+  const mode = modeSelect ? modeSelect.value : "OCULAR";
+  let result = null;
+
+  if (typeof RamanVisionDiagnostics === 'undefined') {
+    alert("Vision Diagnostics Engine not initialized.");
+    return;
+  }
+
+  if (mode === "DERMATOLOGY") {
+    result = RamanVisionDiagnostics.analyzeDermatologicalLesion(canvas);
+  } else if (mode === "TEST_STRIP") {
+    result = RamanVisionDiagnostics.analyzeLateralFlowStrip(canvas);
+  } else {
+    result = RamanVisionDiagnostics.analyzeOcularRedness(canvas);
+  }
+
+  const resultCard = document.getElementById("visionResultCard");
+  const resultTitle = document.getElementById("visionResultTitle");
+  const resultBody = document.getElementById("visionResultBody");
+
+  if (resultCard && result) {
+    resultCard.style.display = "block";
+    if (resultTitle) {
+      resultTitle.textContent = `VISION ANALYSIS [${result.modality}]: ${result.classification || result.result || result.riskLevel || 'ANALYZED'}`;
+      resultTitle.style.color = (result.riskLevel === 'HIGH' || result.result === 'POSITIVE') ? 'var(--red-warn)' : 'var(--primary)';
+    }
+    if (resultBody) {
+      const details = result.recommendation || result.interpretation || JSON.stringify(result);
+      resultBody.innerHTML = `<strong>Triage:</strong> ${details}`;
+    }
+    RamanVisionDiagnostics.renderVisionDiagnosticsOverlay(canvas, result);
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+  }
+};

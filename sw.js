@@ -1,11 +1,21 @@
 /* ===== RAMAN AI – Service Worker (sw.js) ===== */
-const CACHE_NAME = 'raman-ai-v2.1';
+const CACHE_NAME = 'raman-ai-v2.5';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './style.css',
   './session_mgr.css',
   './app.js',
+  './mcp_agent_worker.js',
+  './ble_telemetry.js',
+  './fhir_exporter.js',
+  './zkp_verifier.js',
+  './webgpu_volumetric.js',
+  './webgpu_pkpd.js',
+  './hybrid_search.js',
+  './vision_diagnostics.js',
+  './federated_learning.js',
+  './quantized_slm.js',
   './favicon.svg',
   './human_body_map.png',
   './manifest.json'

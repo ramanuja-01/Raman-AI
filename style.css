@@ -2384,3 +2384,43 @@ body.light-theme #mcpTerminalLog {
   color: var(--text-muted);
   letter-spacing: 1px;
 }
+
+/* Web Bluetooth BLE & ZKP Styles */
+.btn-ble {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 6px;
+  color: var(--cyan);
+  font-family: var(--font-head);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.btn-ble:hover {
+  background: rgba(0, 229, 255, 0.18);
+  box-shadow: 0 0 12px rgba(0, 229, 255, 0.35);
+}
+.ble-pill {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  background: #ff0055;
+  box-shadow: 0 0 6px #ff0055;
+}
+.ble-pill.streaming {
+  background: #00ffb3;
+  box-shadow: 0 0 8px #00ffb3;
+  animation: pulseGlow 1s infinite alternate;
+}
+.ble-pill.connecting, .ble-pill.reconnecting {
+  background: #ffaa00;
+  box-shadow: 0 0 8px #ffaa00;
+  animation: blink 0.8s infinite;
+}

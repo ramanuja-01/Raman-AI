@@ -133,6 +133,18 @@
         <button class="btn-record" id="btnRecord">🔴 Record Video</button>
         <button class="btn-switch-cam" id="btnSwitchCam">🔄 Switch</button>
       </div>
+      <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+        <select id="visionDiagnosticMode" style="flex: 1; background: #070a14; border: 1px solid var(--cyan); color: var(--cyan); padding: 6px; border-radius: 4px; font-size: 0.72rem; outline: none;">
+          <option value="OCULAR">👁️ Ocular Hyperemia / Redness</option>
+          <option value="DERMATOLOGY">🔬 Dermatological Lesion (ABCD)</option>
+          <option value="TEST_STRIP">🧪 Lateral-Flow Strip Reader</option>
+        </select>
+        <button type="button" id="btnRunVisionAnalysis" onclick="executeVisionDiagnostics()" style="background: rgba(0,229,255,0.2); border: 1px solid var(--cyan); color: var(--cyan); padding: 6px 12px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; cursor: pointer;">🔍 Analyze</button>
+      </div>
+      <div id="visionResultCard" style="display: none; margin-top: 10px; background: rgba(5,13,26,0.9); border: 1px solid var(--primary); border-radius: 6px; padding: 10px; font-size: 0.75rem; text-align: left;">
+        <div id="visionResultTitle" style="font-weight: bold; color: var(--primary); font-family: var(--font-head); margin-bottom: 4px;"></div>
+        <div id="visionResultBody" style="color: var(--text-main); font-size: 0.72rem; line-height: 1.4;"></div>
+      </div>
       <canvas id="captureCanvas" style="display:none;"></canvas>
     </div>
   </div>
@@ -273,6 +285,20 @@
           </button>
           <button class="sp-btn sp-btn-restore" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; border-radius: 8px; padding: 10px;" onclick="document.getElementById('importBackupInput').click()">
             📥 Restore Backup
+          </button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+          <button class="sp-btn sp-btn-fhir" id="btnExportFhir" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; border-radius: 8px; padding: 10px; background: rgba(0, 255, 179, 0.08); border: 1px solid var(--primary); color: var(--primary);" onclick="if(window.downloadFhirR4Json) { const p = getProfile(); window.downloadFhirR4Json(p, { healthId: currentHealthId, condition: 'Clinical Consultation' }); }">
+            📋 Export FHIR (R4)
+          </button>
+          <button class="sp-btn sp-btn-zkp" id="btnOpenZkp" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; border-radius: 8px; padding: 10px; background: rgba(0, 229, 255, 0.08); border: 1px solid var(--cyan); color: var(--cyan);" onclick="openZkpModal()">
+            🛡️ Zero-Knowledge (ZKP)
+          </button>
+        </div>
+        <div style="margin-top: 10px;">
+          <button class="sp-btn sp-btn-search" id="btnOpenSearchModal" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; border-radius: 8px; padding: 10px; background: rgba(255, 180, 0, 0.08); border: 1px solid #ffb400; color: #ffb400;" onclick="openSearchModal()">
+            🔍 Hybrid Medical Search (BM25 + Dense)
           </button>
         </div>
         <input type="file" id="importBackupInput" style="display: none;" accept=".json" onchange="window.importSessionBackupJSON(this.files[0])" />
@@ -1068,6 +1094,12 @@
                     <input type="number" id="patientSpO2" placeholder="e.g. 98" min="50" max="100" />
                   </div>
                 </div>
+                <div style="margin-top: 10px;">
+                  <button type="button" class="btn-ble" id="btnBleConnect" onclick="if(window.ramanBle) window.ramanBle.connect();">
+                    <span id="bleStatusPill" class="ble-pill disconnected"></span>
+                    <span id="bleStatusLabel">📡 BLE: CONNECT WEARABLE</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1194,8 +1226,13 @@
               <div class="hud-canvases-wrapper" style="margin-top: 8px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px;">
                 <div class="hud-canvas-block">
                   <div class="hud-canvas-title" style="font-family: var(--font-ui); font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 4px; padding: 0 2px; text-transform: uppercase; letter-spacing: 0.5px;">
-                    <span>⚡ Vital Density Progression</span>
-                    <span style="color: var(--cyan);">WebGPU Active</span>
+                    <span id="hudCanvasModeTitle">⚡ Vital Density Progression</span>
+                    <span id="hudCanvasModeBadge" style="color: var(--cyan);">WebGPU Active</span>
+                  </div>
+                  <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+                    <button type="button" id="btnModeHeatmap" class="btn-hud-mode active" onclick="switchHudSimulationMode('HEATMAP')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(0,229,255,0.15); border: 1px solid var(--cyan); color: var(--cyan); border-radius: 4px; cursor: pointer; font-family: var(--font-head); font-weight: bold;">📊 2D Scatter</button>
+                    <button type="button" id="btnModeOrgan3D" class="btn-hud-mode" onclick="switchHudSimulationMode('ORGAN_3D')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 4px; cursor: pointer; font-family: var(--font-head);">🫀 3D Organ</button>
+                    <button type="button" id="btnModePkpd" class="btn-hud-mode" onclick="switchHudSimulationMode('PKPD')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 4px; cursor: pointer; font-family: var(--font-head);">💊 PK/PD</button>
                   </div>
                   <canvas id="progressionCanvas" width="300" height="200" class="hud-neon-canvas" style="width: 100%; display: block; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.1), inset 0 0 8px rgba(0, 229, 255, 0.15); cursor: crosshair;"></canvas>
                 </div>
@@ -1666,6 +1703,71 @@
     </div>
   </div>
 
+  <!-- ===== ZERO-KNOWLEDGE PROOF (ZKP) MODAL ===== -->
+  <div class="zkp-modal" id="zkpModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">
+    <div style="position:relative; width:92%; max-width:480px; margin:8vh auto; background:rgba(15,23,42,0.95); border:1px solid var(--cyan); border-radius:12px; padding:20px; box-shadow:0 0 30px rgba(0,229,255,0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:8px;">
+        <span style="font-family:var(--font-head); font-weight:bold; color:var(--cyan); font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+          <span>🛡️</span> ZERO-KNOWLEDGE HEALTH PROVER
+        </span>
+        <button onclick="document.getElementById('zkpModal').style.display='none'" style="background:transparent; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
+      </div>
+
+      <p style="font-size:0.75rem; color:var(--text-main); margin-bottom:15px; line-height:1.4;">
+        Cryptographically prove specific health attestations to third parties <strong>without exposing your identity, full diagnosis, or raw Protected Health Information (PHI)</strong>.
+      </p>
+
+      <div style="margin-bottom:14px;">
+        <label for="zkpCircuitSelect" style="font-size:0.7rem; color:var(--text-muted); display:block; text-transform:uppercase; margin-bottom:5px;">Select Attestation Circuit</label>
+        <select id="zkpCircuitSelect" style="width:100%; background:#070a14; border:1px solid var(--border); border-radius:6px; color:var(--text-main); padding:8px; font-size:0.8rem; outline:none; cursor:pointer;">
+          <option value="ALLERGY_ABSENCE">Allergy Absence (Proves NO Penicillin Allergy)</option>
+          <option value="VITAL_STABILITY">Vital Stability (Proves SpO2 >= 95% & Normal Pulse)</option>
+          <option value="STAGE1_LOW_RISK">Stage 1 Triaged (Proves Low Pain Severity <= 4)</option>
+        </select>
+      </div>
+
+      <div id="zkpResultArea" style="display:none; background:rgba(0,0,0,0.6); border:1px solid var(--primary); border-radius:8px; padding:12px; margin-bottom:15px;">
+        <div style="display:flex; align-items:center; gap:6px; color:var(--primary); font-family:var(--font-head); font-weight:bold; font-size:0.8rem; margin-bottom:6px;">
+          <span>✅</span> PROOF VALIDATED (Groth16 BN254)
+        </div>
+        <div id="zkpStatementText" style="font-size:0.75rem; color:var(--text-main); margin-bottom:8px;"></div>
+        <div style="font-family:'Courier New', monospace; font-size:0.62rem; color:var(--cyan); word-break:break-all; background:rgba(0,229,255,0.05); padding:6px; border-radius:4px;" id="zkpProofDigest"></div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button onclick="document.getElementById('zkpModal').style.display='none'" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); padding:7px 15px; border-radius:4px; font-size:0.75rem; font-family:var(--font-head); cursor:pointer;">Cancel</button>
+        <button id="btnExecuteZkp" onclick="executeZkpGeneration()" style="background:rgba(0,229,255,0.15); border:1px solid var(--cyan); color:var(--cyan); padding:7px 18px; border-radius:4px; font-size:0.75rem; font-family:var(--font-head); cursor:pointer; font-weight:bold; box-shadow:0 0 10px rgba(0,229,255,0.2);">Generate Cryptographic Proof</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HYBRID MEDICAL SEARCH MODAL (BM25 + DENSE) ===== -->
+  <div class="search-modal" id="searchModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">
+    <div style="position:relative; width:92%; max-width:540px; margin:7vh auto; background:rgba(15,23,42,0.96); border:1px solid #ffb400; border-radius:12px; padding:20px; box-shadow:0 0 30px rgba(255,180,0,0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(255,180,0,0.2); padding-bottom:8px;">
+        <span style="font-family:var(--font-head); font-weight:bold; color:#ffb400; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+          <span>🔍</span> HYBRID MEDICAL SEARCH (BM25 + DENSE)
+        </span>
+        <button onclick="closeSearchModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
+      </div>
+
+      <div style="margin-bottom:14px; display:flex; gap:8px;">
+        <input type="text" id="inputHybridSearch" placeholder="Search pharmacopeia, SNOMED, contraindications..." style="flex:1; background:#070a14; border:1px solid var(--border); border-radius:6px; color:var(--text-main); padding:8px 12px; font-size:0.82rem; outline:none;" onkeydown="if(event.key==='Enter') executeHybridSearch()" />
+        <button id="btnExecuteSearch" onclick="executeHybridSearch()" style="background:rgba(255,180,0,0.18); border:1px solid #ffb400; color:#ffb400; padding:8px 16px; border-radius:6px; font-size:0.78rem; font-family:var(--font-head); font-weight:bold; cursor:pointer;">Search</button>
+      </div>
+
+      <div id="searchResultList" style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:20px;">
+          Enter symptoms, drugs (e.g. Paracetamol, Ibuprofen), or conditions to query the offline hybrid index.
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+        <button onclick="closeSearchModal()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); padding:6px 14px; border-radius:4px; font-size:0.75rem; font-family:var(--font-head); cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ===== CLINICIAN PORTAL OVERRIDE MODAL ===== -->
   <div class="modal-backdrop" id="clinicianOverrideModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(10,15,30,0.85); backdrop-filter:blur(6px); z-index:10000; align-items:center; justify-content:center;">
     <div style="background:#0e1428; border:2px solid var(--cyan); border-radius:12px; padding:20px; width:90%; max-width:400px; box-shadow:0 0 25px rgba(0, 229, 255, 0.4); text-align:left; color:var(--text-main); position:relative;">
@@ -1705,6 +1807,15 @@
     </div>
   </div>
 
+  <script src="webgpu_volumetric.js?v=2.0"></script>
+  <script src="webgpu_pkpd.js?v=2.0"></script>
+  <script src="hybrid_search.js?v=2.0"></script>
+  <script src="vision_diagnostics.js?v=2.0"></script>
+  <script src="ble_telemetry.js?v=2.0"></script>
+  <script src="fhir_exporter.js?v=2.0"></script>
+  <script src="zkp_verifier.js?v=2.0"></script>
+  <script src="federated_learning.js?v=2.0"></script>
+  <script src="quantized_slm.js?v=2.0"></script>
   <script src="app.js?v=2.1"></script>
   <script>
     if ('serviceWorker' in navigator) {

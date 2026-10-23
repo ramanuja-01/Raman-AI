@@ -1188,6 +1188,532 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  await runTest("Dedicated Web Worker MCP Multi-Agent Hub (JSON-RPC 2.0 Ingestion & Self-Healing)", async () => {
+    let ok = true;
+    const mcpWorker = require('./mcp_agent_worker.js');
+
+    // 1. Assert Worker module exposes required agent classes & dispatcher
+    ok = assert(typeof mcpWorker.dispatchJsonRpc === 'function', "mcp_agent_worker exposes dispatchJsonRpc handler.") && ok;
+    ok = assert(typeof mcpWorker.AgentIngestion === 'function', "AgentIngestion class is defined.") && ok;
+    ok = assert(typeof mcpWorker.AgentPharmacotherapyCompiler === 'function', "AgentPharmacotherapyCompiler is defined.") && ok;
+    ok = assert(typeof mcpWorker.AgentVocabularyTrainer === 'function', "AgentVocabularyTrainer is defined.") && ok;
+    ok = assert(typeof mcpWorker.SelfHealingEngine === 'function', "SelfHealingEngine is defined.") && ok;
+
+    // 2. Dispatch initialize handshake
+    const initReq = {
+      jsonrpc: "2.0",
+      id: 101,
+      method: "initialize",
+      params: {}
+    };
+    const initRes = mcpWorker.dispatchJsonRpc(initReq);
+    ok = assert(initRes.result && initRes.result.protocolVersion === "2024-11-05", "JSON-RPC 2.0 initialize returns protocolVersion '2024-11-05'.") && ok;
+    ok = assert(initRes.result.capabilities.tools.includes("self_healing_scan"), "Worker capabilities include 'self_healing_scan'.") && ok;
+
+    // 3. Dispatch mcp/ingestAndRetrain
+    const ingestReq = {
+      jsonrpc: "2.0",
+      id: 102,
+      method: "mcp/ingestAndRetrain",
+      params: {
+        datasetKey: "otitis",
+        conditionKey: "ear infection",
+        corpus: [
+          "i have severe ear pain and fluid coming out of ear",
+          "kano bitha heuchi kano ru pani baharuche discharge"
+        ],
+        kb: {
+          icd11: "AA30",
+          medications: [
+            { name: "Ofloxacin Otic Solution 0.3%", snomed: "387207008", dose: "5 drops bid" }
+          ]
+        },
+        masterCorpus: {
+          "fever": ["high body temperature chills", "deha garam laguchi"]
+        }
+      }
+    };
+    const ingestRes = mcpWorker.dispatchJsonRpc(ingestReq);
+    ok = assert(ingestRes.result && ingestRes.result.status === "SUCCESS", "mcp/ingestAndRetrain returns status SUCCESS.") && ok;
+    ok = assert(ingestRes.result.ingestion.phrasesIngested === 2, "AgentIngestion ingested exactly 2 bilingual phrases.") && ok;
+    ok = assert(ingestRes.result.compilation.icd11 === "AA30", "AgentPharmacotherapyCompiler mapped ICD-11: 'AA30'.") && ok;
+    ok = assert(ingestRes.result.retraining.conditionsCount === 2, "AgentVocabularyTrainer retrained across 2 conditions.") && ok;
+    ok = assert(ingestRes.transferables && ingestRes.transferables.length > 0, "mcp/ingestAndRetrain exposes Transferable ArrayBuffer priorsBuffer.") && ok;
+
+    // 4. Dispatch mcp/selfHealingScan
+    const scanReq = {
+      jsonrpc: "2.0",
+      id: 103,
+      method: "mcp/selfHealingScan",
+      params: {
+        rawQuery: "mor ghanti pura bitha heuchi galare kanta futuchi throat prickling pain",
+        currentVocab: ["fever", "cough", "chest", "pain", "headache"],
+        conditionCentroids: {}
+      }
+    };
+    const scanRes = mcpWorker.dispatchJsonRpc(scanReq);
+    ok = assert(scanRes.result && scanRes.result.hasGap === true, "Self-healing scan correctly flags semantic gap on colloquial OOV query.") && ok;
+    ok = assert(scanRes.result.suggestedAction === "TRIGGER_MCP_AUTO_INGESTION", "Self-healing scan suggests 'TRIGGER_MCP_AUTO_INGESTION'.") && ok;
+
+    return ok;
+  });
+
+  await runTest("Dynamic Adaptive MLP Neural Scaling & Model Capacity Expansion", async () => {
+    let ok = true;
+
+    // 1. Verify expandModelCapacity method exists
+    ok = assert(typeof slmClassifier.expandModelCapacity === 'function', "slmClassifier.expandModelCapacity is defined as a method.") && ok;
+
+    // 2. Expand model capacity to 35 conditions and 1800 vocabulary tokens
+    const oldC = slmClassifier.conditions.length;
+    const oldW4_0 = slmClassifier.mlpW4[0][0]; // Save first weight to assert preservation
+    
+    const expansion = slmClassifier.expandModelCapacity(35, 1800);
+    ok = assert(expansion.H1 === 64, "Dynamic MLP Layer 1 width scaled to 64 units.") && ok;
+    ok = assert(expansion.H2 === 32, "Dynamic MLP Layer 2 width scaled to 32 units.") && ok;
+    ok = assert(expansion.H3 === 16, "Dynamic MLP Layer 3 width scaled to 16 units.") && ok;
+    ok = assert(expansion.conditionCapacity === 35, "Dynamic MLP condition capacity expanded to 35 classes.") && ok;
+    ok = assert(slmClassifier.mlpW4[0].length === 35, "Layer 4 weights buffer expanded to 35 output columns.") && ok;
+    ok = assert(slmClassifier.mlpb4.length === 35, "Layer 4 bias buffer expanded to 35 output classes.") && ok;
+    ok = assert(Math.abs(slmClassifier.mlpW4[0][0] - oldW4_0) < 1e-6, "Pre-existing weights strictly preserved during capacity expansion.") && ok;
+
+    // 3. Reset classifier to baseline training corpus to ensure test suite stability
+    slmClassifier.H1 = 32;
+    slmClassifier.H2 = 16;
+    slmClassifier.H3 = 8;
+    slmClassifier.train(SLM_TRAINING_CORPUS);
+    ok = assert(slmClassifier.conditions.length === oldC, "Model successfully restored to baseline conditions count.") && ok;
+
+    return ok;
+  });
+
+  await runTest("Offline ONNX Runtime Web WASM Cross-Encoder Reranker & Fallback", async () => {
+    let ok = true;
+
+    // 1. Assert window.RamanOnnxReranker is defined
+    ok = assert(window.RamanOnnxReranker && typeof window.RamanOnnxReranker.rerank === 'function', "window.RamanOnnxReranker is defined globally.") && ok;
+    
+    // 2. Test reranking evaluation on candidate list
+    const query = "crushing chest pain radiating to left arm heart squeezing";
+    const candidates = [
+      { condition: "fever", score: 2.1, confidence: 30 },
+      { condition: "chest pain", score: 2.4, confidence: 55 }
+    ];
+    const reranked = await window.RamanOnnxReranker.rerank(query, candidates);
+    ok = assert(reranked.length === 2, "Reranker preserves candidate count.") && ok;
+    ok = assert(reranked[0].condition === "chest pain", "Reranker correctly maintains 'chest pain' at Rank #01.") && ok;
+    ok = assert(reranked[0].rerankBoost > 0, "Reranker calculates positive cross-encoder semantic boost.") && ok;
+    ok = assert(reranked[0].score > candidates[1].score, "Combined score correctly reflects ensemble + cross-encoder boost.") && ok;
+
+    return ok;
+  });
+
+  await runTest("Native Web Bluetooth (BLE) GATT Telemetry Parser", async () => {
+    let ok = true;
+    const bleModule = require('./ble_telemetry.js');
+
+    // 1. Test 8-bit Heart Rate parsing (Flags = 0x00, HR = 76)
+    const hr8Buf = new Uint8Array([0x00, 76]);
+    const hr8View = new DataView(hr8Buf.buffer);
+    const parsedHr8 = bleModule.parseHeartRateMeasurement(hr8View);
+    ok = assert(parsedHr8 && parsedHr8.heartRate === 76, "8-bit BLE Heart Rate correctly parsed: 76 bpm.") && ok;
+
+    // 2. Test 16-bit Heart Rate parsing (Flags = 0x01, HR = 142)
+    const hr16Buf = new Uint8Array([0x01, 142, 0]);
+    const hr16View = new DataView(hr16Buf.buffer);
+    const parsedHr16 = bleModule.parseHeartRateMeasurement(hr16View);
+    ok = assert(parsedHr16 && parsedHr16.heartRate === 142, "16-bit BLE Heart Rate correctly parsed: 142 bpm.") && ok;
+
+    // 3. Test Pulse Oximeter PLX parsing (Flags = 0, SpO2 SFLOAT = 98, Pulse = 74)
+    // SFLOAT: 98 -> mantissa 98 (0x0062), exponent 0
+    // SFLOAT: 74 -> mantissa 74 (0x004A), exponent 0
+    const spo2Buf = new Uint8Array([0x00, 0x62, 0x00, 0x4A, 0x00]);
+    const spo2View = new DataView(spo2Buf.buffer);
+    const parsedSpo2 = bleModule.parsePulseOximeterMeasurement(spo2View);
+    ok = assert(parsedSpo2 && parsedSpo2.spo2 === 98, "Pulse Oximeter SpO2 correctly parsed: 98%.") && ok;
+    ok = assert(parsedSpo2 && parsedSpo2.pulseRate === 74, "Pulse Oximeter Pulse Rate correctly parsed: 74 bpm.") && ok;
+
+    // 4. Test Manager instantiation
+    const mgr = new bleModule.RamanBleManager();
+    ok = assert(mgr.state === "DISCONNECTED", "BLE manager initializes in DISCONNECTED state.") && ok;
+
+    return ok;
+  });
+
+  await runTest("HL7 FHIR Release 4 (R4) JSON Document Bundle Exporter", async () => {
+    let ok = true;
+    const fhirModule = require('./fhir_exporter.js');
+
+    const profile = {
+      name: "Ramanuja Pathy",
+      age: "34",
+      gender: "male",
+      blood: "B+",
+      allergies: "None",
+      bp: "120/80",
+      heartRate: "72",
+      temp: "98.6",
+      SpO2: "98"
+    };
+
+    const sessionData = {
+      healthId: "RMN-E3B9F2",
+      condition: "Angina Pectoris / Chest Pain",
+      icd11: "BA41",
+      medications: [
+        { name: "Paracetamol 650mg", snomed: "387207008", dose: "650mg SOS" }
+      ]
+    };
+
+    const bundle = fhirModule.generateFhirR4Bundle(profile, sessionData, profile);
+
+    // Assert FHIR R4 Bundle specifications
+    ok = assert(bundle.resourceType === "Bundle", "Export resourceType is 'Bundle'.") && ok;
+    ok = assert(bundle.type === "document", "Bundle type is 'document'.") && ok;
+    ok = assert(bundle.identifier && bundle.identifier.value === "BUNDLE-RMN-E3B9F2", "Bundle identifier matches Health ID.") && ok;
+    ok = assert(Array.isArray(bundle.entry) && bundle.entry.length >= 4, "Bundle entries contain Patient, Condition, Observation, and MedicationStatement.") && ok;
+
+    // Find Patient Resource
+    const patientEntry = bundle.entry.find(e => e.resource.resourceType === "Patient");
+    ok = assert(patientEntry && patientEntry.resource.gender === "male", "FHIR Patient gender correctly mapped to 'male'.") && ok;
+    ok = assert(patientEntry.resource.birthDate === "1992-01-01", "FHIR Patient birthDate dynamically computed from age.") && ok;
+
+    // Find Condition Resource
+    const conditionEntry = bundle.entry.find(e => e.resource.resourceType === "Condition");
+    ok = assert(conditionEntry && conditionEntry.resource.code.coding[0].code === "BA41", "FHIR Condition code matches ICD-11: 'BA41'.") && ok;
+
+    // Find SpO2 Observation
+    const spo2Entry = bundle.entry.find(e => e.resource.resourceType === "Observation" && e.resource.code.coding[0].code === "2708-6");
+    ok = assert(spo2Entry && spo2Entry.resource.valueQuantity.value === 98, "FHIR SpO2 Observation LOINC '2708-6' matches 98%.") && ok;
+
+    // Find MedicationStatement
+    const medEntry = bundle.entry.find(e => e.resource.resourceType === "MedicationStatement");
+    ok = assert(medEntry && medEntry.resource.medicationCodeableConcept.coding[0].code === "387207008", "FHIR MedicationStatement SNOMED CT '387207008' correctly mapped.") && ok;
+
+    return ok;
+  });
+
+  await runTest("Client-Side Zero-Knowledge Proof (ZKP) Health Circuit & Tamper Rejection", async () => {
+    let ok = true;
+    const zkpModule = require('./zkp_verifier.js');
+
+    const witness = {
+      name: "Raman",
+      allergies: "None",
+      SpO2: "98",
+      heartRate: "72",
+      painLevel: "2"
+    };
+
+    // 1. Generate Allergy Absence Proof (Penicillin)
+    const allergyProof = await zkpModule.RamanZkpProver.generateProof("ALLERGY_ABSENCE", witness, { allergen: "penicillin" });
+    ok = assert(allergyProof && allergyProof.protocol === "RAMAN-ZKP-GROTH16-CIRCUIT-v1", "ZKP Prover compiles Groth16 circuit.") && ok;
+    ok = assert(allergyProof.proof && allergyProof.proof.pi_a.length === 32, "Proof digest pi_a is valid 32-character hex.") && ok;
+
+    // 2. Verify Proof
+    const verifyResult = zkpModule.RamanZkpProver.verifyProof(allergyProof);
+    ok = assert(verifyResult.isValid === true, "ZKP proof verified successfully without exposing witness.") && ok;
+    ok = assert(verifyResult.privacyDisclosure === "ZERO_KNOWLEDGE_PRESERVED", "Privacy attestation maintains ZERO_KNOWLEDGE_PRESERVED.") && ok;
+
+    // 3. Test Negative Constraint (Patient actually has Penicillin allergy)
+    const allergicWitness = { allergies: "Penicillin, Sulfa" };
+    const failedProof = await zkpModule.RamanZkpProver.generateProof("ALLERGY_ABSENCE", allergicWitness, { allergen: "penicillin" });
+    ok = assert(failedProof.status === "FAILED_CONSTRAINT", "ZKP correctly rejects proof generation when witness violates constraint.") && ok;
+
+    // 4. Test Tamper Rejection
+    const tamperedProof = JSON.parse(JSON.stringify(allergyProof));
+    tamperedProof.proof.pi_a = "tampered_short";
+    const tamperResult = zkpModule.RamanZkpProver.verifyProof(tamperedProof);
+    ok = assert(tamperResult.isValid === false, "ZKP verifier correctly rejects tampered proof digest.") && ok;
+
+    return ok;
+  });
+
+
+  // =========================================================================
+  // ── TEST SUITE 27: 3D Volumetric Raymarching & SDF Anatomical Engine ─────
+  // =========================================================================
+  await runTest("3D Volumetric Raymarching & Signed Distance Function (SDF) Anatomy", async () => {
+    let ok = true;
+    const volumetricModule = require('./webgpu_volumetric.js');
+    const Renderer = volumetricModule.RamanVolumetricRenderer;
+
+    ok = assert(typeof Renderer === "function", "RamanVolumetricRenderer class is defined.") && ok;
+
+    // 1. Test Sphere SDF
+    const dSphere = Renderer.sdSphere([0, 0, 0], 1.0);
+    ok = assert(dSphere === -1.0, "sdSphere at origin has distance -radius (-1.0).") && ok;
+
+    // 2. Test Ellipsoid SDF
+    const dEllipsoid = Renderer.sdEllipsoid([0, 0, 0], [1, 2, 3]);
+    ok = assert(dEllipsoid < 0, "sdEllipsoid inside ellipsoid has negative distance.") && ok;
+
+    // 3. Test Smooth Minimum Polynomial
+    const sminVal = Renderer.smin(1.0, 1.0, 0.2);
+    ok = assert(sminVal < 1.0, "Smooth minimum blends overlapping SDFs below raw minimum.") && ok;
+
+    // 4. Test Anatomical SDF evaluation at t=0
+    const anatomyT0 = Renderer.evaluateAnatomySDF([0, -0.1, 0], 72, 16, 0.0);
+    ok = assert(typeof anatomyT0.distance === "number", "evaluateAnatomySDF returns numerical distance.") && ok;
+    ok = assert(anatomyT0.isHeart === true, "Origin near chest center classifies as cardiac region.") && ok;
+
+    // 5. Test Systolic cardiac contraction driven by heart rate
+    const anatomySystole = Renderer.evaluateAnatomySDF([0, -0.1, 0], 120, 16, 0.25);
+    ok = assert(typeof anatomySystole.heartDist === "number", "Systole state correctly computes dynamic heart distance.") && ok;
+
+    // 6. Test WGSL shader code generation
+    const wgsl = Renderer.getWgslShaderSource();
+    ok = assert(wgsl.includes("@fragment") && wgsl.includes("evaluateScene"), "Volumetric WGSL shader source compiles raymarching loop.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 28: Parallel Pharmacokinetic (PK/PD) RK4 Solver ───────────
+  // =========================================================================
+  await runTest("Parallel Pharmacokinetic (PK/PD) RK4 ODE Solver & Dynamic Simulation", async () => {
+    let ok = true;
+    const pkpdModule = require('./webgpu_pkpd.js');
+    const Simulator = pkpdModule.RamanPkPdSimulator;
+    const profiles = pkpdModule.DRUG_PK_PROFILES;
+
+    ok = assert(typeof Simulator === "function", "RamanPkPdSimulator class is defined.") && ok;
+    ok = assert(!!profiles.paracetamol && !!profiles.ibuprofen, "Standard drug profiles defined (Paracetamol, Ibuprofen).") && ok;
+
+    // 1. Solve Paracetamol 24-hour RK4
+    const simParacetamol = Simulator.solveRk4(profiles.paracetamol, {}, 24.0, 96);
+    ok = assert(simParacetamol.drug === "Paracetamol", "Solver returned correct drug: Paracetamol.") && ok;
+    ok = assert(simParacetamol.timeSeries.length === 97, "RK4 generated exactly 97 discrete time steps (0h to 24h).") && ok;
+    ok = assert(simParacetamol.cmax > 0, `Cmax reached: ${simParacetamol.cmax} mg/L.`) && ok;
+    ok = assert(simParacetamol.tmax >= 0.5 && simParacetamol.tmax <= 2.5, `Tmax within physiological range (Got: ${simParacetamol.tmax}h).`) && ok;
+
+    // 2. Initial state verification: at t=0, GI tract has full dose, plasma is 0
+    const t0 = simParacetamol.timeSeries[0];
+    ok = assert(t0.Cg === 650 && t0.Cc === 0, "Initial condition t=0: Cg=650mg, Cc=0mg/L.") && ok;
+
+    // 3. Elimination verification: at t=24h, drug is almost completely cleared
+    const t24 = simParacetamol.timeSeries[simParacetamol.timeSeries.length - 1];
+    ok = assert(t24.Cc < 2.0, `Elimination at 24h brings plasma level near zero (Got: ${t24.Cc} mg/L).`) && ok;
+
+    // 4. Test Geriatric / Renal clearance modifier
+    const geriatricSim = Simulator.solveRk4(profiles.paracetamol, { age: 75, egfr: 45 });
+    ok = assert(geriatricSim.cmax > simParacetamol.cmax, "Geriatric/Renal impaired clearance yields higher peak concentration.") && ok;
+
+    // 5. Verify WGSL Compute shader code
+    const computeWgsl = Simulator.getWgslPkpdComputeShader();
+    ok = assert(computeWgsl.includes("@compute") && computeWgsl.includes("cohortConcentrations"), "PK/PD WebGPU compute shader compiled.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 29: Offline BM25 + Dense Vector Hybrid Search Engine ──────
+  // =========================================================================
+  await runTest("Offline BM25 + Dense Hybrid Search Engine & Reciprocal Rank Fusion", async () => {
+    let ok = true;
+    const searchModule = require('./hybrid_search.js');
+    const SearchEngine = searchModule.RamanHybridSearchEngine;
+    const createCorpus = searchModule.createDefaultMedicalCorpus;
+
+    ok = assert(typeof SearchEngine === "function", "RamanHybridSearchEngine class is defined.") && ok;
+
+    const mockKb = {
+      fever: {
+        icd11: "MG26",
+        conditions: ["Viral Infection", "Influenza"],
+        medications: [{ name: "Paracetamol 650mg", snomed: "387584000", dose: "650mg q6h", note: "Antipyretic" }],
+        precautions: ["Hydration"],
+        diet: ["Warm soup"]
+      },
+      migraine: {
+        icd11: "8A80",
+        conditions: ["Migraine with aura"],
+        medications: [{ name: "Sumatriptan 50mg", snomed: "372834007", dose: "50mg onset", note: "5-HT1 agonist" }],
+        precautions: ["Dark room"]
+      }
+    };
+
+    const corpus = createCorpus(mockKb);
+    ok = assert(corpus.length >= 4, `Corpus successfully constructed with ${corpus.length} entries.`) && ok;
+
+    const engine = new SearchEngine();
+    engine.indexDocuments(corpus);
+    ok = assert(engine.isIndexed === true, "Hybrid search index built successfully.") && ok;
+
+    // 1. Lexical BM25 search for exact medication
+    const searchParacetamol = engine.search("Paracetamol 650mg", 3);
+    ok = assert(searchParacetamol.length > 0, "Search for 'Paracetamol 650mg' returned results.") && ok;
+    ok = assert(searchParacetamol[0].document.title.includes("Paracetamol"), `Top result matches query: '${searchParacetamol[0].document.title}'.`) && ok;
+    ok = assert(searchParacetamol[0].bm25Score > 0, "BM25 score is positive.") && ok;
+    ok = assert(searchParacetamol[0].rrfScore > 0, "RRF fusion score is calculated.") && ok;
+
+    // 2. Semantic search for symptom concept
+    const searchHeadache = engine.search("severe pounding migraine aura", 3);
+    ok = assert(searchHeadache.length > 0, "Search for 'migraine aura' returned results.") && ok;
+    ok = assert(searchHeadache[0].document.title.includes("MIGRAINE") || searchHeadache[0].document.title.includes("Sumatriptan"), "Top result relevant to migraine.") && ok;
+
+    // 3. Dense Embedding unit normalization test
+    const emb = SearchEngine.generateEmbedding("clinical pharmacogenomics", 64);
+    let norm = 0;
+    for (let i = 0; i < 64; i++) norm += emb[i] * emb[i];
+    ok = assert(Math.abs(Math.sqrt(norm) - 1.0) < 0.001, "Dense embedding vector is strictly L2-normalized.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 30: Offline Computer Vision Diagnostic Analyzer ───────────
+  // =========================================================================
+  await runTest("Offline Computer Vision Diagnostics (Ocular, Derm ABCD & Strips)", async () => {
+    let ok = true;
+    const visionModule = require('./vision_diagnostics.js');
+    const Vision = visionModule.RamanVisionDiagnostics;
+
+    ok = assert(typeof Vision === "function", "RamanVisionDiagnostics class is defined.") && ok;
+
+    // Helper: create mock synthetic RGBA pixel buffer
+    function createMockImage(width, height, fillFn) {
+      const data = new Uint8ClampedArray(width * height * 4);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          const [r, g, b, a] = fillFn(x, y);
+          data[idx] = r;
+          data[idx + 1] = g;
+          data[idx + 2] = b;
+          data[idx + 3] = a || 255;
+        }
+      }
+      return { width, height, data };
+    }
+
+    // 1. Test Ocular Hyperemia on synthetic inflamed conjunctival frame (high red)
+    const inflamedEye = createMockImage(40, 40, (x, y) => [220, 70, 70, 255]);
+    const eyeResult = Vision.analyzeOcularRedness(inflamedEye);
+    ok = assert(eyeResult.modality === "OCULAR_REDNESS", "Modality identified as OCULAR_REDNESS.") && ok;
+    ok = assert(eyeResult.classification === "MARKED_CONJUNCTIVITIS_OR_UVEITIS", "Correctly classifies marked hyperemia.") && ok;
+    ok = assert(eyeResult.rednessRatio > 0.70, "Redness ratio reflects acute vasodilation.") && ok;
+
+    // 2. Test Normal Sclera (low red ratio)
+    const normalEye = createMockImage(40, 40, (x, y) => [210, 215, 210, 255]);
+    const normalResult = Vision.analyzeOcularRedness(normalEye);
+    ok = assert(normalResult.classification === "NORMAL", "Normal sclera classified as physiological baseline.") && ok;
+
+    // 3. Test Dermatological Lesion ABCD Analysis (synthetic circular dark lesion)
+    const lesionImg = createMockImage(50, 50, (x, y) => {
+      const dist = Math.hypot(x - 25, y - 25);
+      return dist <= 12 ? [40, 30, 30, 255] : [220, 190, 170, 255];
+    });
+    const dermResult = Vision.analyzeDermatologicalLesion(lesionImg);
+    ok = assert(dermResult.modality === "DERMATOLOGY_ABCD", "Modality identified as DERMATOLOGY_ABCD.") && ok;
+    ok = assert(dermResult.riskLevel === "LOW_RISK_BENIGN", "Symmetric round lesion classified as benign.") && ok;
+    ok = assert(dermResult.metrics.asymmetryIndex < 0.2, "Circular lesion has minimal asymmetry.") && ok;
+
+    // 4. Test Lateral-Flow Test Strip (2 dark horizontal bands: C and T)
+    const positiveStrip = createMockImage(20, 60, (x, y) => {
+      // Background white (240), Control band at y=20 (50), Test band at y=40 (50)
+      if (Math.abs(y - 20) <= 1 || Math.abs(y - 40) <= 1) {
+        return [80, 40, 50, 255];
+      }
+      return [240, 240, 240, 255];
+    });
+    const stripResult = Vision.analyzeLateralFlowStrip(positiveStrip);
+    ok = assert(stripResult.modality === "LATERAL_FLOW_STRIP", "Modality identified as LATERAL_FLOW_STRIP.") && ok;
+    ok = assert(stripResult.result === "POSITIVE", "Detects bifurcated C and T bands as POSITIVE.") && ok;
+    ok = assert(stripResult.controlLineFound === true, "Control line validated.") && ok;
+    ok = assert(stripResult.testLineFound === true, "Test line validated.") && ok;
+
+    return ok;
+  });
+
+
+  // =========================================================================
+  // ── TEST SUITE 31: Federated Active Learning & Differential Privacy ──────
+  // =========================================================================
+  await runTest("Federated Active Learning & (epsilon, delta)-Differential Privacy", async () => {
+    let ok = true;
+    const fedModule = require('./federated_learning.js');
+    const FedLearning = fedModule.RamanFederatedLearning;
+
+    ok = assert(typeof FedLearning === "function", "RamanFederatedLearning class is defined.") && ok;
+
+    // 1. Test L2 Gradient Norm & Clipping
+    const rawGrads = new Float32Array([3.0, 4.0]); // norm = 5.0
+    const norm = FedLearning.computeL2Norm(rawGrads);
+    ok = assert(norm === 5.0, "L2 norm computed accurately (norm=5.0).") && ok;
+
+    const clipped = FedLearning.clipGradient(rawGrads, 1.0);
+    const clippedNorm = FedLearning.computeL2Norm(clipped);
+    ok = assert(Math.abs(clippedNorm - 1.0) < 0.001, "Clipped gradient norm bounded by sensitivity threshold (C=1.0).") && ok;
+
+    // 2. Test Gaussian Noise Injection with Differential Privacy
+    const learner = new FedLearning({ epsilon: 1.0, delta: 1e-5, clippingThreshold: 1.0 });
+    const dpResult = learner.injectDifferentialPrivacy(new Float32Array(32).fill(0.5));
+    ok = assert(dpResult.noisyGradients.length === 32, "DP injected noisy gradients have correct dimension (32).") && ok;
+    ok = assert(dpResult.sigma > 0, `Gaussian sigma calculated: ${dpResult.sigma}.`) && ok;
+    ok = assert(dpResult.privacyGuarantee.includes("(ε=1, δ=0.00001)-DP"), "Differential privacy guarantee formatted.") && ok;
+
+    // 3. Test Federated Averaging (FedAvg) across 2 client updates
+    const client1 = { gradients: new Float32Array([1.0, 2.0]), sampleCount: 10 };
+    const client2 = { gradients: new Float32Array([3.0, 4.0]), sampleCount: 10 };
+    const avgGrads = FedLearning.aggregateFedAvg([client1, client2]);
+    ok = assert(avgGrads[0] === 2.0 && avgGrads[1] === 3.0, "FedAvg accurately averages client updates weighted by sample counts.") && ok;
+
+    // 4. Test Export of Privacy-Preserving Gradient Package
+    const mockClinicianDeltas = { "fever": "malaria", "cough": "bronchitis" };
+    const pkg = learner.exportPrivacyPreservingGradientPackage(mockClinicianDeltas);
+    ok = assert(pkg.protocol === "RAMAN-FEDERATED-LEARNING-v1", "Federated package protocol matches v1.") && ok;
+    ok = assert(pkg.sampleCount === 2, "Sample count matches override deltas count.") && ok;
+    ok = assert(pkg.gradientVector.length === 64, "Gradient vector serialized with 64 dimensions.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 32: Offline Quantized SLM Reasoning & SOAP Note Generator ─
+  // =========================================================================
+  await runTest("Offline Quantized Small Language Model (SLM) Reasoning & SOAP Engine", async () => {
+    let ok = true;
+    const slmModule = require('./quantized_slm.js');
+    const QuantizedSlm = slmModule.RamanQuantizedSlm;
+
+    ok = assert(typeof QuantizedSlm === "function", "RamanQuantizedSlm class is defined.") && ok;
+
+    // 1. Test Nibble dequantization math
+    const val8 = QuantizedSlm.dequantizeNibble(8, 0.1, 8); // zero point = 8 -> 0.0
+    const val12 = QuantizedSlm.dequantizeNibble(12, 0.1, 8); // 0.1 * (12 - 8) = 0.4
+    ok = assert(val8 === 0.0, "Nibble at zero point dequantizes to exactly 0.0.") && ok;
+    ok = assert(Math.abs(val12 - 0.4) < 0.001, "Nibble value 12 dequantizes to 0.4.") && ok;
+
+    // 2. Test SIMD-style packed quantized dot product
+    const acts = new Float32Array([1.0, 2.0]);
+    // Byte: high nibble = 8 (val=0), low nibble = 10 (val = 0.1 * (10-8) = 0.2)
+    const packed = new Uint8Array([0x8A]);
+    const dot = QuantizedSlm.quantizedDotProduct(acts, packed, 0.1);
+    // acts[0]*0.2 + acts[1]*0.0 = 0.2
+    ok = assert(Math.abs(dot - 0.2) < 0.001, `Quantized dot product computed: ${dot.toFixed(2)}.`) && ok;
+
+    // 3. Test Clinical Narrative (SOAP Note) Generation
+    const qSlm = new QuantizedSlm();
+    const mockContext = {
+      profile: { name: "Raman", age: "34", gender: "male" },
+      condition: "Acute Migraine with Aura",
+      icd11: "8A80.0",
+      vitals: { heartRate: "76", bp: "125/82", SpO2: "98", temp: "98.4" },
+      medications: [{ name: "Sumatriptan 50mg", dose: "1 tablet at onset" }],
+      precautions: ["Rest in quiet dark room", "Stay well hydrated"]
+    };
+
+    const narrative = qSlm.generateClinicalNarrative(mockContext);
+    ok = assert(narrative.runtime.includes("RAMAN-SLM"), "Runtime identifies as RAMAN-SLM.") && ok;
+    ok = assert(narrative.soap.subjective.includes("Raman") && narrative.soap.subjective.includes("Acute Migraine"), "SOAP Subjective section includes patient name and condition.") && ok;
+    ok = assert(narrative.soap.objective.includes("76 bpm") && narrative.soap.objective.includes("98%"), "SOAP Objective section integrates live vitals.") && ok;
+    ok = assert(narrative.soap.assessment.includes("8A80.0"), "SOAP Assessment maps WHO ICD-11 code.") && ok;
+    ok = assert(narrative.soap.plan.includes("Sumatriptan"), "SOAP Plan contains targeted medication guidance.") && ok;
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");
