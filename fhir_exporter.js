@@ -224,6 +224,72 @@ function generateFhirR4Bundle(profile, sessionData = {}, vitals = {}) {
     }
   }
 
+  // 3D. Step Count (LOINC 55423-8: Number of steps in 24 hour Measured)
+  const rawSteps = vitals.steps || profile.steps || (typeof window !== 'undefined' && window.ramanBle ? window.ramanBle.steps : 0);
+  const stepsNum = parseInt(rawSteps, 10);
+  if (!isNaN(stepsNum) && stepsNum > 0) {
+    entries.push({
+      fullUrl: `urn:uuid:obs-steps-${Date.now()}`,
+      resource: {
+        resourceType: "Observation",
+        status: "final",
+        category: [{
+          coding: [{
+            system: "http://terminology.hl7.org/CodeSystem/observation-category",
+            code: "activity",
+            display: "Activity"
+          }]
+        }],
+        code: {
+          coding: [{
+            system: "http://loinc.org",
+            code: "55423-8",
+            display: "Number of steps in 24 hour Measured"
+          }]
+        },
+        subject: { reference: `urn:uuid:${patientId}` },
+        effectiveDateTime: timestamp,
+        valueQuantity: {
+          value: stepsNum,
+          unit: "steps",
+          system: "http://unitsofmeasure.org",
+          code: "{steps}"
+        }
+      }
+    });
+  }
+
+  // 3E. Wearable Device Resource (if connected)
+  const deviceModel = vitals.deviceModel || profile.deviceModel || (typeof window !== 'undefined' && window.ramanBle && window.ramanBle.deviceModel ? window.ramanBle.deviceModel : null);
+  if (deviceModel) {
+    const devId = `device-${healthId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}-wearable`;
+    entries.push({
+      fullUrl: `urn:uuid:${devId}`,
+      resource: {
+        resourceType: "Device",
+        id: devId,
+        status: "active",
+        deviceName: [
+          {
+            name: deviceModel,
+            type: "user-friendly-name"
+          }
+        ],
+        type: {
+          coding: [
+            {
+              system: "http://snomed.info/sct",
+              code: "86184003",
+              display: "Wearable device"
+            }
+          ],
+          text: deviceModel
+        },
+        patient: { reference: `urn:uuid:${patientId}` }
+      }
+    });
+  }
+
   // 4. Medication Statements (SNOMED CT coded)
   const medications = sessionData.medications || [];
   medications.forEach((med, idx) => {

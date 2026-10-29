@@ -10,6 +10,11 @@ test.describe('Milestone 2: Web Bluetooth BLE, HL7 FHIR R4 & Client-Side ZKP', (
       return {
         hasBleManager: !!window.RamanBleManager,
         hasRamanBleInstance: !!window.ramanBle,
+        hasXiaomiSteps: typeof window.parseXiaomiSteps === 'function',
+        hasXiaomiBattery: typeof window.parseXiaomiBattery === 'function',
+        hasXiaomiSpO2: typeof window.parseXiaomiSpO2 === 'function',
+        hasXiaomiBrand: typeof window.isXiaomiBrand === 'function',
+        hasHrvCalculator: typeof window.calculateHrvMetrics === 'function',
         hasFhirGenerator: typeof window.generateFhirR4Bundle === 'function',
         hasFhirDownloader: typeof window.downloadFhirR4Json === 'function',
         hasZkpProver: !!window.RamanZkpProver,
@@ -20,6 +25,11 @@ test.describe('Milestone 2: Web Bluetooth BLE, HL7 FHIR R4 & Client-Side ZKP', (
 
     expect(apiStatus.hasBleManager).toBe(true);
     expect(apiStatus.hasRamanBleInstance).toBe(true);
+    expect(apiStatus.hasXiaomiSteps).toBe(true);
+    expect(apiStatus.hasXiaomiBattery).toBe(true);
+    expect(apiStatus.hasXiaomiSpO2).toBe(true);
+    expect(apiStatus.hasXiaomiBrand).toBe(true);
+    expect(apiStatus.hasHrvCalculator).toBe(true);
     expect(apiStatus.hasFhirGenerator).toBe(true);
     expect(apiStatus.hasFhirDownloader).toBe(true);
     expect(apiStatus.hasZkpProver).toBe(true);
@@ -28,10 +38,14 @@ test.describe('Milestone 2: Web Bluetooth BLE, HL7 FHIR R4 & Client-Side ZKP', (
 
     // Verify DOM triggers exist
     const btnBle = await page.$('#btnBleConnect');
+    const wearableInfo = await page.$('#bleWearableInfo');
+    const bleHelpTip = await page.$('#bleHelpTip');
     const btnFhir = await page.$('#btnExportFhir');
     const btnZkp = await page.$('#btnOpenZkp');
 
     expect(btnBle).not.toBeNull();
+    expect(wearableInfo).not.toBeNull();
+    expect(bleHelpTip).not.toBeNull();
     expect(btnFhir).not.toBeNull();
     expect(btnZkp).not.toBeNull();
   });
@@ -68,6 +82,88 @@ test.describe('Milestone 2: Web Bluetooth BLE, HL7 FHIR R4 & Client-Side ZKP', (
     expect(telemetryTestResult.spo2InputValue).toBe('99');
   });
 
+  test('should test Xiaomi wearable BLE telemetry parsing, optical continuous PPG activation, and badge sync', async ({ page }) => {
+    await loadRamanApp(page);
+
+    const xiaomiResult = await page.evaluate(() => {
+      const ble = window.ramanBle;
+      if (!ble) return { error: 'No ble instance' };
+
+      // Set Xiaomi Device Identity
+      ble.isXiaomiDevice = true;
+      ble.deviceModel = "Mi Smart Band 8";
+      ble.setState("STREAMING");
+
+      // 1. Synthetic 32-bit LE Steps DataView (10,420 steps, 7,500m, 320 kcal)
+      const stepsBuffer = new ArrayBuffer(12);
+      const stepsView = new DataView(stepsBuffer);
+      stepsView.setUint32(0, 10420, true);
+      stepsView.setUint32(4, 7500, true);
+      stepsView.setUint32(8, 320, true);
+      ble.handleXiaomiSteps(stepsView);
+
+      // 2. Synthetic Xiaomi Battery DataView (Byte 1 = 85%, Byte 2 = 1 [Charging])
+      const batBuf = new Uint8Array([0x00, 85, 0x01]);
+      ble.handleXiaomiBattery(new DataView(batBuf.buffer));
+
+      // 3. Synthetic Xiaomi SpO2 DataView (Byte 1 = 97%)
+      const spo2Buf = new Uint8Array([0x00, 97]);
+      ble.handleXiaomiSpO2(new DataView(spo2Buf.buffer));
+
+      // 4. Synthetic Continuous PPG Heart Rate with RR-Intervals (Flags = 0x10 [RR-Present], HR = 76, RR = 800, 820)
+      const hrWithRrBuf = new Uint8Array([0x10, 76, 0x20, 0x03, 0x34, 0x03]);
+      ble.handleHeartRateMeasurement(new DataView(hrWithRrBuf.buffer));
+
+      const infoEl = document.getElementById('bleWearableInfo');
+      const labelEl = document.getElementById('bleStatusLabel');
+      const spo2Input = document.getElementById('patientSpO2');
+
+      const infoTextBefore = infoEl ? infoEl.textContent : '';
+      const infoDisplayBefore = infoEl ? window.getComputedStyle(infoEl).display : '';
+      const labelText = labelEl ? labelEl.textContent : '';
+
+      // Test Disconnect Cleanup
+      ble.disconnect();
+      const infoDisplayAfter = infoEl ? window.getComputedStyle(infoEl).display : '';
+
+      return {
+        brandValidation: {
+          miBand: window.isXiaomiBrand("Mi Smart Band 8"),
+          amazfit: window.isXiaomiBrand("Amazfit GTS 4"),
+          redmi: window.isXiaomiBrand("Redmi Watch 3"),
+          thirdParty: window.isXiaomiBrand("Polar H10")
+        },
+        infoText: infoTextBefore,
+        infoDisplayBefore,
+        labelText,
+        spo2InputValue: spo2Input ? spo2Input.value : null,
+        infoDisplayAfter,
+        stateAfter: ble.state,
+        isXiaomiAfter: ble.isXiaomiDevice
+      };
+    });
+
+    // Verify brand filters
+    expect(xiaomiResult.brandValidation.miBand).toBe(true);
+    expect(xiaomiResult.brandValidation.amazfit).toBe(true);
+    expect(xiaomiResult.brandValidation.redmi).toBe(true);
+    expect(xiaomiResult.brandValidation.thirdParty).toBe(false);
+
+    // Verify telemetry DOM badge contents
+    expect(xiaomiResult.labelText).toBe('📡 MI SMART BAND 8: STREAMING');
+    expect(xiaomiResult.infoText).toContain('Mi Smart Band 8');
+    expect(xiaomiResult.infoText).toContain('85%');
+    expect(xiaomiResult.infoText).toContain('10,420 steps');
+    expect(xiaomiResult.infoText).toContain('HRV');
+    expect(xiaomiResult.infoDisplayBefore).toBe('flex');
+    expect(xiaomiResult.spo2InputValue).toBe('97');
+
+    // Verify clean disconnect
+    expect(xiaomiResult.infoDisplayAfter).toBe('none');
+    expect(xiaomiResult.stateAfter).toBe('DISCONNECTED');
+    expect(xiaomiResult.isXiaomiAfter).toBe(false);
+  });
+
   test('should generate standards-compliant HL7 FHIR Release 4 document bundle', async ({ page }) => {
     await loadRamanApp(page);
 
@@ -81,7 +177,9 @@ test.describe('Milestone 2: Web Bluetooth BLE, HL7 FHIR R4 & Client-Side ZKP', (
         bp: '120/80',
         heartRate: '78',
         temp: '98.6',
-        SpO2: '99'
+        SpO2: '99',
+        steps: 10420,
+        deviceModel: 'Mi Smart Band 8'
       };
 
       const mockSession = {
@@ -123,6 +221,15 @@ test.describe('Milestone 2: Web Bluetooth BLE, HL7 FHIR R4 & Client-Side ZKP', (
     const medStatement = fhirBundle.entry.find(e => e.resource.resourceType === 'MedicationStatement').resource;
     expect(medStatement.medicationCodeableConcept.coding[0].system).toBe('http://snomed.info/sct');
     expect(medStatement.medicationCodeableConcept.coding[0].code).toBe('387207008');
+
+    // Check Wearable Steps Observation
+    const stepsObs = fhirBundle.entry.find(e => e.resource.resourceType === 'Observation' && e.resource.code.coding[0].code === '55423-8').resource;
+    expect(stepsObs.valueQuantity.value).toBe(10420);
+
+    // Check Connected Wearable Device Resource
+    const deviceRes = fhirBundle.entry.find(e => e.resource.resourceType === 'Device').resource;
+    expect(deviceRes.deviceName[0].name).toBe('Mi Smart Band 8');
+    expect(deviceRes.type.coding[0].code).toBe('86184003');
   });
 
   test('should open ZKP modal, generate cryptographic proof, and verify in-browser', async ({ page }) => {

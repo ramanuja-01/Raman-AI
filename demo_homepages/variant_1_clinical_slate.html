@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <title>RAMAN AI – Variant 1: Clinical Slate & Aurora</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #090d16;
+      --surface: #0f172a;
+      --surface-elevated: #15203b;
+      --surface-glass: rgba(15, 23, 42, 0.75);
+      --border: rgba(148, 163, 184, 0.12);
+      --border-focus: rgba(6, 182, 212, 0.4);
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --cyan: #06b6d4;
+      --cyan-soft: rgba(6, 182, 212, 0.12);
+      --emerald: #10b981;
+      --emerald-soft: rgba(16, 185, 129, 0.12);
+      --rose: #f43f5e;
+      --rose-soft: rgba(244, 63, 94, 0.12);
+      --amber: #f59e0b;
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.25);
+      --shadow-md: 0 10px 30px -10px rgba(0,0,0,0.5);
+      --header-h: 60px;
+      --bottom-nav-h: 64px;
+    }
+
+    html.light {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-elevated: #f1f5f9;
+      --surface-glass: rgba(255, 255, 255, 0.85);
+      --border: rgba(100, 116, 139, 0.16);
+      --border-focus: rgba(2, 132, 199, 0.5);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-dim: #94a3b8;
+      --cyan: #0284c7;
+      --cyan-soft: rgba(2, 132, 199, 0.08);
+      --emerald: #059669;
+      --emerald-soft: rgba(5, 150, 105, 0.08);
+      --rose: #e11d48;
+      --shadow-sm: 0 2px 6px rgba(0,0,0,0.06);
+      --shadow-md: 0 12px 32px -8px rgba(15,23,42,0.08);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font-main);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      letter-spacing: -0.01em;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    /* Ambient soft background gradient */
+    .ambient-glow {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 900px;
+      height: 380px;
+      background: radial-gradient(ellipse at center, rgba(6, 182, 212, 0.09) 0%, rgba(16, 185, 129, 0.04) 40%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* Header */
+    header.slate-header {
+      height: var(--header-h);
+      background: var(--surface-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      background: linear-gradient(135deg, var(--cyan), var(--emerald));
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1.05rem;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.25);
+    }
+    .brand-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .version-tag {
+      font-size: 0.68rem;
+      font-weight: 600;
+      background: var(--cyan-soft);
+      color: var(--cyan);
+      padding: 2px 7px;
+      border-radius: 99px;
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      letter-spacing: 0.02em;
+    }
+
+    .header-center-status {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--surface-elevated);
+      padding: 5px 12px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+    }
+    .pulse-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--emerald);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--emerald);
+      animation: pulse 2s infinite ease-in-out;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .btn-icon {
+      height: 36px;
+      padding: 0 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.78rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+    .btn-icon:hover {
+      background: var(--surface-elevated);
+      border-color: var(--cyan);
+      transform: translateY(-1px);
+    }
+
+    /* Main 3-Column Layout */
+    .app-workspace {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 310px 1fr 340px;
+      gap: 20px;
+      max-width: 1720px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 20px;
+      height: calc(100vh - var(--header-h));
+      overflow: hidden;
+    }
+
+    /* Column Container */
+    .col-pane {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      height: 100%;
+      overflow-y: auto;
+      padding-right: 4px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .col-pane::-webkit-scrollbar { width: 5px; }
+    .col-pane::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Card Containers */
+    .slate-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      transition: border-color 0.2s ease;
+    }
+    .slate-card:hover {
+      border-color: rgba(148, 163, 184, 0.22);
+    }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .card-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--cyan);
+      background: var(--cyan-soft);
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+
+    /* Patient Profile Card */
+    .patient-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .patient-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, rgba(6, 182, 212, 0.15), rgba(16, 185, 129, 0.15));
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+    .patient-info h3 {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+    .patient-info p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Vitals Grid */
+    .vitals-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .vital-tile {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .vital-label {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .vital-val-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 4px;
+    }
+    .vital-number {
+      font-family: var(--font-mono);
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .vital-unit {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+    }
+    .vital-tile.highlight-emerald .vital-number { color: var(--emerald); }
+    .vital-tile.highlight-cyan .vital-number { color: var(--cyan); }
+
+    /* Pill Badges */
+    .tag-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .tag-pill {
+      font-size: 0.7rem;
+      font-weight: 500;
+      padding: 4px 9px;
+      border-radius: 6px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+    .tag-pill.allergy {
+      background: var(--rose-soft);
+      color: var(--rose);
+      border-color: rgba(244, 63, 94, 0.25);
+    }
+    .tag-pill.pgx {
+      background: var(--cyan-soft);
+      color: var(--cyan);
+      border-color: rgba(6, 182, 212, 0.25);
+    }
+
+    /* Center Pane: Consultation Stage */
+    .center-stage {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    .stage-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--surface-elevated);
+    }
+    .stage-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stage-session-id {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--cyan);
+      background: var(--cyan-soft);
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .chat-stream {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+
+    /* Chat Messages */
+    .msg-group {
+      display: flex;
+      gap: 12px;
+      max-width: 85%;
+    }
+    .msg-group.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+    .msg-group.ai .msg-avatar {
+      background: linear-gradient(135deg, var(--cyan), var(--emerald));
+      color: #fff;
+    }
+
+    .msg-bubble {
+      padding: 14px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.86rem;
+      line-height: 1.5;
+    }
+    .msg-group.ai .msg-bubble {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-top-left-radius: 4px;
+    }
+    .msg-group.user .msg-bubble {
+      background: linear-gradient(135deg, var(--cyan), #0284c7);
+      color: #ffffff;
+      border-top-right-radius: 4px;
+      font-weight: 500;
+    }
+
+    /* Prescription Card in Chat */
+    .rx-card {
+      background: rgba(6, 182, 212, 0.05);
+      border: 1px solid rgba(6, 182, 212, 0.25);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      margin-top: 10px;
+    }
+    .rx-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--cyan);
+      margin-bottom: 8px;
+    }
+    .rx-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    .rx-row:last-child { border-bottom: none; }
+    .rx-drug { font-weight: 600; color: var(--text); }
+    .rx-dose { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted); }
+
+    /* Input Deck */
+    .input-deck {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .quick-chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      scrollbar-width: none;
+    }
+    .quick-chips::-webkit-scrollbar { display: none; }
+    .chip-btn {
+      white-space: nowrap;
+      font-size: 0.74rem;
+      padding: 5px 11px;
+      border-radius: 99px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .chip-btn:hover {
+      background: var(--cyan-soft);
+      border-color: var(--cyan);
+      color: var(--cyan);
+    }
+
+    .input-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      transition: border-color 0.2s;
+    }
+    .input-box:focus-within {
+      border-color: var(--cyan);
+      box-shadow: 0 0 0 2px var(--cyan-soft);
+    }
+    .chat-textarea {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.88rem;
+      resize: none;
+      outline: none;
+      min-height: 24px;
+      max-height: 90px;
+    }
+    .chat-textarea::placeholder { color: var(--text-dim); }
+
+    .btn-send {
+      width: 34px;
+      height: 34px;
+      border-radius: 6px;
+      background: var(--cyan);
+      border: none;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .btn-send:hover { transform: scale(1.05); }
+
+    /* Right Pane: Anatomical Telemetry */
+    .organ-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .organ-card {
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .organ-card:hover, .organ-card.active {
+      border-color: var(--cyan);
+      color: var(--cyan);
+      background: var(--cyan-soft);
+    }
+
+    .body-map-wrap {
+      position: relative;
+      background: var(--surface-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 10px;
+    }
+
+    /* Bottom mobile navigation */
+    .mobile-tab-bar {
+      display: none;
+      height: var(--bottom-nav-h);
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: var(--surface-glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid var(--border);
+      z-index: 60;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 10px;
+    }
+    .tab-bar-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      font-family: inherit;
+      font-size: 0.68rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .tab-bar-item.active {
+      color: var(--cyan);
+    }
+    .tab-bar-item span:first-child { font-size: 1.15rem; }
+
+    /* Device Preview Floating Toolbar (for Demo showcase) */
+    .preview-mode-bar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--surface-glass);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: var(--shadow-md);
+      z-index: 100;
+    }
+    .preview-pill {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .preview-pill.active {
+      background: var(--cyan);
+      color: #fff;
+    }
+
+    /* =========================================================
+       RESPONSIVE ADAPTATIONS (Tablet & Mobile)
+       ========================================================= */
+    @media (max-width: 1200px) {
+      .app-workspace {
+        grid-template-columns: 280px 1fr;
+      }
+      .col-pane.telemetry-pane {
+        display: none;
+      }
+      .col-pane.telemetry-pane.show-drawer {
+        display: flex;
+        position: fixed;
+        right: 0;
+        top: var(--header-h);
+        bottom: 0;
+        width: 320px;
+        background: var(--surface);
+        border-left: 1px solid var(--border);
+        z-index: 40;
+        padding: 20px;
+      }
+      #btnToggleTelemetry {
+        display: flex !important;
+      }
+    }
+
+    @media (max-width: 860px) {
+      .slate-header {
+        padding: 0 16px;
+      }
+      .header-center-status { display: none; }
+      .app-workspace {
+        grid-template-columns: 1fr;
+        padding: 10px 12px calc(var(--bottom-nav-h) + 10px);
+        height: auto;
+        overflow: visible;
+      }
+      .col-pane.left-pane { display: none; }
+      .col-pane.left-pane.mobile-active { display: flex; }
+      .center-stage.mobile-hidden { display: none; }
+      .mobile-tab-bar { display: flex; }
+      .preview-mode-bar { bottom: 74px; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-glow"></div>
+
+  <!-- Main Sleek Header -->
+  <header class="slate-header">
+    <div class="brand-wrap">
+      <div class="brand-badge">R</div>
+      <div class="brand-title">
+        RAMAN AI
+        <span class="version-tag">CLINICAL SLATE · EXP 170</span>
+      </div>
+    </div>
+
+    <div class="header-center-status">
+      <div class="status-pill">
+        <span class="pulse-dot"></span>
+        <span>Offline Clinical Inference Engine Active</span>
+      </div>
+      <div class="status-pill" style="font-family: var(--font-mono); font-size: 0.7rem;">
+        <span style="color: var(--cyan);">LATENCY</span> 1.4ms
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button class="btn-icon" id="btnToggleTelemetry" style="display:none;" onclick="toggleTelemetryDrawer()">
+        <span>📊</span> <span>Telemetry</span>
+      </button>
+      <button class="btn-icon" onclick="toggleSlateTheme()">
+        <span id="themeIcon">🌙</span> <span id="themeLabel">Dark</span>
+      </button>
+      <button class="btn-icon" style="background: var(--cyan-soft); color: var(--cyan); border-color: rgba(6,182,212,0.3);">
+        <span>🗂️</span> <span>RMN-A3F9K2</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- 3-Column Studio Workspace -->
+  <main class="app-workspace" id="appWorkspace">
+
+    <!-- Left Column: Patient Profile & Health Ledger -->
+    <aside class="col-pane left-pane" id="paneProfile">
+      <!-- Patient Summary Card -->
+      <div class="slate-card">
+        <div class="card-header">
+          <span class="card-title">👤 Patient Record</span>
+          <span class="card-badge">Verified</span>
+        </div>
+        <div class="patient-row">
+          <div class="patient-avatar">🧑</div>
+          <div class="patient-info">
+            <h3>Ramanuja Pathy</h3>
+            <p>28 yrs · Male · Blood Type: O+</p>
+          </div>
+        </div>
+
+        <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 4px; font-weight: 600;">KNOWN ALLERGIES</div>
+        <div class="tag-container" style="margin-bottom: 12px;">
+          <span class="tag-pill allergy">⚠️ Penicillin (Amoxicillin)</span>
+          <span class="tag-pill allergy">⚠️ NSAIDs (Aspirin)</span>
+        </div>
+
+        <div style="font-size: 0.72rem; color: var(--text-dim); margin-bottom: 4px; font-weight: 600;">PGx METABOLIC TRAITS</div>
+        <div class="tag-container">
+          <span class="tag-pill pgx">🧬 G6PD Deficiency</span>
+          <span class="tag-pill pgx">🧬 CYP2D6 Poor Metabolizer</span>
+        </div>
+      </div>
+
+      <!-- Real-Time Physiological Vitals -->
+      <div class="slate-card">
+        <div class="card-header">
+          <span class="card-title">📊 Live Vitals Telemetry</span>
+          <span class="card-badge" style="color: var(--emerald); background: var(--emerald-soft);">BLE Synced</span>
+        </div>
+        <div class="vitals-grid">
+          <div class="vital-tile highlight-cyan">
+            <span class="vital-label">Heart Rate</span>
+            <div class="vital-val-wrap">
+              <span class="vital-number" id="valHR">72</span>
+              <span class="vital-unit">bpm</span>
+            </div>
+          </div>
+          <div class="vital-tile highlight-emerald">
+            <span class="vital-label">Blood Oxygen</span>
+            <div class="vital-val-wrap">
+              <span class="vital-number" id="valSpO2">98</span>
+              <span class="vital-unit">% SpO2</span>
+            </div>
+          </div>
+          <div class="vital-tile">
+            <span class="vital-label">Blood Pressure</span>
+            <div class="vital-val-wrap">
+              <span class="vital-number" id="valBP">118/76</span>
+              <span class="vital-unit">mmHg</span>
+            </div>
+          </div>
+          <div class="vital-tile">
+            <span class="vital-label">Body Temp</span>
+            <div class="vital-val-wrap">
+              <span class="vital-number" id="valTemp">98.4</span>
+              <span class="vital-unit">°F</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Medical Vault Summary -->
+      <div class="slate-card">
+        <div class="card-header">
+          <span class="card-title">📁 Local Medical Vault</span>
+          <span class="card-badge">3 Docs</span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: var(--surface-elevated); border-radius: 6px;">
+            <span>🫁 Chest_Xray_Dec2026.png</span>
+            <span style="color: var(--emerald); font-size: 0.68rem; font-weight: 600;">CLEAR</span>
+          </div>
+          <div style="font-size: 0.78rem; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; background: var(--surface-elevated); border-radius: 6px;">
+            <span>🧪 Lipid_Panel_Nov2026.pdf</span>
+            <span style="color: var(--cyan); font-size: 0.68rem; font-weight: 600;">PARSED</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Column: Modern Consultation Stage -->
+    <section class="center-stage" id="stageConsult">
+      <div class="stage-header">
+        <div class="stage-title">
+          <span>🩺</span>
+          <span>Bilingual Clinical Consultation</span>
+          <span style="font-size: 0.72rem; color: var(--text-muted); font-weight: 500;">(English &amp; Odia)</span>
+        </div>
+        <div class="stage-session-id">EN-US · SLM ENSEMBLE</div>
+      </div>
+
+      <div class="chat-stream" id="chatStream">
+        <!-- AI Welcome Message -->
+        <div class="msg-group ai">
+          <div class="msg-avatar">🤖</div>
+          <div class="msg-bubble">
+            Hello Ramanuja. I am <strong>RAMAN AI (Experiment No. 170)</strong>. All diagnostic NLP, vital staging, and allergy contraindication checks are compiled 100% locally in your browser sandbox at &lt; 2ms latency.
+            <br><br>
+            How are you feeling right now? You can describe any symptoms naturally, select an organ on the right, or upload a lab report.
+          </div>
+        </div>
+
+        <!-- Sample Conversation Exchange -->
+        <div class="msg-group user">
+          <div class="msg-avatar">🧑</div>
+          <div class="msg-bubble">
+            I've had a burning stomach pain and nausea for the past 2 days, especially after meals.
+          </div>
+        </div>
+
+        <div class="msg-group ai">
+          <div class="msg-avatar">🤖</div>
+          <div class="msg-bubble">
+            Based on your reported epigastric burning and postprandial nausea, our Bayesian SLM identifies high probability for **Gastritis / Dyspepsia (ICD-11: MD80)**.
+            
+            <!-- Dynamic Prescription Card -->
+            <div class="rx-card">
+              <div class="rx-header">
+                <span>💊 CLINICAL FORMULARY RECOMMENDATIONS</span>
+                <span style="color: var(--emerald);">ALLERGY-CHECK PASSED</span>
+              </div>
+              <div class="rx-row">
+                <span class="rx-drug">Pantoprazole 40mg</span>
+                <span class="rx-dose">1 tab OD before breakfast (14 days)</span>
+              </div>
+              <div class="rx-row">
+                <span class="rx-drug">Sucralfate Suspension</span>
+                <span class="rx-dose">10ml TDS 1 hr before meals</span>
+              </div>
+              <div style="font-size: 0.7rem; color: var(--rose); margin-top: 6px;">
+                ⚠️ Note: NSAIDs (Aspirin/Ibuprofen) are strictly contraindicated due to mucosal risk.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Consultation Input Deck -->
+      <div class="input-deck">
+        <div class="quick-chips">
+          <button class="chip-btn" onclick="sendQuickSymptom('Headache with mild fever')">🤕 Headache + Fever</button>
+          <button class="chip-btn" onclick="sendQuickSymptom('Crushing chest pain and shortness of breath')">💔 Chest Pain</button>
+          <button class="chip-btn" onclick="sendQuickSymptom('Persistent dry cough')">🗣️ Cough</button>
+          <button class="chip-btn" onclick="sendQuickSymptom('Burning stomach pain')">🤢 Stomach Pain</button>
+          <button class="chip-btn" onclick="sendQuickSymptom('Knee joint pain and stiffness')">🦵 Joint Pain</button>
+        </div>
+
+        <div class="input-box">
+          <button class="btn-icon" style="height: 30px; padding: 0 8px; border: none; background: transparent; font-size: 1rem;" title="Upload Medical Photo">📎</button>
+          <button class="btn-icon" style="height: 30px; padding: 0 8px; border: none; background: transparent; font-size: 1rem;" title="Voice Input">🎙️</button>
+          <textarea class="chat-textarea" id="slateInput" rows="1" placeholder="Type your symptoms here or speak in English / Odia..." onkeydown="handleInputKey(event)"></textarea>
+          <button class="btn-send" onclick="sendSlateMessage()">➤</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Right Column: Anatomical Diagnostic Visualizer -->
+    <aside class="col-pane telemetry-pane" id="paneTelemetry">
+      <div class="slate-card">
+        <div class="card-header">
+          <span class="card-title">🗺️ Anatomical Scanner</span>
+          <span class="card-badge">Targeting</span>
+        </div>
+        <p style="font-size: 0.74rem; color: var(--text-muted); line-height: 1.4;">
+          Select anatomical regions to trigger local Bayesian feature weight calculations.
+        </p>
+
+        <div class="organ-grid">
+          <button class="organ-card" onclick="highlightOrgan('Head', 'Headache & Migraine')">🤕 Head</button>
+          <button class="organ-card" onclick="highlightOrgan('Chest', 'Chest Pain & Heart')">💔 Chest</button>
+          <button class="organ-card active" onclick="highlightOrgan('Stomach', 'Gastric & Abdominal')">🤢 Stomach</button>
+          <button class="organ-card" onclick="highlightOrgan('Throat', 'Cough & Bronchial')">🗣️ Throat</button>
+          <button class="organ-card" onclick="highlightOrgan('Back', 'Lumbar Spine & Joint')">🔩 Back</button>
+          <button class="organ-card" onclick="highlightOrgan('Joints', 'Knee & Rheumatic')">🦵 Joints</button>
+        </div>
+
+        <div class="body-map-wrap">
+          <svg viewBox="0 0 140 180" style="width: 130px; height: 160px; filter: drop-shadow(0 0 8px rgba(6,182,212,0.2));">
+            <!-- Sleek Stylized Silhouette -->
+            <path d="M 70 20 C 60 20 54 28 54 38 C 54 48 60 54 70 54 C 80 54 86 48 86 38 C 86 28 80 20 70 20 Z" fill="rgba(148, 163, 184, 0.15)" stroke="var(--cyan)" stroke-width="1.2" />
+            <path d="M 52 54 L 30 75 L 36 110 L 46 108 L 42 78 L 52 75 L 50 120 L 58 170 L 68 170 L 66 120 L 74 120 L 72 170 L 82 170 L 90 120 L 88 75 L 98 78 L 94 108 L 104 110 L 110 75 L 88 54 Z" fill="rgba(148, 163, 184, 0.12)" stroke="var(--border)" stroke-width="1" />
+            <!-- Active Selected Stomach Target -->
+            <circle cx="70" cy="95" r="7" fill="var(--cyan)" opacity="0.8" />
+            <circle cx="70" cy="95" r="14" fill="none" stroke="var(--cyan)" stroke-width="1" stroke-dasharray="3 2" style="animation: pulse 1.5s infinite;" />
+          </svg>
+        </div>
+      </div>
+
+      <!-- WebGPU Physiological Progression -->
+      <div class="slate-card">
+        <div class="card-header">
+          <span class="card-title">⚡ WebGPU Trajectory</span>
+          <span class="card-badge" style="color: var(--cyan);">16k Shaders</span>
+        </div>
+        <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px;">
+          Epigastric Recovery Simulation: <strong>Improving (▼ 42% Risk)</strong>
+        </div>
+        <div style="height: 80px; background: var(--surface-elevated); border: 1px solid var(--border); border-radius: var(--radius-sm); position: relative; overflow: hidden; display: flex; align-items: flex-end; padding: 6px 10px; gap: 4px;">
+          <!-- Sparkline Bars -->
+          <div style="flex:1; height:70%; background:rgba(6,182,212,0.3); border-radius: 2px;"></div>
+          <div style="flex:1; height:85%; background:rgba(6,182,212,0.4); border-radius: 2px;"></div>
+          <div style="flex:1; height:60%; background:rgba(6,182,212,0.5); border-radius: 2px;"></div>
+          <div style="flex:1; height:45%; background:rgba(16,185,129,0.6); border-radius: 2px;"></div>
+          <div style="flex:1; height:30%; background:rgba(16,185,129,0.8); border-radius: 2px;"></div>
+          <div style="flex:1; height:20%; background:var(--emerald); border-radius: 2px;"></div>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Mobile Bottom 4-Tab Navigation Bar -->
+  <nav class="mobile-tab-bar">
+    <button class="tab-bar-item active" onclick="switchMobileTab('consult')">
+      <span>💬</span>
+      <span>Consult</span>
+    </button>
+    <button class="tab-bar-item" onclick="switchMobileTab('profile')">
+      <span>👤</span>
+      <span>Profile</span>
+    </button>
+    <button class="tab-bar-item" onclick="switchMobileTab('anatomy')">
+      <span>🗺️</span>
+      <span>Anatomy</span>
+    </button>
+    <button class="tab-bar-item" onclick="switchMobileTab('vault')">
+      <span>📁</span>
+      <span>Vault</span>
+    </button>
+  </nav>
+
+  <!-- Floating Device Viewport Tester Pill -->
+  <div class="preview-mode-bar">
+    <span style="font-size: 0.7rem; font-weight: 700; color: var(--text-dim); text-transform: uppercase;">Preview Device:</span>
+    <button class="preview-pill active" onclick="setViewportMode('desktop', this)">🖥️ Desktop</button>
+    <button class="preview-pill" onclick="setViewportMode('tablet', this)">📱 Tablet</button>
+    <button class="preview-pill" onclick="setViewportMode('mobile', this)">📱 Mobile</button>
+  </div>
+
+  <script>
+    // Theme Switcher
+    function toggleSlateTheme() {
+      const isLight = document.documentElement.classList.toggle('light');
+      document.getElementById('themeIcon').textContent = isLight ? '☀️' : '🌙';
+      document.getElementById('themeLabel').textContent = isLight ? 'Light' : 'Dark';
+    }
+
+    // Telemetry Drawer toggle (Tablet view)
+    function toggleTelemetryDrawer() {
+      const pane = document.getElementById('paneTelemetry');
+      pane.classList.toggle('show-drawer');
+    }
+
+    // Chat Send Simulator
+    function sendSlateMessage() {
+      const input = document.getElementById('slateInput');
+      const text = input.value.trim();
+      if (!text) return;
+      
+      const stream = document.getElementById('chatStream');
+      
+      // User Message
+      const userDiv = document.createElement('div');
+      userDiv.className = 'msg-group user';
+      userDiv.innerHTML = `<div class="msg-avatar">🧑</div><div class="msg-bubble">${escapeHtml(text)}</div>`;
+      stream.appendChild(userDiv);
+      input.value = '';
+      stream.scrollTop = stream.scrollHeight;
+
+      // Simulated Clinical AI Response
+      setTimeout(() => {
+        const aiDiv = document.createElement('div');
+        aiDiv.className = 'msg-group ai';
+        aiDiv.innerHTML = `
+          <div class="msg-avatar">🤖</div>
+          <div class="msg-bubble">
+            Analyzing <em>"${escapeHtml(text)}"</em> with local Bayes &amp; Linear SVM classifier...
+            <br><br>
+            Allergy profile confirmed: No contraindications detected. Recommended non-drowsy formulation and monitored hydration.
+          </div>
+        `;
+        stream.appendChild(aiDiv);
+        stream.scrollTop = stream.scrollHeight;
+      }, 600);
+    }
+
+    function sendQuickSymptom(symptom) {
+      document.getElementById('slateInput').value = symptom;
+      sendSlateMessage();
+    }
+
+    function handleInputKey(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendSlateMessage();
+      }
+    }
+
+    function highlightOrgan(name, detail) {
+      document.querySelectorAll('.organ-card').forEach(c => c.classList.remove('active'));
+      event.target.classList.add('active');
+      const input = document.getElementById('slateInput');
+      input.value = `I am having pain in my ${name.toLowerCase()} (${detail}).`;
+      input.focus();
+    }
+
+    // Mobile Bottom Tab Switcher
+    function switchMobileTab(tab) {
+      document.querySelectorAll('.tab-bar-item').forEach(b => b.classList.remove('active'));
+      event.currentTarget.classList.add('active');
+
+      const stage = document.getElementById('stageConsult');
+      const leftPane = document.getElementById('paneProfile');
+      const telePane = document.getElementById('paneTelemetry');
+
+      if (tab === 'consult') {
+        stage.classList.remove('mobile-hidden');
+        leftPane.classList.remove('mobile-active');
+        telePane.classList.remove('show-drawer');
+      } else if (tab === 'profile') {
+        stage.classList.add('mobile-hidden');
+        leftPane.classList.add('mobile-active');
+        telePane.classList.remove('show-drawer');
+      } else if (tab === 'anatomy') {
+        stage.classList.add('mobile-hidden');
+        leftPane.classList.remove('mobile-active');
+        telePane.classList.add('show-drawer');
+        telePane.style.position = 'static';
+        telePane.style.width = '100%';
+        telePane.style.display = 'flex';
+      }
+    }
+
+    // Viewport Mode Tester (Simulate PC, Tablet, Mobile in-place)
+    function setViewportMode(mode, btn) {
+      document.querySelectorAll('.preview-pill').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      const ws = document.getElementById('appWorkspace');
+      if (mode === 'desktop') {
+        ws.style.maxWidth = '1720px';
+        ws.style.gridTemplateColumns = '310px 1fr 340px';
+        document.getElementById('paneProfile').style.display = 'flex';
+        document.getElementById('paneTelemetry').style.display = 'flex';
+        document.getElementById('stageConsult').classList.remove('mobile-hidden');
+      } else if (mode === 'tablet') {
+        ws.style.maxWidth = '880px';
+        ws.style.gridTemplateColumns = '280px 1fr';
+        document.getElementById('paneProfile').style.display = 'flex';
+        document.getElementById('paneTelemetry').style.display = 'none';
+        document.getElementById('stageConsult').classList.remove('mobile-hidden');
+      } else if (mode === 'mobile') {
+        ws.style.maxWidth = '420px';
+        ws.style.gridTemplateColumns = '1fr';
+        document.getElementById('paneProfile').style.display = 'none';
+        document.getElementById('paneTelemetry').style.display = 'none';
+        document.getElementById('stageConsult').classList.remove('mobile-hidden');
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>

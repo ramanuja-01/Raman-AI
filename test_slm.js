@@ -53,6 +53,8 @@ const makeMockElement = () => {
     getContext() {
       return {
         clearRect() {},
+        fillRect() {},
+        strokeRect() {},
         beginPath() {},
         moveTo() {},
         lineTo() {},
@@ -60,6 +62,10 @@ const makeMockElement = () => {
         arc() {},
         fill() {},
         fillText() {},
+        measureText() { return { width: 0 }; },
+        save() {},
+        restore() {},
+        setLineDash() {},
         createLinearGradient() {
           return { addColorStop() {} };
         }
@@ -141,6 +147,8 @@ global.indexedDB = mockIndexedDB;
 global.document = mockDocument;
 global.window = mockWindow;
 global.performance = { now() { return Date.now(); } };
+global.requestAnimationFrame = (cb) => setTimeout(cb, 16);
+global.cancelAnimationFrame = (id) => clearTimeout(id);
 
 // Mock hardware-agnostic WebGPU APIs for Node.js testing environment
 const mockGpu = {
@@ -1333,9 +1341,61 @@ async function runTest(name, fn) {
     ok = assert(parsedSpo2 && parsedSpo2.spo2 === 98, "Pulse Oximeter SpO2 correctly parsed: 98%.") && ok;
     ok = assert(parsedSpo2 && parsedSpo2.pulseRate === 74, "Pulse Oximeter Pulse Rate correctly parsed: 74 bpm.") && ok;
 
-    // 4. Test Manager instantiation
+    // 4. Test Xiaomi / Amazfit Wearables Step Counter Parsing
+    // 10,420 steps (0x000028B4), 7,500m distance (0x00001D4C), 320 kcal (0x00000140)
+    const stepsBuffer = new ArrayBuffer(12);
+    const stepsView = new DataView(stepsBuffer);
+    stepsView.setUint32(0, 10420, true);
+    stepsView.setUint32(4, 7500, true);
+    stepsView.setUint32(8, 320, true);
+    const parsedSteps = bleModule.parseXiaomiSteps(stepsView);
+    ok = assert(parsedSteps && parsedSteps.steps === 10420, "Xiaomi 32-bit LE Step Counter parsed: 10,420 steps.") && ok;
+    ok = assert(parsedSteps && parsedSteps.distanceMeters === 7500, "Xiaomi Distance parsed: 7,500 meters.") && ok;
+    ok = assert(parsedSteps && parsedSteps.calories === 320, "Xiaomi Calories parsed: 320 kcal.") && ok;
+
+    // 5. Test Xiaomi Battery Status Parsing (Byte 1 = 85%, Byte 2 = 1 [Charging])
+    const batBuf = new Uint8Array([0x00, 85, 0x01]);
+    const batView = new DataView(batBuf.buffer);
+    const parsedBat = bleModule.parseXiaomiBattery(batView);
+    ok = assert(parsedBat && parsedBat.level === 85, "Xiaomi Battery Level parsed: 85%.") && ok;
+    ok = assert(parsedBat && parsedBat.isCharging === true, "Xiaomi Charging state flagged: true.") && ok;
+
+    // 6. Test Standard Battery Fallback (1-byte: 92%)
+    const bat1Buf = new Uint8Array([92]);
+    const parsedBat1 = bleModule.parseXiaomiBattery(new DataView(bat1Buf.buffer));
+    ok = assert(parsedBat1 && parsedBat1.level === 92 && parsedBat1.isCharging === false, "Standard 1-byte battery fallback parsed: 92%.") && ok;
+
+    // 7. Test Xiaomi SpO2 Telemetry Parsing (Byte 1 = 97%)
+    const spo2XBuf = new Uint8Array([0x00, 97]);
+    const parsedXSpO2 = bleModule.parseXiaomiSpO2(new DataView(spo2XBuf.buffer));
+    ok = assert(parsedXSpO2 && parsedXSpO2.spo2 === 97, "Xiaomi SpO2 telemetry parsed: 97%.") && ok;
+
+    // 7B. Test HRV RMSSD calculation
+    const rrTest = [800, 820, 790, 810, 805];
+    const hrvRes = bleModule.calculateHrvMetrics(rrTest);
+    ok = assert(hrvRes && hrvRes.rmssd > 0, "Heart Rate Variability (HRV) RMSSD successfully calculated from RR intervals.") && ok;
+
+    // 8. Test Brand Recognition & Command Handshake Constants
+    ok = assert(bleModule.isXiaomiBrand("Mi Smart Band 8") === true, "Brand detector identifies 'Mi Smart Band 8'.") && ok;
+    ok = assert(bleModule.isXiaomiBrand("Amazfit GTS 4 Mini") === true, "Brand detector identifies 'Amazfit GTS 4 Mini'.") && ok;
+    ok = assert(bleModule.isXiaomiBrand("Redmi Watch 3 Active") === true, "Brand detector identifies 'Redmi Watch 3 Active'.") && ok;
+    ok = assert(bleModule.isXiaomiBrand("Polar H10 83742") === false, "Brand detector correctly rejects third-party 'Polar H10'.") && ok;
+    ok = assert(bleModule.XIAOMI_COMMANDS.START_CONTINUOUS_HR[0] === 0x15, "Continuous PPG activation command code 0x15 validated.") && ok;
+    ok = assert(bleModule.XIAOMI_COMMANDS.PING_HEARTBEAT[0] === 0x16, "Optical PPG keep-alive ping code 0x16 validated.") && ok;
+
+    // 9. Test Manager instantiation and Xiaomi Telemetry State Sync
     const mgr = new bleModule.RamanBleManager();
     ok = assert(mgr.state === "DISCONNECTED", "BLE manager initializes in DISCONNECTED state.") && ok;
+    mgr.isXiaomiDevice = true;
+    mgr.deviceModel = "Mi Smart Band 8";
+    mgr.setState("STREAMING");
+    mgr.handleXiaomiSteps(stepsView);
+    mgr.handleXiaomiBattery(batView);
+    ok = assert(mgr.steps === 10420, "Manager synchronizes live step count: 10,420.") && ok;
+    ok = assert(mgr.batteryLevel === 85, "Manager synchronizes live battery level: 85%.") && ok;
+    mgr.disconnect();
+    ok = assert(mgr.state === "DISCONNECTED", "Manager disconnects and resets state cleanly.") && ok;
+    ok = assert(mgr.isXiaomiDevice === false, "Manager resets Xiaomi device flag upon disconnect.") && ok;
 
     return ok;
   });
@@ -1389,6 +1449,20 @@ async function runTest(name, fn) {
     // Find MedicationStatement
     const medEntry = bundle.entry.find(e => e.resource.resourceType === "MedicationStatement");
     ok = assert(medEntry && medEntry.resource.medicationCodeableConcept.coding[0].code === "387207008", "FHIR MedicationStatement SNOMED CT '387207008' correctly mapped.") && ok;
+
+    // Test Wearable Telemetry FHIR R4 Resources (Steps & Device)
+    const profileWearable = {
+      ...profile,
+      steps: 10420,
+      deviceModel: "Mi Smart Band 8"
+    };
+    const wearableBundle = fhirModule.generateFhirR4Bundle(profileWearable, sessionData);
+    const stepsEntry = wearableBundle.entry.find(e => e.resource.resourceType === "Observation" && e.resource.code.coding[0].code === "55423-8");
+    ok = assert(stepsEntry && stepsEntry.resource.valueQuantity.value === 10420, "FHIR Step Count Observation LOINC '55423-8' matches 10,420 steps.") && ok;
+
+    const deviceEntry = wearableBundle.entry.find(e => e.resource.resourceType === "Device");
+    ok = assert(deviceEntry && deviceEntry.resource.deviceName[0].name === "Mi Smart Band 8", "FHIR Device resource maps connected wearable model: 'Mi Smart Band 8'.") && ok;
+    ok = assert(deviceEntry && deviceEntry.resource.type.coding[0].code === "86184003", "FHIR Device resource coded with SNOMED CT '86184003' (Wearable device).") && ok;
 
     return ok;
   });

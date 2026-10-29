@@ -251,7 +251,7 @@ class RamanPkPdSimulator {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
     }
 
-    const margin = { left: 35, right: 15, top: 25, bottom: 25 };
+    const margin = { left: 35, right: 15, top: 28, bottom: 25 };
     const plotW = w - margin.left - margin.right;
     const plotH = h - margin.top - margin.bottom;
 
@@ -315,14 +315,19 @@ class RamanPkPdSimulator {
     ctx.arc(peakX, peakY, 4, 0, 2 * Math.PI);
     ctx.fill();
 
-    // Text labels
+    // Text labels - Dual row layout to prevent collision on compact HUD canvases
     ctx.font = "bold 9px 'Orbitron', monospace";
     ctx.fillStyle = "#00e5ff";
-    ctx.fillText(`PK/PD: ${drug.name.toUpperCase()} (${drug.doseMg}mg)`, margin.left, 14);
+    ctx.fillText(`PK/PD: ${drug.name.toUpperCase()} (${drug.doseMg}mg)`, margin.left, 12);
 
     ctx.font = "8px 'Space Grotesk', sans-serif";
     ctx.fillStyle = "#00ffb3";
-    ctx.fillText(`Cmax: ${simulation.cmax.toFixed(1)} mg/L @ ${simulation.tmax}h`, w - 120, 14);
+    ctx.fillText(`Cmax: ${simulation.cmax.toFixed(1)} mg/L @ ${simulation.tmax}h`, margin.left, 22);
+
+    ctx.fillStyle = "rgba(255, 255, 255, 0.55)";
+    ctx.textAlign = "right";
+    ctx.fillText(`MEC: ${drug.mec} | MTC: ${drug.mtc}`, w - margin.right, 22);
+    ctx.textAlign = "left";
 
     ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
     ctx.fillText(`0h`, margin.left, h - 8);

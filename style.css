@@ -2424,3 +2424,19 @@ body.light-theme #mcpTerminalLog {
   box-shadow: 0 0 8px #ffaa00;
   animation: blink 0.8s infinite;
 }
+.ble-wearable-info {
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.25);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-top: 6px;
+  font-size: 0.72rem;
+  color: var(--cyan);
+  font-family: var(--font-head);
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  animation: fadeIn 0.3s ease;
+}

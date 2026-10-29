@@ -3749,7 +3749,20 @@ function updateProfileCompleteness(skipGreeting = false) {
 // Attach listeners to profile inputs
 ['patientName', 'patientAge', 'patientGender', 'patientBlood', 'patientAllergies', 'patientBP', 'patientHR', 'patientTemp', 'patientSpO2'].forEach(id => {
   const el = document.getElementById(id);
-  if (el) el.addEventListener('input', () => { updateProfileCompleteness(false); saveProfile(); });
+  if (el) el.addEventListener('input', () => {
+    updateProfileCompleteness(false);
+    saveProfile();
+    if (id === 'patientHR' && typeof window.updateOscilloscopeHeartRate === 'function') {
+      window.updateOscilloscopeHeartRate(el.value);
+    }
+    if ((id === 'patientHR' || id === 'patientSpO2') && window.volumetricRenderer) {
+      const p = typeof getProfile === 'function' ? getProfile() : {};
+      window.volumetricRenderer.setVitals({
+        heartRate: p.heartRate || 72,
+        spo2: p.SpO2 || 98
+      });
+    }
+  });
 });
 
 // ── Chat Functions ──────────────────────────────────────
@@ -3767,7 +3780,9 @@ function getProfile() {
     bp: bpEl ? bpEl.value.trim() : "",
     heartRate: hrEl ? hrEl.value.trim() : "",
     temp: tempEl ? tempEl.value.trim() : "",
-    SpO2: spo2El ? spo2El.value.trim() : ""
+    SpO2: spo2El ? spo2El.value.trim() : "",
+    steps: (typeof window !== 'undefined' && window.ramanBle && window.ramanBle.steps) ? window.ramanBle.steps : 0,
+    deviceModel: (typeof window !== 'undefined' && window.ramanBle && window.ramanBle.deviceModel) ? window.ramanBle.deviceModel : ""
   };
 }
 
@@ -9367,11 +9382,16 @@ window.logDiaryEntry = function() {
   }
   
   const history = JSON.parse(localStorage.getItem('ramanai_diary_history') || '[]');
-  history.push({
+  const entry = {
     date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
     condition: cond,
     severity: sevVal
-  });
+  };
+  if (typeof window !== 'undefined' && window.ramanBle && window.ramanBle.state === 'STREAMING') {
+    if (window.ramanBle.steps > 0) entry.steps = window.ramanBle.steps;
+    if (window.ramanBle.deviceModel) entry.device = window.ramanBle.deviceModel;
+  }
+  history.push(entry);
   localStorage.setItem('ramanai_diary_history', JSON.stringify(history));
   document.getElementById('diarySeverity').value = "5"; // Reset to standard mid-value
   window.renderDiaryChart();
@@ -9538,7 +9558,10 @@ window.renderDiaryChart = function(hoveredPoint) {
     ctx.setLineDash([]); // Reset dash
     
     // 2. Cyber floating tooltip bubble near the node
-    const text = `${hoveredPoint.condition}: ${hoveredPoint.severity}/10 on ${hoveredPoint.date}`;
+    let text = `${hoveredPoint.condition}: ${hoveredPoint.severity}/10 on ${hoveredPoint.date}`;
+    if (hoveredPoint.steps) {
+      text += ` | 👟 ${Number(hoveredPoint.steps).toLocaleString()}`;
+    }
     ctx.font = '9px Inter, sans-serif';
     const textWidth = ctx.measureText(text).width;
     
@@ -9652,6 +9675,8 @@ function initAnatomicalScanner() {
   window.initAnatomicalScanner = initAnatomicalScanner;
   const hotspots = document.querySelectorAll(".map-hotspot");
   const activeScanZone = document.getElementById("activeScanZone");
+  const activeScanCoords = document.getElementById("activeScanCoords");
+  const activeScanLatency = document.getElementById("activeScanLatency");
   
   if (!hotspots.length || !activeScanZone) return;
   
@@ -9661,6 +9686,17 @@ function initAnatomicalScanner() {
       const label = this.getAttribute("data-label");
       activeScanZone.textContent = label;
       activeScanZone.style.color = "var(--primary)";
+      const cx = this.getAttribute("cx") || "75";
+      const cy = this.getAttribute("cy") || "100";
+      if (activeScanCoords) {
+        activeScanCoords.textContent = `COORDS: X: ${cx}, Y: ${cy}`;
+        activeScanCoords.style.color = "var(--cyan)";
+      }
+      if (activeScanLatency) {
+        const lat = Math.floor(14 + Math.random() * 8);
+        activeScanLatency.textContent = `LATENCY: ${lat}MS`;
+        activeScanLatency.style.color = "var(--teal)";
+      }
       if (window.BioTelemetrySFX) window.BioTelemetrySFX.playClick();
     });
     
@@ -9670,9 +9706,20 @@ function initAnatomicalScanner() {
       if (activeHotspot) {
         activeScanZone.textContent = activeHotspot.getAttribute("data-label");
         activeScanZone.style.color = "var(--teal)";
+        const cx = activeHotspot.getAttribute("cx") || "75";
+        const cy = activeHotspot.getAttribute("cy") || "100";
+        if (activeScanCoords) activeScanCoords.textContent = `COORDS: X: ${cx}, Y: ${cy}`;
       } else {
         activeScanZone.textContent = "SELECT REGION";
         activeScanZone.style.color = "var(--cyan)";
+        if (activeScanCoords) {
+          activeScanCoords.textContent = "COORDS: X: --, Y: --";
+          activeScanCoords.style.color = "var(--text-muted)";
+        }
+        if (activeScanLatency) {
+          activeScanLatency.textContent = "LATENCY: --MS";
+          activeScanLatency.style.color = "var(--text-muted)";
+        }
       }
     });
     
@@ -9692,6 +9739,17 @@ function initAnatomicalScanner() {
       // Update scan zone label to active visual
       activeScanZone.textContent = this.getAttribute("data-label");
       activeScanZone.style.color = "var(--teal)";
+      const cx = this.getAttribute("cx") || "75";
+      const cy = this.getAttribute("cy") || "100";
+      if (activeScanCoords) {
+        activeScanCoords.textContent = `COORDS: X: ${cx}, Y: ${cy}`;
+        activeScanCoords.style.color = "var(--teal)";
+      }
+      if (activeScanLatency) {
+        const ping = Math.floor(10 + Math.random() * 8);
+        activeScanLatency.textContent = `LATENCY: ${ping}MS`;
+        activeScanLatency.style.color = "var(--primary)";
+      }
       
       // Populate chat text input
       const input = document.getElementById("userInput");
@@ -9733,6 +9791,22 @@ function initAnatomicalScanner() {
       }, 300);
     });
   });
+
+  const svgMap = document.querySelector(".anatomical-map-svg");
+  if (svgMap && activeScanCoords) {
+    svgMap.addEventListener("mousemove", (e) => {
+      const rect = svgMap.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        const x = Math.round(((e.clientX - rect.left) / rect.width) * 150);
+        const y = Math.round(((e.clientY - rect.top) / rect.height) * 200);
+        if (x >= 0 && x <= 150 && y >= 0 && y <= 200) {
+          if (!document.querySelector(".map-hotspot:hover")) {
+            activeScanCoords.textContent = `COORDS: X: ${x}, Y: ${y}`;
+          }
+        }
+      }
+    });
+  }
 
   document.querySelectorAll(".organ-chip").forEach(chip => {
     chip.addEventListener("click", function() {
@@ -9812,9 +9886,16 @@ if (typeof document !== 'undefined' && document.body && typeof document.body.get
   }
 }
 
-// Register anatomical scanner on load
+// Register anatomical scanner and initialize bio-telemetry canvases on load
 setTimeout(() => {
   initAnatomicalScanner();
+  const profile = typeof getProfile === 'function' ? getProfile() : {};
+  if (typeof window.drawOscilloscopeWaveform === 'function') {
+    window.drawOscilloscopeWaveform(parseFloat(profile.heartRate) || 72);
+  }
+  if (typeof window.switchHudSimulationMode === 'function') {
+    window.switchHudSimulationMode('HEATMAP');
+  }
 }, 400);
 
 // ── Text-to-Speech (TTS) Prescription Reader ───────────
@@ -10635,32 +10716,47 @@ window.renderProgressionHeatmap = function(vitalsSample) {
 
 // Real-time animation loop for the HUD ECG Oscilloscope
 let oscAnimationId = null;
-window.drawOscilloscopeWaveform = function(hr = 72) {
+let oscCurrentHr = 72;
+let oscPoints = null;
+
+window.updateOscilloscopeHeartRate = function(hr) {
+  const val = parseFloat(hr);
+  if (!isNaN(val) && val >= 30 && val <= 240) {
+    oscCurrentHr = val;
+  }
+};
+
+window.drawOscilloscopeWaveform = function(hr) {
+  if (hr !== undefined && hr !== null && hr !== "") {
+    window.updateOscilloscopeHeartRate(hr);
+  }
   const canvas = document.getElementById("oscilloscopeCanvas");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
   
-  if (oscAnimationId) cancelAnimationFrame(oscAnimationId);
-  
   const width = canvas.width;
   const height = canvas.height;
   
-  let x = 0;
-  const points = new Array(width).fill(height / 2);
+  if (!oscPoints || oscPoints.length !== width) {
+    oscPoints = new Array(width).fill(height / 2);
+  }
+  
+  if (oscAnimationId) return; // Continue smooth running animation
   
   const animate = () => {
-    ctx.fillStyle = "rgba(10, 15, 30, 0.2)";
+    ctx.fillStyle = "rgba(10, 15, 30, 0.22)";
     ctx.fillRect(0, 0, width, height);
     
-    // Draw neon cyan line
-    ctx.strokeStyle = "rgba(0, 255, 179, 0.85)";
-    ctx.lineWidth = 2.5;
+    // Draw neon cyan/teal line
+    ctx.strokeStyle = "rgba(0, 255, 179, 0.9)";
+    ctx.lineWidth = 2.2;
     ctx.shadowBlur = 8;
     ctx.shadowColor = "#00ffb3";
     
-    // Compute ECG wave shape matching heartbeat speed
-    const cycleTime = 60000 / hr; // ms per beat
+    // Compute ECG wave shape matching heartbeat speed dynamically
+    const currentRate = oscCurrentHr || 72;
+    const cycleTime = 60000 / currentRate; // ms per beat
     const time = Date.now() % cycleTime;
     const phase = time / cycleTime;
     
@@ -10683,18 +10779,20 @@ window.drawOscilloscopeWaveform = function(hr = 72) {
       y -= Math.sin((phase - 0.32) / 0.10 * Math.PI) * 8;
     }
     
-    points.push(y);
-    if (points.length > width) points.shift();
+    oscPoints.push(y);
+    if (oscPoints.length > width) oscPoints.shift();
     
     ctx.beginPath();
-    ctx.moveTo(0, points[0]);
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(i, points[i]);
+    ctx.moveTo(0, oscPoints[0]);
+    for (let i = 1; i < oscPoints.length; i++) {
+      ctx.lineTo(i, oscPoints[i]);
     }
     ctx.stroke();
     ctx.shadowBlur = 0;
     
-    oscAnimationId = requestAnimationFrame(animate);
+    if (typeof requestAnimationFrame === 'function') {
+      oscAnimationId = requestAnimationFrame(animate);
+    }
   };
   
   animate();
@@ -11920,10 +12018,28 @@ let currentHudMode = "HEATMAP";
 let volumetricRendererInstance = null;
 let pkpdSimulatorInstance = null;
 
+window.generateDefaultVitalsCohort = function(profile = {}) {
+  const baseHr = parseFloat(profile.heartRate) || 72;
+  const baseTemp = parseFloat(profile.temp) || 98.6;
+  const cohort = new Array(512);
+  for (let i = 0; i < 512; i++) {
+    const hrNoise = (Math.random() - 0.5) * 18;
+    const tempNoise = (Math.random() - 0.5) * 1.6;
+    cohort[i] = {
+      hr: Math.round((baseHr + hrNoise) * 10) / 10,
+      temp: Math.round((baseTemp + tempNoise) * 100) / 100
+    };
+  }
+  window.currentVitalsSample = cohort;
+  return cohort;
+};
+
 window.switchHudSimulationMode = function(mode) {
   currentHudMode = mode;
-  const canvas = document.getElementById("progressionCanvas");
-  if (!canvas) return;
+  const canvasHeatmap = document.getElementById("progressionCanvas");
+  const canvasOrgan = document.getElementById("organ3dCanvas") || canvasHeatmap;
+  const canvasPkpd = document.getElementById("pkpdCanvas") || canvasHeatmap;
+  if (!canvasHeatmap) return;
 
   const btnHeatmap = document.getElementById("btnModeHeatmap");
   const btnOrgan3d = document.getElementById("btnModeOrgan3D");
@@ -11942,6 +12058,11 @@ window.switchHudSimulationMode = function(mode) {
 
   const profile = typeof getProfile === 'function' ? getProfile() : {};
 
+  // Stop 3D animation loop if switching away from ORGAN_3D
+  if (mode !== "ORGAN_3D" && volumetricRendererInstance) {
+    volumetricRendererInstance.stop();
+  }
+
   if (mode === "ORGAN_3D") {
     if (btnOrgan3d) {
       btnOrgan3d.style.background = "rgba(0,229,255,0.15)";
@@ -11952,8 +12073,13 @@ window.switchHudSimulationMode = function(mode) {
     if (titleEl) titleEl.textContent = "🫀 3D Volumetric Organ SDF";
     if (badgeEl) badgeEl.textContent = "Real-Time Raymarcher";
 
+    // Viewport visibility toggle (Zero context collision)
+    canvasHeatmap.style.display = "none";
+    if (canvasPkpd && canvasPkpd !== canvasHeatmap) canvasPkpd.style.display = "none";
+    canvasOrgan.style.display = "block";
+
     if (!volumetricRendererInstance && typeof RamanVolumetricRenderer !== 'undefined') {
-      volumetricRendererInstance = new RamanVolumetricRenderer(canvas);
+      volumetricRendererInstance = new RamanVolumetricRenderer(canvasOrgan);
       volumetricRendererInstance.initialize();
       window.volumetricRenderer = volumetricRendererInstance;
     }
@@ -11963,7 +12089,7 @@ window.switchHudSimulationMode = function(mode) {
         heartRate: profile.heartRate || 72,
         spo2: profile.SpO2 || 98
       });
-      volumetricRendererInstance.render();
+      volumetricRendererInstance.start();
     }
   } else if (mode === "PKPD") {
     if (btnPkpd) {
@@ -11975,8 +12101,13 @@ window.switchHudSimulationMode = function(mode) {
     if (titleEl) titleEl.textContent = "💊 Pharmacokinetic (PK/PD) Dynamics";
     if (badgeEl) badgeEl.textContent = "RK4 Differential Solver";
 
+    // Viewport visibility toggle
+    canvasHeatmap.style.display = "none";
+    if (canvasOrgan && canvasOrgan !== canvasHeatmap) canvasOrgan.style.display = "none";
+    canvasPkpd.style.display = "block";
+
     if (!pkpdSimulatorInstance && typeof RamanPkPdSimulator !== 'undefined') {
-      pkpdSimulatorInstance = new RamanPkPdSimulator(canvas);
+      pkpdSimulatorInstance = new RamanPkPdSimulator(canvasPkpd);
       window.pkpdSimulator = pkpdSimulatorInstance;
     }
     if (pkpdSimulatorInstance) {
@@ -11992,7 +12123,15 @@ window.switchHudSimulationMode = function(mode) {
     if (titleEl) titleEl.textContent = "⚡ Vital Density Progression";
     if (badgeEl) badgeEl.textContent = "WebGPU Active";
 
+    // Viewport visibility toggle
+    if (canvasOrgan && canvasOrgan !== canvasHeatmap) canvasOrgan.style.display = "none";
+    if (canvasPkpd && canvasPkpd !== canvasHeatmap) canvasPkpd.style.display = "none";
+    canvasHeatmap.style.display = "block";
+
     if (volumetricRendererInstance) volumetricRendererInstance.viewMode = "HEATMAP";
+    if (!window.currentVitalsSample || window.currentVitalsSample.length === 0) {
+      window.generateDefaultVitalsCohort(profile);
+    }
     if (typeof window.renderProgressionHeatmap === 'function') {
       window.renderProgressionHeatmap(window.currentVitalsSample || []);
     }

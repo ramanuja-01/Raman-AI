@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <title>RAMAN AI – Variant 3: Spatial Glassmorphism 2.0</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #030712;
+      --glass-surface: rgba(17, 24, 39, 0.65);
+      --glass-surface-elevated: rgba(31, 41, 55, 0.75);
+      --glass-border: rgba(255, 255, 255, 0.12);
+      --glass-border-glow: rgba(56, 189, 248, 0.4);
+      --text: #f9fafb;
+      --text-muted: #9ca3af;
+      --text-sub: #6b7280;
+      --cyan: #38bdf8;
+      --indigo: #818cf8;
+      --purple: #c084fc;
+      --emerald: #34d399;
+      --rose: #fb7185;
+      --font: 'Plus Jakarta Sans', sans-serif;
+      --font-display: 'Space Grotesk', sans-serif;
+      --radius-xl: 24px;
+      --radius-lg: 16px;
+      --radius-sm: 10px;
+    }
+
+    html.light {
+      --bg: #e2e8f0;
+      --glass-surface: rgba(255, 255, 255, 0.7);
+      --glass-surface-elevated: rgba(255, 255, 255, 0.9);
+      --glass-border: rgba(255, 255, 255, 0.8);
+      --glass-border-glow: rgba(2, 132, 199, 0.5);
+      --text: #0f172a;
+      --text-muted: #475569;
+      --text-sub: #94a3b8;
+      --cyan: #0284c7;
+      --indigo: #4f46e5;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      transition: background 0.3s;
+    }
+
+    /* Ambient Spatial Lighting Blobs */
+    .spatial-blobs {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .blob-1 {
+      position: absolute;
+      top: -150px;
+      left: 15%;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.18) 0%, transparent 65%);
+      filter: blur(60px);
+      animation: floatBlob 14s infinite alternate ease-in-out;
+    }
+    .blob-2 {
+      position: absolute;
+      bottom: -150px;
+      right: 15%;
+      width: 650px;
+      height: 650px;
+      background: radial-gradient(circle, rgba(192, 132, 252, 0.15) 0%, transparent 65%);
+      filter: blur(70px);
+      animation: floatBlob 18s infinite alternate-reverse ease-in-out;
+    }
+    @keyframes floatBlob {
+      0% { transform: translateY(0px) scale(1); }
+      100% { transform: translateY(50px) scale(1.1); }
+    }
+
+    /* Floating Glass Header */
+    header.spatial-nav {
+      height: 68px;
+      margin: 14px 24px 0;
+      background: var(--glass-surface);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      position: sticky;
+      top: 14px;
+      z-index: 50;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .brand-orb {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--indigo), var(--purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 800;
+      font-size: 1rem;
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+    }
+    .brand-title {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.1rem;
+      letter-spacing: -0.02em;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .glass-btn {
+      height: 38px;
+      padding: 0 16px;
+      border-radius: 99px;
+      background: var(--glass-surface);
+      border: 1px solid var(--glass-border);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.25s;
+    }
+    .glass-btn:hover {
+      background: var(--glass-surface-elevated);
+      border-color: var(--glass-border-glow);
+      transform: translateY(-1px);
+    }
+
+    /* Spatial Workspace Layout */
+    .spatial-workspace {
+      position: relative;
+      z-index: 1;
+      max-width: 1680px;
+      width: calc(100% - 48px);
+      margin: 20px auto;
+      flex: 1;
+      display: grid;
+      grid-template-columns: 310px 1fr 360px;
+      gap: 20px;
+      height: calc(100vh - 120px);
+    }
+
+    /* Glass Surface Panel */
+    .glass-panel {
+      background: var(--glass-surface);
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 22px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.35);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .panel-title {
+      font-family: var(--font-display);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--cyan);
+    }
+
+    /* Left Stack: Spatial Bio-Card */
+    .patient-glass-card {
+      background: var(--glass-surface-elevated);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .vitals-hologram {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .holo-tile {
+      background: rgba(0,0,0,0.25);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      text-align: center;
+    }
+    .holo-val {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: var(--cyan);
+    }
+
+    /* Center Stage */
+    .stage-glass {
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .stage-top-bar {
+      padding: 16px 24px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255, 255, 255, 0.02);
+    }
+    .stage-stream {
+      flex: 1;
+      padding: 24px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    /* Floating Bubble */
+    .spatial-bubble-wrap {
+      display: flex;
+      gap: 12px;
+      max-width: 80%;
+    }
+    .spatial-bubble-wrap.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    .spatial-bubble {
+      background: var(--glass-surface-elevated);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      font-size: 0.88rem;
+      line-height: 1.6;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    }
+    .spatial-bubble-wrap.user .spatial-bubble {
+      background: linear-gradient(135deg, var(--cyan), var(--indigo));
+      color: #fff;
+      border: none;
+    }
+
+    /* Floating Input Island */
+    .spatial-input-island {
+      margin: 16px 20px 20px;
+      background: var(--glass-surface-elevated);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-xl);
+      padding: 8px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .spatial-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.9rem;
+      resize: none;
+    }
+    .spatial-send-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--cyan), var(--indigo));
+      border: none;
+      color: #fff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+
+    /* Right Telemetry: Holographic Organ Inspector */
+    .holo-organ-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .holo-glow-ring {
+      width: 180px;
+      height: 180px;
+      border-radius: 50%;
+      border: 1px dashed var(--cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: spinHolo 25s linear infinite;
+      box-shadow: 0 0 25px rgba(56, 189, 248, 0.2);
+    }
+    @keyframes spinHolo { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* Floating Viewport Switcher */
+    .device-dock {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--glass-surface);
+      backdrop-filter: blur(28px);
+      border: 1px solid var(--glass-border);
+      border-radius: 99px;
+      padding: 6px 14px;
+      display: flex;
+      gap: 8px;
+      z-index: 100;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .dock-pill {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 99px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .dock-pill.active {
+      background: linear-gradient(135deg, var(--cyan), var(--indigo));
+      color: #fff;
+    }
+
+    /* Mobile Adaptations */
+    @media (max-width: 1200px) {
+      .spatial-workspace { grid-template-columns: 280px 1fr; }
+      #paneSpatialRight { display: none; }
+    }
+    @media (max-width: 860px) {
+      header.spatial-nav { margin: 10px 12px 0; padding: 0 16px; }
+      .spatial-workspace {
+        grid-template-columns: 1fr;
+        width: calc(100% - 24px);
+        margin: 14px auto 80px;
+        height: auto;
+      }
+      #paneSpatialLeft { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="spatial-blobs">
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+  </div>
+
+  <!-- Floating Glass Nav -->
+  <header class="spatial-nav">
+    <div class="brand-group">
+      <div class="brand-orb">✦</div>
+      <span class="brand-title">RAMAN AI</span>
+      <span style="font-size: 0.7rem; color: var(--cyan); background: rgba(56,189,248,0.15); padding: 2px 8px; border-radius: 99px; font-weight: 600;">SPATIAL 2.0</span>
+    </div>
+
+    <div class="nav-actions">
+      <button class="glass-btn" onclick="toggleSpatialTheme()">
+        <span id="themeIco">🌙</span> <span id="themeLbl">Dark</span>
+      </button>
+      <button class="glass-btn" style="background: rgba(56, 189, 248, 0.15); color: var(--cyan); border-color: rgba(56, 189, 248, 0.3);">
+        <span>🛡️</span> Zero-Knowledge Verified
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace -->
+  <main class="spatial-workspace" id="spatialWs">
+
+    <!-- Left Spatial Panel: Patient Identity & Vitals -->
+    <aside class="glass-panel" id="paneSpatialLeft">
+      <div class="panel-header">
+        <span class="panel-title">👤 Patient Bio-Sphere</span>
+        <span style="font-size: 0.68rem; color: var(--emerald);">LIVE SYNC</span>
+      </div>
+
+      <div class="patient-glass-card">
+        <div style="font-weight: 700; font-size: 1rem; margin-bottom: 2px;">Ramanuja Pathy</div>
+        <div style="font-size: 0.75rem; color: var(--text-muted);">28 yrs · O+ · Clinical Sandbox ID: #170</div>
+        <div style="margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap;">
+          <span style="font-size: 0.68rem; background: rgba(251,113,133,0.15); color: var(--rose); padding: 2px 8px; border-radius: 99px; font-weight: 600;">⚠️ Penicillin Anaphylaxis</span>
+          <span style="font-size: 0.68rem; background: rgba(192,132,252,0.15); color: var(--purple); padding: 2px 8px; border-radius: 99px; font-weight: 600;">🧬 CYP2D6 Poor Metabolizer</span>
+        </div>
+      </div>
+
+      <div class="panel-title" style="margin-top: 10px;">📊 Physiological Sphere</div>
+      <div class="vitals-hologram">
+        <div class="holo-tile">
+          <div style="font-size: 0.68rem; color: var(--text-sub);">PULSE</div>
+          <div class="holo-val">76 <small style="font-size: 0.7rem;">bpm</small></div>
+        </div>
+        <div class="holo-tile">
+          <div style="font-size: 0.68rem; color: var(--text-sub);">SpO2</div>
+          <div class="holo-val" style="color: var(--emerald);">98%</div>
+        </div>
+        <div class="holo-tile">
+          <div style="font-size: 0.68rem; color: var(--text-sub);">BP</div>
+          <div class="holo-val">119/78</div>
+        </div>
+        <div class="holo-tile">
+          <div style="font-size: 0.68rem; color: var(--text-sub);">TEMP</div>
+          <div class="holo-val">98.4°F</div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Center Stage: Floating Dialogue Island -->
+    <section class="glass-panel stage-glass" id="paneSpatialCenter">
+      <div class="stage-top-bar">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span>✨</span>
+          <span style="font-weight: 700; font-size: 0.95rem;">Empathetic Clinical Dialogue</span>
+        </div>
+        <span style="font-size: 0.72rem; color: var(--cyan); font-family: var(--font-display);">SUB-MILLISEC NLP</span>
+      </div>
+
+      <div class="stage-stream" id="spatialStream">
+        <div class="spatial-bubble-wrap ai">
+          <div class="spatial-bubble">
+            Greetings Ramanuja. You are entering the <strong>Spatial Clinical Sandbox</strong> of RAMAN AI. Our client-side Markov empathy chain and Linear SVM ensemble are primed offline.
+            <br><br>
+            Please describe any discomfort or symptoms you are experiencing today.
+          </div>
+        </div>
+
+        <div class="spatial-bubble-wrap user">
+          <div class="spatial-bubble">
+            I am feeling sharp chest discomfort when breathing deeply, along with dry coughing.
+          </div>
+        </div>
+
+        <div class="spatial-bubble-wrap ai">
+          <div class="spatial-bubble">
+            Pleuritic discomfort exacerbated by deep inspiration and coughing warrants evaluation for <strong>Acute Bronchitis / Pleurisy (ICD-11: CA40)</strong>.
+            <br><br>
+            <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 12px; padding: 12px;">
+              <strong style="color: var(--cyan); font-size: 0.8rem; display: block; margin-bottom: 6px;">RECOMMENDED THERAPY FORMULARY</strong>
+              <div style="font-size: 0.8rem; display: flex; justify-content: space-between;">
+                <span>Azithromycin 500mg (Safe alternative)</span>
+                <span style="color: var(--emerald);">PASSED</span>
+              </div>
+              <div style="font-size: 0.8rem; display: flex; justify-content: space-between; margin-top: 4px;">
+                <span>Levosalbutamol Inhaler (100mcg)</span>
+                <span style="color: var(--cyan);">BRONCHODILATOR</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating Input Island -->
+      <div class="spatial-input-island">
+        <textarea class="spatial-input" id="spatialText" rows="1" placeholder="Describe symptoms (e.g. chest pain, munda bindhuchi)..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendSpatialMsg();}"></textarea>
+        <button class="spatial-send-btn" onclick="sendSpatialMsg()">➤</button>
+      </div>
+    </section>
+
+    <!-- Right Panel: Holographic Organ Map -->
+    <aside class="glass-panel" id="paneSpatialRight">
+      <div class="panel-header">
+        <span class="panel-title">🫁 Holographic Inspection</span>
+        <span style="font-size: 0.7rem; color: var(--cyan);">Vision 3D</span>
+      </div>
+
+      <div class="holo-organ-wrap">
+        <div class="holo-glow-ring">
+          <span style="font-size: 3rem; filter: drop-shadow(0 0 16px var(--cyan));">🫁</span>
+        </div>
+        <div style="margin-top: 20px; font-weight: 700; font-size: 0.9rem; text-align: center;">
+          Thoracic &amp; Pulmonary Field
+        </div>
+        <p style="font-size: 0.72rem; color: var(--text-muted); text-align: center; margin-top: 4px;">
+          Pleuritic motion vectors computed via client-side WebGPU acceleration.
+        </p>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- Device Switcher Dock -->
+  <div class="device-dock">
+    <button class="dock-pill active" onclick="setSpatialView('desktop', this)">🖥️ Desktop</button>
+    <button class="dock-pill" onclick="setSpatialView('tablet', this)">📱 Tablet</button>
+    <button class="dock-pill" onclick="setSpatialView('mobile', this)">📱 Mobile</button>
+  </div>
+
+  <script>
+    function toggleSpatialTheme() {
+      const isLight = document.documentElement.classList.toggle('light');
+      document.getElementById('themeIco').textContent = isLight ? '☀️' : '🌙';
+      document.getElementById('themeLbl').textContent = isLight ? 'Light' : 'Dark';
+    }
+
+    function sendSpatialMsg() {
+      const input = document.getElementById('spatialText');
+      const val = input.value.trim();
+      if (!val) return;
+
+      const stream = document.getElementById('spatialStream');
+      const userBubble = document.createElement('div');
+      userBubble.className = 'spatial-bubble-wrap user';
+      userBubble.innerHTML = `<div class="spatial-bubble">${escapeHtml(val)}</div>`;
+      stream.appendChild(userBubble);
+      input.value = '';
+      stream.scrollTop = stream.scrollHeight;
+
+      setTimeout(() => {
+        const aiBubble = document.createElement('div');
+        aiBubble.className = 'spatial-bubble-wrap ai';
+        aiBubble.innerHTML = `<div class="spatial-bubble">Processed <em>"${escapeHtml(val)}"</em>. Neural trie matched relevant clinical markers. Patient allergen shield maintained.</div>`;
+        stream.appendChild(aiBubble);
+        stream.scrollTop = stream.scrollHeight;
+      }, 600);
+    }
+
+    function setSpatialView(mode, btn) {
+      document.querySelectorAll('.dock-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const ws = document.getElementById('spatialWs');
+      const left = document.getElementById('paneSpatialLeft');
+      const right = document.getElementById('paneSpatialRight');
+
+      if (mode === 'desktop') {
+        ws.style.maxWidth = '1680px';
+        ws.style.gridTemplateColumns = '310px 1fr 360px';
+        left.style.display = 'flex';
+        right.style.display = 'flex';
+      } else if (mode === 'tablet') {
+        ws.style.maxWidth = '900px';
+        ws.style.gridTemplateColumns = '280px 1fr';
+        left.style.display = 'flex';
+        right.style.display = 'none';
+      } else if (mode === 'mobile') {
+        ws.style.maxWidth = '420px';
+        ws.style.gridTemplateColumns = '1fr';
+        left.style.display = 'none';
+        right.style.display = 'none';
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+  </script>
+</body>
+</html>
