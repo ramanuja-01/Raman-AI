@@ -1297,6 +1297,10 @@
               <circle cx="71.5" cy="36" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
               <circle cx="78.5" cy="36" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
               
+              <!-- 2B. Ears (Otitis Media / କାନ ବିନ୍ଧା) -->
+              <circle cx="67" cy="32" r="3" class="map-hotspot" data-symptom="otitis media" data-en="Child has severe ear pain and ear tugging with fever" data-or="ପିଲାଟିର କାନ ବିନ୍ଧୁଛି ଏବଂ କାନ ଟାଣୁଛି ଜ୍ୱର ସହିତ" data-label="EARS (କାନ ବିନ୍ଧା / OTITIS)" fill="#00e5ff"/>
+              <circle cx="83" cy="32" r="3" class="map-hotspot" data-symptom="otitis media" data-en="Child has severe ear pain and ear tugging with fever" data-or="ପିଲାଟିର କାନ ବିନ୍ଧୁଛି ଏବଂ କାନ ଟାଣୁଛି ଜ୍ୱର ସହିତ" data-label="EARS (କାନ ବିନ୍ଧା / OTITIS)" fill="#00e5ff"/>
+              
               <!-- 3. Throat (Cough / କାଶ) -->
               <circle cx="75" cy="47" r="4" class="map-hotspot" data-symptom="cough" data-en="I have a persistent cough with mucus and a sore throat" data-or="ମୋର ବହୁତ କାଶ ଏବଂ ଥଣ୍ଡା ହେଉଛି" data-label="THROAT (କାଶ / ଗଳା)" fill="#ff00a0"/>
               
@@ -1314,6 +1318,9 @@
 
               <!-- 8. Metabolic (Diabetes / ମଧୁମେହ) -->
               <circle cx="75" cy="126" r="4" class="map-hotspot" data-symptom="diabetes" data-en="I have high blood sugar, extreme thirst, and frequent urination" data-or="ମୋର ରକ୍ତ ଶର୍କରା ବୃଦ୍ଧି ପାଇଛି" data-label="METABOLIC (ମଧୁମେହ)" fill="#00e5ff"/>
+              
+              <!-- 8B. Pelvis (Dysmenorrhea & Women's Health / ଋତୁସ୍ରାବ ଯନ୍ତ୍ରଣା) -->
+              <circle cx="75" cy="138" r="5" class="map-hotspot" data-symptom="dysmenorrhea" data-en="I have severe menstrual cramps and lower pelvic pain" data-or="ମୋର ପ୍ରବଳ ଋତୁସ୍ରାବ ଯନ୍ତ୍ରଣା ଏବଂ ପେଲଭିକ୍ ବ୍ୟଥା ହେଉଛି" data-label="PELVIS (ଋତୁସ୍ରାବ / DYSMENORRHEA)" fill="#ff0077"/>
 
               <!-- 9. Skin (Skin Rash / ଚର୍ମ କୁଣ୍ଡେଇ ହେବା) -->
               <circle cx="46" cy="114" r="4" class="map-hotspot" data-symptom="skin rash" data-en="I have an itchy red skin rash and allergic skin patches" data-or="ମୋ ଚର୍ମ କୁଣ୍ଡେଇ ହେଉଛି ଏବଂ ଲାଲ ପଡିଯାଇଛି" data-label="SKIN (ଚର୍ମ କୁଣ୍ଡେଇ ହେବା)" fill="#a8ff78"/>
@@ -1338,6 +1345,7 @@
             <div class="anatomical-chips-carousel" id="anatomicalChipsCarousel">
               <button type="button" class="organ-chip" data-symptom="headache" onclick="window.handleOrganChipClick(this)">🤕 Head / ମୁଣ୍ଡ</button>
               <button type="button" class="organ-chip" data-symptom="eye pain" onclick="window.handleOrganChipClick(this)">👁️ Eyes / ଆଖି</button>
+              <button type="button" class="organ-chip" data-symptom="otitis media" onclick="window.handleOrganChipClick(this)">👂 Ears / କାନ</button>
               <button type="button" class="organ-chip" data-symptom="cough" onclick="window.handleOrganChipClick(this)">🗣️ Throat / କାଶ</button>
               <button type="button" class="organ-chip" data-symptom="chest pain" onclick="window.handleOrganChipClick(this)">💔 Chest / ଛାତି</button>
               <button type="button" class="organ-chip" data-symptom="high blood pressure" onclick="window.handleOrganChipClick(this)">❤️ Heart / ରକ୍ତଚାପ</button>
@@ -1346,6 +1354,7 @@
               <button type="button" class="organ-chip" data-symptom="diabetes" onclick="window.handleOrganChipClick(this)">🩸 Metabolic / ମଧୁମେହ</button>
               <button type="button" class="organ-chip" data-symptom="skin rash" onclick="window.handleOrganChipClick(this)">🩹 Skin / ଚର୍ମ</button>
               <button type="button" class="organ-chip" data-symptom="joint pain" onclick="window.handleOrganChipClick(this)">🦵 Joints / ଗଣ୍ଠି</button>
+              <button type="button" class="organ-chip" data-symptom="dysmenorrhea" onclick="window.handleOrganChipClick(this)">🌸 Pelvis / ଋତୁସ୍ରାବ</button>
             </div>
           </div>
         </div>
@@ -1363,6 +1372,10 @@
             <button class="symptom-tag" data-symptom="I have diabetes and my blood sugar is high">🩸 Diabetes</button>
             <button class="symptom-tag" data-symptom="I have eye pain and blurred vision">👁️ Eye Problems</button>
             <button class="symptom-tag" data-symptom="I have back pain and difficulty moving">🔩 Back Pain</button>
+            <button class="symptom-tag" data-symptom="Child ear tugging and acute ear pain with fever in toddler">👂 Ear Infection / Otitis</button>
+            <button class="symptom-tag" data-symptom="Severe menstrual cramps with lower pelvic pain dysmenorrhea">🌸 Period Cramps / Dysmenorrhea</button>
+            <button class="symptom-tag" data-symptom="High blood pressure in pregnancy with headache and preeclampsia risk">🤰 High BP in Pregnancy</button>
+            <button class="symptom-tag" data-symptom="Infant lethargy and yellow skin eyes neonatal jaundice">👶 Neonatal Jaundice</button>
           </div>
         </div>
 
