@@ -61,6 +61,42 @@ const DRUG_PK_PROFILES = {
     k21: 0.50,
     mec: 0.05,
     mtc: 0.25
+  },
+  mefenamic_acid: {
+    name: "Mefenamic Acid",
+    doseMg: 500,
+    ka: 1.2,     // Absorption rate constant (1/hr)
+    cl: 24.5,    // Clearance (L/hr)
+    vc: 70.0,    // Central distribution volume (L)
+    vp: 35.0,    // Peripheral distribution volume (L)
+    k12: 0.55,
+    k21: 0.35,
+    mec: 2.0,    // Therapeutic analgesia window (mg/L)
+    mtc: 20.0
+  },
+  fluconazole: {
+    name: "Fluconazole",
+    doseMg: 150,
+    ka: 0.9,     // Absorption rate constant (1/hr)
+    cl: 1.6,     // Low hepatic clearance (L/hr), half-life ~30h
+    vc: 49.0,    // Volume of distribution (0.7 L/kg * 70kg)
+    vp: 21.0,
+    k12: 0.40,
+    k21: 0.25,
+    mec: 1.5,    // Antifungal MIC target (mg/L)
+    mtc: 12.0
+  },
+  labetalol: {
+    name: "Labetalol",
+    doseMg: 100,
+    ka: 1.5,     // Absorption rate constant (1/hr)
+    cl: 84.0,    // High first-pass clearance (L/hr)
+    vc: 420.0,   // Extensive tissue distribution volume (L)
+    vp: 210.0,
+    k12: 0.75,
+    k21: 0.45,
+    mec: 0.05,   // Therapeutic antihypertensive range (mg/L)
+    mtc: 0.5
   }
 };
 

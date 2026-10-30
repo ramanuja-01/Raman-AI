@@ -1961,6 +1961,132 @@ const SLM_TRAINING_CORPUS = {
     "insomnia rati re nida heuni deha durbala laguchi tired easily",
     "tossing and turning in bed restless sleep cannot fall asleep",
     "sleepy during the day sleep deprivation waking up tired"
+  ],
+  "otitis media": [
+    "severe ear pain ear tugging crying toddler fever acute otitis media",
+    "baby pulling ears crying constantly high temperature ear drainage",
+    "kana bitha heuchi pila kanduchi earache fever crying child",
+    "sharp pain in right ear hearing muffled discharge from ear",
+    "toddler ear tugging fever irritability bulging red ear drum",
+    "kana kuheuchi kana pani paduchi pila jaro kanduchi",
+    "ear infection child crying night waking otalgia middle ear fluid",
+    "child holding ear crying fever yellow pus discharge ear",
+    "kana betha pila deha garam kana dhariki kanduchi",
+    "acute ear pain after cold blocked ear infant irritability",
+    "middle ear infection ear canal swelling crying preverbal infant",
+    "kana bitha jaro pila asustha kana kuheuchi"
+  ],
+  "neonatal jaundice": [
+    "newborn yellow skin yellow eyes high bilirubin neonatal jaundice",
+    "baby scleral icterus yellow palms lethargic poor feeding phototherapy",
+    "pila deha haladia padichi akhi haladia jaundice infant",
+    "infant jaundice high bilirubin levels sleepy baby not feeding",
+    "newborn yellowish discoloration face chest lethargy dark urine",
+    "pila dudha piunahi deha pura haladia jaundice infant",
+    "hyperbilirubinemia newborn phototherapy required yellow eyes infant",
+    "baby yellow skin sleepy lethargic bilirubin rising",
+    "naba jata sishu haladia deha akhi haladia jaundice",
+    "infant with yellow skin and sclera poor latching dark yellow urine",
+    "neonatal icterus serum bilirubin elevated kernicterus risk",
+    "chhota pila haladia padigala akhi ebam deha jaundice"
+  ],
+  "febrile seizure": [
+    "child high fever convulsion shivering shaking febrile seizure",
+    "toddler fever spike shaking limbs eyes rolling back convulsion",
+    "pila jaro tharuchi deha tanidela convulsion seizure child",
+    "febrile seizure shaking twitching body stiff fever spike",
+    "child jerking arms legs high fever 103F postictal sleepiness",
+    "pila jaro re kampana akhi ulati gala seizure convulsion",
+    "fever convulsion toddler shaking stiff limbs emergency seizure",
+    "sudden high temperature shivering child shaking uncontrollably",
+    "pila deha garam kampana heuchi jaro re tharuchi",
+    "febrile convulsion child unconscious shaking high fever",
+    "shivering convulsions thermal spike child twitching limbs",
+    "jaro re pila deha tanuchi kampana heba"
+  ],
+  "hfmd": [
+    "hand foot mouth disease blisters palms soles mouth ulcers child",
+    "toddler drooling mouth sores refusing food rash hands feet",
+    "muha kshata goda hata phuta phuta hfmd coxsackie child",
+    "red spots blisters hands feet mouth sores toddler fever",
+    "painful mouth blisters child cannot swallow rash on palms and soles",
+    "goda hata muha re phuta phuta lal daag pila khai paruni",
+    "vesicular lesions palms soles painful oral ulcers toddler hfmd",
+    "child refusing milk painful mouth sores rash on feet buttocks",
+    "muha bitha goda hata phuta lal daag fever in toddler",
+    "coxsackievirus mouth ulcers palm soles rash pediatric exanthem",
+    "aphthous stomatitis with hand foot vesicle rash toddler",
+    "pila galo kshata ebam hatare phuta phuta lal daag"
+  ],
+  "dysmenorrhea": [
+    "severe period cramps menstrual cramps pelvic uterine pain dysmenorrhea",
+    "painful menstruation lower back pain uterine cramps vomiting menses",
+    "petare tana bitha menses samayare kasta period cramps severe",
+    "debilitating period pain pelvic cramps heating pad mefenamic acid",
+    "severe menstrual pelvic pain lower abdominal cramps nausea menses",
+    "masesika betha tala peta tana bitha period cramps",
+    "menstrual cramps radiating to thighs backache painful periods",
+    "spasmodic lower abdominal pain during menstruation dysmenorrhea",
+    "period re asajhya jantrana petare bitha kasta",
+    "severe dysmenorrhea uterine cramping first days of menses",
+    "cyclical pelvic cramping period pain incapacitating dysmenorrhea",
+    "rutusrava kasta tala petare tana bitha"
+  ],
+  "pcos": [
+    "irregular periods pcos facial hair weight gain polycystic ovary",
+    "missed periods months hirsutism cystic ovaries hormonal acne",
+    "masesika thik nahi irregular period mukhare kesha pcos",
+    "polycystic ovarian syndrome oligomenorrhea weight gain acne",
+    "irregular menstrual cycles pelvic ultrasound polycystic ovaries",
+    "pcos samasya deha mota heba ebam period band heba",
+    "excessive facial hair irregular menses insulin resistance pcos",
+    "missed periods polycystic ovaries hirsutism hormonal imbalance",
+    "irregular periods weight gain facial hair pcos syndrome",
+    "delayed periods months cystic ovaries androgen excess",
+    "rotterdam criteria polycystic ovarian morphology hyperandrogenism",
+    "period maso maso heuni mukhare kesha pcos"
+  ],
+  "pelvic inflammatory disease": [
+    "pelvic inflammatory disease pid lower abdominal pain foul discharge",
+    "cervical motion tenderness deep dyspareunia fever pelvic pain",
+    "tala peta ghoro bitha durghandha srava pid infection",
+    "lower abdominal pelvic tenderness abnormal vaginal discharge fever",
+    "adnexal tenderness purulent cervical discharge painful intercourse",
+    "tala peta betha jonio durghandha srava jaro pid",
+    "acute pelvic pain fever foul smelling discharge cervical tenderness",
+    "severe pelvic infection tenderness abnormal bleeding discharge",
+    "tala petare asajhya bitha jonio srava pid",
+    "pelvic inflammatory disease salpingitis lower abdominal pain",
+    "chandelier sign cervical excitation tenderness pelvic infection",
+    "tala petare ghoro jantrana jonio durghandha srava"
+  ],
+  "gestational hypertension": [
+    "high blood pressure in pregnancy preeclampsia facial swelling headache",
+    "pregnant high bp protein in urine blurred vision preeclampsia",
+    "garbhabastha uccha raktachapa preeclampsia mukha phuliba",
+    "gestational hypertension high bp 150 95 pregnant severe headache",
+    "swollen hands face high blood pressure pregnancy preeclampsia risk",
+    "garbhavati uccha raktachapa akhi agare aloka tharuchi",
+    "preeclampsia flashing lights visual disturbances high bp pregnant",
+    "proteinuria elevated blood pressure third trimester pregnancy",
+    "garbhasthare matha bitha bp barhiba preeclampsia",
+    "gestational hypertension epigastric pain blurred vision high bp",
+    "preeclampsia severe features hyperreflexia high blood pressure pregnancy",
+    "garbhabastha samayare matha bitha ebam uccha raktachapa"
+  ],
+  "vaginal candidiasis": [
+    "vaginal yeast infection curd like discharge intense vulvar itching",
+    "cottage cheese discharge burning sensation vaginal candidiasis",
+    "jonio kunda heba dahi bhali shukla srava yeast infection",
+    "intense vaginal itching white clumpy discharge redness burning",
+    "vulvovaginal candidiasis painful intercourse thick white discharge",
+    "jonio jwalan kunda heba dahi bhali srava thrush",
+    "vaginal thrush fungal infection severe itching curd like discharge",
+    "vulvar erythema dysuria white curdy vaginal discharge",
+    "jonio lal padiba kunda jwalan candida infection",
+    "vaginal candidiasis yeast infection burning itching white discharge",
+    "curd like vaginal discharge erythema fungal vulvovaginitis",
+    "jonio re kunda ebam dahi bhali srava"
   ]
 };
 
@@ -3018,6 +3144,115 @@ const MEDICAL_KB = {
     precautions: ["Practice strict sleep hygiene (no screens / blue light 1 hour before bed)", "Maintain a regular sleep and wake schedule, even on weekends", "Avoid daytime naps longer than 20 minutes", "Seek specialist consult if insomnia persists for more than 4 weeks"],
     diet: ["Warm milk before bedtime (contains tryptophan)", "Magnesium-rich foods (bananas, almonds, pumpkin seeds)", "Avoid caffeine, tea, or chocolate after 4 PM", "Avoid heavy meals within 3 hours of sleep"],
     specialist: "Somnologist / Sleep Specialist / Psychiatrist"
+  },
+  "otitis media": {
+    icd11: "AB00",
+    conditions: ["Acute Otitis Media", "Suppurative Otitis Media", "Tympanic Membrane Inflammation", "Pediatric Ear Infection"],
+    medications: [
+      { name: "Amoxicillin 250mg/5mL Oral Suspension (Brand: Mox, Amoxil)", snomed: "372687006", dose: "80-90 mg/kg/day divided every 12 hours for 10 days", note: "First-line pediatric antibiotic for bacterial otitis media. High middle-ear fluid concentration. Shake suspension well before administering. Strictly blocked if Penicillin allergy reported." },
+      { name: "Amoxicillin / Clavulanate 457mg/5mL (Brand: Augmentin DDS)", snomed: "372690001", dose: "90 mg/kg/day amoxicillin component divided q12h", note: "Beta-lactamase resistant penicillin combination. Indicated for recurrent otitis media or treatment failure." },
+      { name: "Paracetamol 120mg/5mL Pediatric Drops (Brand: Calpol, Crocin)", snomed: "387584000", dose: "10-15 mg/kg every 4-6 hours as needed for ear pain and fever", note: "Pediatric analgesic and antipyretic. Relieves acute ear throbbing and lowers body temperature." }
+    ],
+    precautions: ["Administer the full 10-day antibiotic course even if child seems pain-free", "Do not insert cotton swabs or unprescribed ear drops into the ear canal", "Keep ears dry during bathing", "Seek immediate pediatric care if swelling or redness develops behind the ear (mastoiditis)"],
+    diet: ["Maintain plenty of oral fluids to thin mucus secretions", "Warm nourishing broths and pureed foods", "Avoid feeding infant while lying completely flat on back (eustachian tube reflux)"],
+    specialist: "Pediatrician / ENT Specialist (Otolaryngologist)"
+  },
+  "neonatal jaundice": {
+    icd11: "KA60",
+    conditions: ["Neonatal Hyperbilirubinemia", "Physiological Jaundice of Newborn", "Breast Milk Jaundice", "Neonatal Cholestasis"],
+    medications: [
+      { name: "Phototherapy Protocol (Intensive Blue-Green Light 460-490nm)", snomed: "399248000", dose: "Continuous irradiance >30 µW/cm²/nm with eye protection shields", note: "Converts insoluble unconjugated bilirubin into water-soluble lumirubin via structural photoisomerization for rapid renal excretion." },
+      { name: "Ursodeoxycholic Acid 150mg/5mL (Brand: Udiliv, Urso)", snomed: "387037000", dose: "10-15 mg/kg/day divided into 2-3 doses", note: "Hepatoprotective hydrophilic bile acid. Enhances bile flow and promotes clearance in cholestatic jaundice." },
+      { name: "Frequent Enteral Feeding Regimen (Breastmilk / Formula)", snomed: "387310006", dose: "Feed every 2 to 2.5 hours (8-12 feedings per 24 hours)", note: "Stimulates gastrointestinal motility and promotes early meconium passage, minimizing enterohepatic circulation of bilirubin." }
+    ],
+    precautions: ["Measure transcutaneous or total serum bilirubin every 12-24 hours", "Cover eyes with certified opaque neonatal eye patches during phototherapy", "Monitor diaper count (minimum 6 wet diapers and 3-4 stools daily)", "Immediate ER evaluation if baby is lethargic, has high-pitched cry, or arches back"],
+    diet: ["Exclusive breastmilk or specialized infant formula every 2-2.5 hours", "Avoid giving plain water or sugar water to newborns (risk of hyponatremia)"],
+    specialist: "Neonatologist / Pediatrician"
+  },
+  "febrile seizure": {
+    icd11: "MB20.0",
+    conditions: ["Simple Febrile Seizure", "Complex Febrile Seizure", "Fever-Induced Pediatric Convulsion"],
+    medications: [
+      { name: "Paracetamol 250mg/5mL Oral Suspension (Brand: Calpol 250, Crocin DS)", snomed: "387584000", dose: "15 mg/kg orally or rectal suppository every 4-6 hours PRN", note: "Rapid antipyretic. Lowers core body temperature and minimizes thermal threshold spikes triggering convulsions." },
+      { name: "Midazolam Nasal Spray 0.5mg/actuation (Brand: Me-Dorm, Insed)", snomed: "387340007", dose: "0.2 mg/kg administered intranasally if seizure lasts > 5 minutes", note: "Rapid-acting benzodiazepine for acute seizure termination. Administer into nostrils with child turned on side." },
+      { name: "Oral Rehydration Salts (ORS Liquid)", snomed: "387310006", dose: "Small sips frequently once child is fully awake and alert", note: "Restores electrolyte balance and prevents post-ictal dehydration." }
+    ],
+    precautions: ["Turn child onto their side (recovery position) to maintain clear airway", "Never place any object, spoon, or finger in child's mouth during convulsion", "Time the duration of the convulsion; call emergency if > 5 minutes", "Avoid cold water ice baths which induce shivering and core temperature elevation"],
+    diet: ["Cool or room temperature fluids once fully conscious", "Electrolyte oral solutions and light soups", "Never offer food or drink while child is sleepy or convulsing"],
+    specialist: "Pediatric Neurologist / Emergency Pediatrician"
+  },
+  "hfmd": {
+    icd11: "1F03",
+    conditions: ["Hand, Foot and Mouth Disease", "Coxsackievirus Enteroviral Vesicular Stomatitis", "Enterovirus 71 Exanthem"],
+    medications: [
+      { name: "Paracetamol 120mg/5mL Oral Suspension (Brand: Calpol)", snomed: "387584000", dose: "10-15 mg/kg every 4-6 hours as needed for fever and pain", note: "Controls pyrexia and reduces distress from painful oral ulcerations." },
+      { name: "Choline Salicylate & Lignocaine Topical Oral Gel (Brand: Zytee, Bonjela)", snomed: "387213009", dose: "Gently apply small dab to oral mucosal ulcers 15 minutes before meals", note: "Topical analgesic providing surface mucosal numbness to allow child to swallow liquids comfortably." },
+      { name: "Zinc Gluconate Drops 20mg (Brand: Zincovit)", snomed: "387140004", dose: "1 mL daily for 14 days", note: "Supports mucosal cell repair and accelerates re-epithelialization of vesicular blisters." }
+    ],
+    precautions: ["Highly contagious virus; isolate child from daycare/school until blisters crust over", "Strict handwashing after diaper changes and contact with blister fluid", "Disinfect toys and feeding bottles frequently", "Watch for signs of dehydration (dry lips, crying without tears, no urine > 6 hours)"],
+    diet: ["Cold, soothing liquids: tender coconut water, cold milk, yogurt, ice cream", "Pureed non-acidic fruits (applesauce, mashed banana)", "Avoid citrus, tomatoes, salty chips, and spicy curries"],
+    specialist: "Pediatrician / Pediatric Dermatologist"
+  },
+  "dysmenorrhea": {
+    icd11: "GA34.0",
+    conditions: ["Primary Dysmenorrhea", "Secondary Dysmenorrhea", "Spasmodic Menstrual Pelvic Pain"],
+    medications: [
+      { name: "Mefenamic Acid 500mg & Dicyclomine 20mg (Brand: Meftal-Spas)", snomed: "387525002", dose: "1 tablet three times daily with meals starting at cramping onset", note: "Potent NSAID and smooth muscle antispasmodic. Directly blocks myometrial prostaglandin F2-alpha synthesis to stop painful uterine contractions." },
+      { name: "Drotaverine Hydrochloride 80mg (Brand: Drotin)", snomed: "387431007", dose: "1 tablet twice or thrice daily after meals", note: "Selective phosphodiesterase-4 inhibitor antispasmodic. Relieves smooth muscle spasms without anticholinergic side effects." },
+      { name: "Naproxen 500mg (Brand: Naprosyn)", snomed: "387458008", dose: "500 mg initial, then 250 mg every 6-8 hours with food", note: "Long-acting non-steroidal anti-inflammatory. Provides sustained 12-hour relief for severe cyclical pelvic cramping." }
+    ],
+    precautions: ["Always take pain relievers with food or milk to safeguard gastric lining", "Apply warm heating pad or hot water bottle to lower abdomen and sacrum", "Maintain regular low-impact aerobic exercise (walking, yoga)", "Consult gynecologist if cramps progressively worsen or are unresponsive to NSAIDs (rule out endometriosis)"],
+    diet: ["Warm chamomile or ginger tea (anti-inflammatory)", "Magnesium-rich foods (almonds, dark leafy greens, bananas)", "Omega-3 rich seeds (chia seeds, flaxseeds)", "Avoid high sodium, caffeine, and alcohol during menstrual cycle"],
+    specialist: "Gynecologist / Women's Health Specialist"
+  },
+  "pcos": {
+    icd11: "5A80.1",
+    conditions: ["Polycystic Ovary Syndrome", "Hyperandrogenic Anovulatory Infertility", "Stein-Leventhal Syndrome"],
+    medications: [
+      { name: "Metformin Hydrochloride 500mg SR (Brand: Glycomet SR)", snomed: "372567009", dose: "500 mg orally twice daily with meals", note: "Biguanide insulin sensitizer. Decreases peripheral insulin resistance, lowers compensatory hyperinsulinemia, and reduces ovarian androgen production." },
+      { name: "Ethinylestradiol 0.035mg & Cyproterone Acetate 2mg (Brand: Diane-35, Krimson-35)", snomed: "387258007", dose: "1 tablet daily for 21 consecutive days followed by 7-day pill-free interval", note: "Anti-androgenic oral contraceptive. Suppresses pituitary LH secretion, regularizes menses, and treats hirsutism and cystic acne." },
+      { name: "Myo-Inositol 2000mg & D-Chiro-Inositol 50mg Sachet (Brand: Ovasitol)", snomed: "387157007", dose: "1 sachet dissolved in water twice daily", note: "Physiological secondary messenger. Restores physiological 40:1 inositol ratio, improves oocyte quality, and supports ovulatory function." }
+    ],
+    precautions: ["Engage in 150 minutes of structured moderate-intensity exercise weekly", "Monitor fasting blood glucose, HbA1c, and lipid profile every 6-12 months", "Combined hormonal contraceptives contraindicated in smokers > 35 years or history of thrombosis", "Schedule pelvic ultrasound to monitor endometrial thickness"],
+    diet: ["Low glycemic index (GI) Mediterranean diet rich in fiber", "Lean proteins (lentils, fish, tofu, egg whites)", "Avoid refined sugars, sweet beverages, white bread, and ultra-processed foods"],
+    specialist: "Endocrinologist / Reproductive Gynecologist"
+  },
+  "pelvic inflammatory disease": {
+    icd11: "GA00",
+    conditions: ["Acute Pelvic Inflammatory Disease", "Salpingitis and Oophoritis", "Endometritis", "Tubo-Ovarian Abscess Risk"],
+    medications: [
+      { name: "Ceftriaxone 500mg Intramuscular Injection (Brand: Monocef)", snomed: "387342004", dose: "Single 500 mg stat IM injection with 1% lidocaine diluent", note: "Third-generation cephalosporin providing bactericidal coverage against Neisseria gonorrhoeae." },
+      { name: "Doxycycline 100mg Capsule (Brand: Doxicip, Vibramycin)", snomed: "387524003", dose: "100 mg orally twice daily for 14 continuous days", note: "Tetracycline antibiotic providing comprehensive coverage against Chlamydia trachomatis. Take with full glass of water. Contraindicated in pregnancy." },
+      { name: "Metronidazole 400mg Tablet (Brand: Flagyl)", snomed: "387309009", dose: "400 mg orally twice daily for 14 days", note: "Nitroimidazole antimicrobial covering anaerobic pelvic bacteria and Trichomonas. Strictly avoid all alcohol consumption during therapy." }
+    ],
+    precautions: ["MUST complete the full 14-day antibiotic regimen even if pelvic pain subsides early", "Sexual partner must be clinically evaluated and treated to prevent reinfection", "Abstain from sexual intercourse until both partners finish antimicrobial course", "Seek emergency inpatient hospital care if high fever, severe nausea, or peritoneal rebound tenderness develops"],
+    diet: ["High fluid intake with oral rehydration", "Nutrient-dense probiotic foods (plain curd, fermented foods) to support gut flora", "Avoid spicy foods and alcohol"],
+    specialist: "Gynecologist / Infectious Disease Specialist"
+  },
+  "gestational hypertension": {
+    icd11: "JA21",
+    conditions: ["Gestational Hypertension", "Preeclampsia without Severe Features", "Preeclampsia with Severe Features", "Pregnancy-Induced Hypertension"],
+    medications: [
+      { name: "Labetalol Hydrochloride 100mg (Brand: Labetamac, Trandate)", snomed: "387467000", dose: "100 mg orally twice daily, titrate up to 400 mg TDS if needed", note: "Combined alpha-1 and non-selective beta-blocker. First-line antihypertensive in pregnancy. Preserves uteroplacental blood flow with established fetal safety." },
+      { name: "Methyldopa 250mg (Brand: Alphadopa)", snomed: "387150009", dose: "250 mg orally two to three times daily", note: "Centrally-acting alpha-2 adrenergic agonist. Long-standing decades of fetal safety and absence of teratogenic risk in pregnancy." },
+      { name: "Nifedipine Extended Release 20mg (Brand: Nicardia Retard)", snomed: "387399008", dose: "20-30 mg orally once or twice daily", note: "Dihydropyridine calcium channel blocker. Effective maternal vasodilation. Do not bite or crush tablet." },
+      { name: "Low-Dose Aspirin 150mg (Brand: Ecosprin 150)", snomed: "387458008", dose: "150 mg orally once daily taken at bedtime from 12-36 weeks gestation", note: "Prophylactic antiplatelet therapy for high preeclampsia risk. Inhibits platelet thromboxane A2 and prevents placental vascular insufficiency." }
+    ],
+    precautions: ["🚨 CONTRAINDICATED: ACE inhibitors (Enalapril) and ARBs (Telmisartan) strictly banned due to fatal fetal renal dysgenesis", "Measure blood pressure daily; record in maternal health log", "Immediate ER admission if BP >= 160/110 mmHg, severe epigastric pain, or persistent headache with visual flashes", "Perform weekly urine protein dipstick and fetal growth ultrasound scans"],
+    diet: ["Normal salt intake (do NOT restrict sodium severely during pregnancy)", "High protein diet with plenty of water", "Avoid energy drinks, excess caffeine, and licorice"],
+    specialist: "Maternal-Fetal Medicine (Perinatologist) / Obstetrician & Gynecologist"
+  },
+  "vaginal candidiasis": {
+    icd11: "1F23.0",
+    conditions: ["Vaginal Candidiasis", "Vulvovaginal Thrush", "Candida Albicans Vulvovaginitis", "Mycotic Vaginitis"],
+    medications: [
+      { name: "Fluconazole 150mg Tablet (Brand: Forcan, Flucos, Diflucan)", snomed: "387413009", dose: "Single 150 mg oral dose (Stat)", note: "Triazole antifungal. Inhibits fungal cytochrome P450 lanosterol 14-alpha-demethylase. Rapidly clears vaginal yeast infection. Contraindicated in 1st trimester pregnancy." },
+      { name: "Clotrimazole 100mg Vaginal Pessaries (Brand: Candid V6)", snomed: "387405005", dose: "1 pessary inserted deeply into vagina at bedtime for 6 consecutive nights", note: "Topical imidazole antifungal. Safe first-choice therapy during all trimesters of pregnancy. Use applicator with gentle care." },
+      { name: "Miconazole Nitrate 2% Topical Cream (Brand: Micogel)", snomed: "387410007", dose: "Apply thin layer to external vulva twice daily for 7 days", note: "Topical soothing antifungal. Rapidly relieves external vulvar itching, burning, and localized swelling." }
+    ],
+    precautions: ["Avoid oral Fluconazole during first trimester of pregnancy (substitute with topical Clotrimazole)", "Wear loose, breathable 100% cotton underwear", "Avoid feminine hygiene sprays, perfumed soaps, and vaginal douching", "Complete full 6-night course of pessaries even if itching resolves early"],
+    diet: ["Unsweetened probiotic yogurt / curd to restore lactobacillus flora", "Drink 2-3 liters of water daily", "Reduce refined sugars and carbohydrates which foster candida proliferation"],
+    specialist: "Gynecologist / General Physician"
   }
 };
 
@@ -3048,7 +3283,16 @@ const KEYWORD_MAP = {
   "hyperlipidemia|cholesterol|ldl|triglycerides|hypercholesterolemia|lipid panel": "hyperlipidemia",
   "hypothyroidism|tsh|thyroid|myxedema|goiter|thyroiditis|levothyroxine": "hypothyroidism",
   "renal failure|kidney failure|creatinine|egfr|kidney function|uremia|ckd": "renal failure",
-  "insomnia|sleep|sleepless|sleepy|restless sleep|nida heuni|nida hauni": "insomnia"
+  "insomnia|sleep|sleepless|sleepy|restless sleep|nida heuni|nida hauni": "insomnia",
+  "otitis media|ear infection|ear tugging|ear pain|earache|kana bitha|kana kuheuchi|kana pani": "otitis media",
+  "neonatal jaundice|infant jaundice|yellow eyes infant|yellow skin baby|pila deha haladia|icterus": "neonatal jaundice",
+  "febrile seizure|convulsion child|fever shivering child|pila jaro|seizure fever|kampana": "febrile seizure",
+  "hfmd|hand foot mouth|mouth sores child|palm soles rash|goda hata phuta": "hfmd",
+  "dysmenorrhea|period cramps|menstrual cramps|menstrual pain|petare tana bitha|menses bitha": "dysmenorrhea",
+  "pcos|polycystic ovary|irregular periods|hirsutism|facial hair periods|oligomenorrhea": "pcos",
+  "pelvic inflammatory disease|pid|cervical tenderness|foul vaginal discharge|tala peta ghoro bitha": "pelvic inflammatory disease",
+  "gestational hypertension|preeclampsia|high blood pressure pregnancy|garbhabastha uccha raktachapa": "gestational hypertension",
+  "vaginal candidiasis|yeast infection|curd discharge|cottage cheese discharge|vulvar itching|jonio kunda": "vaginal candidiasis"
 };
 
 
@@ -5836,7 +6080,16 @@ const CLINICAL_DICTS = {
   "multiple sclerosis": ["demyelinating plaques", "uhthoff phenomenon", "optic neuritis", "oligoclonal bands", "white matter lesions", "myelin degradation"],
   "stroke": ["cerebral ischemia", "cerebral infarction", "thrombotic occlusion", "hemiplegia paralysis", "transient ischemic attack", "ischemic penumbra"],
   "hyperlipidemia": ["hypercholesterolemia", "atherosclerotic plaque", "low-density lipoprotein", "triglyceride elevation", "lipid profile clearance", "hmg-coa inhibition"],
-  "hypothyroidism": ["thyroid stimulating hormone", "levothyroxine replacement", "hashimoto thyroiditis", "thyroid follicle activity", "subclinical hypothyroidism", "myxedema"]
+  "hypothyroidism": ["thyroid stimulating hormone", "levothyroxine replacement", "hashimoto thyroiditis", "thyroid follicle activity", "subclinical hypothyroidism", "myxedema"],
+  "otitis media": ["acute otitis media", "erythematous tympanic membrane", "middle ear effusion", "bulging tympanic membrane", "tympanic perforation", "conductive hearing loss", "mastoid tenderness"],
+  "neonatal jaundice": ["neonatal hyperbilirubinemia", "unconjugated bilirubin", "dermal icterus", "kernicterus risk", "phototherapy irradiance", "biliary atresia", "hepatic glucuronosyltransferase"],
+  "febrile seizure": ["febrile convulsion", "hyperpyrexia", "generalized tonic-clonic", "post-ictal drowsiness", "thermal seizure threshold", "status epilepticus", "pediatric pyrexia"],
+  "hfmd": ["coxsackievirus a16", "enterovirus 71", "vesicular stomatitis", "maculopapular rash", "oral enanthem", "herpangina", "cutaneous exanthem"],
+  "dysmenorrhea": ["primary dysmenorrhea", "myometrial prostaglandin f2-alpha", "pelvic uterine cramping", "spasmodic dysmenorrhea", "endometriosis rule-out", "vasomotor pelvic discomfort"],
+  "pcos": ["polycystic ovary syndrome", "hyperandrogenism", "ovarian follicular cysts", "insulin resistance", "chronic anovulation", "acanthosis nigricans", "luteinizing hormone elevation"],
+  "pelvic inflammatory disease": ["salpingitis", "cervical motion tenderness", "adnexal tenderness", "neisseria gonorrhoeae", "chlamydia trachomatis", "tubo-ovarian abscess", "endometritis"],
+  "gestational hypertension": ["preeclampsia", "gestational hypertension", "placental ischemia", "maternal proteinuria", "anti-angiogenic sflt-1", "thrombocytopenia", "endothelial activation"],
+  "vaginal candidiasis": ["candida albicans", "vulvovaginal candidiasis", "pseudohyphae", "curd-like vaginal discharge", "vulvar erythema", "pruritus vulvae", "vaginal dysbiosis"]
 };
 
 async function fetchBiomedicalSynonyms(detectedCondition, docType) {
@@ -7689,6 +7942,15 @@ function renderWizardStep1() {
         <button class="consult-chip-btn" data-symptom="Stomach Pain" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Stomach Pain / ପେଟ ବ୍ୟଥା</button>
         <button class="consult-chip-btn" data-symptom="High BP" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">High BP / ରକ୍ତଚାପ</button>
         <button class="consult-chip-btn" data-symptom="Diabetes" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Diabetes / ମଧୁମେହ</button>
+        <button class="consult-chip-btn" data-symptom="Ear Pain" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Ear Pain / କାନ ବିନ୍ଧା</button>
+        <button class="consult-chip-btn" data-symptom="Infant Jaundice" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Infant Jaundice / ହଳଦିଆ ଶିଶୁ</button>
+        <button class="consult-chip-btn" data-symptom="Febrile Seizure" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Febrile Seizure / ଝଟକା</button>
+        <button class="consult-chip-btn" data-symptom="HFMD" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">HFMD / ଫୋଟକା</button>
+        <button class="consult-chip-btn" data-symptom="Menstrual Cramps" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Period Cramps / ଋତୁସ୍ରାବ ଯନ୍ତ୍ରଣା</button>
+        <button class="consult-chip-btn" data-symptom="PCOS" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">PCOS / ଅନିୟମିତ ଋତୁ</button>
+        <button class="consult-chip-btn" data-symptom="PID" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">PID / ପେଲଭିକ୍ ବ୍ୟଥା</button>
+        <button class="consult-chip-btn" data-symptom="High BP Pregnancy" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">High BP Pregnancy / ଗର୍ଭାବସ୍ଥା</button>
+        <button class="consult-chip-btn" data-symptom="Yeast Infection" style="background:#0f172a; border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:15px; cursor:pointer; font-size:0.8rem; font-weight:bold; transition:all 0.2s; outline:none;">Yeast Infection / କାଣ୍ଡିଡା</button>
       </div>
       <div style="margin-bottom:20px;">
         <label style="display:block; font-weight:bold; margin-bottom:6px; font-size:0.8rem; text-transform:uppercase; color:var(--cyan);">2. Duration of symptoms / Onset period:</label>
@@ -7874,7 +8136,16 @@ function completeClinicalConsultation() {
     "High BP": "high bp blood pressure tension hypertension",
     "Diabetes": "diabetes sugar blood sugar madhumeha",
     "Eye Pain": "eye pain akhi lal padichi bitha strain ocular",
-    "Back Pain": "back pain lower back ache anta bindhuchi stiffness"
+    "Back Pain": "back pain lower back ache anta bindhuchi stiffness",
+    "Ear Pain": "ear pain ear tugging otitis kana bitha kana kuheuchi kana pani",
+    "Infant Jaundice": "neonatal jaundice yellow eyes infant lethargy pila deha haladia",
+    "Febrile Seizure": "febrile seizure convulsion child high fever shivering pila jaro",
+    "HFMD": "hfmd hand foot mouth sores child palm soles rash goda hata phuta",
+    "Menstrual Cramps": "dysmenorrhea menstrual period cramps pelvic pain petare tana bitha",
+    "PCOS": "pcos polycystic ovary irregular periods hirsutism facial hair",
+    "PID": "pelvic inflammatory disease pid cervical tenderness foul discharge tala peta bitha",
+    "High BP Pregnancy": "gestational hypertension preeclampsia high bp pregnancy garbhabastha uccha raktachapa",
+    "Yeast Infection": "vaginal candidiasis yeast infection curd discharge vulvar itching jonio kunda"
   };
 
   let queryText = symptoms.map(s => symptomTranslations[s] || s).join(" ") + " for " + duration;
@@ -7899,7 +8170,16 @@ function completeClinicalConsultation() {
       "High BP": "high blood pressure",
       "Diabetes": "diabetes",
       "Eye Pain": "eye pain",
-      "Back Pain": "back pain"
+      "Back Pain": "back pain",
+      "Ear Pain": "otitis media",
+      "Infant Jaundice": "neonatal jaundice",
+      "Febrile Seizure": "febrile seizure",
+      "HFMD": "hfmd",
+      "Menstrual Cramps": "dysmenorrhea",
+      "PCOS": "pcos",
+      "PID": "pelvic inflammatory disease",
+      "High BP Pregnancy": "gestational hypertension",
+      "Yeast Infection": "vaginal candidiasis"
     };
     category = directMap[symptoms[0]] || "fever";
   }
@@ -8034,53 +8314,23 @@ function completeClinicalConsultation() {
   // Empathy Narrative Generated locally from upgraded Bigram Markov Chain
   const empathyFiller = markovGenerator.generate(16);
 
-  // Active Profile Allergy Check & Safe Pharmacotherapy Substitution
-  const allergies = (p.allergies || "").toLowerCase().trim();
+  // Active Profile Allergy Check & Safe Pharmacotherapy Substitution via checkSafetyContraindications
   const medicines = [];
   let allergyWarningHtml = "";
   const baseMeds = kb.medications || [];
 
   for (const med of baseMeds) {
-    const medNameLower = med.name.toLowerCase();
-    let isContraindicated = false;
+    const safetyCheck = checkSafetyContraindications(med, p, category);
 
-    if (allergies !== "none" && allergies.length > 0) {
-      if (medNameLower.includes(allergies)) {
-        isContraindicated = true;
-      } else if (allergies.includes("nsaid") && (medNameLower.includes("ibuprofen") || medNameLower.includes("aspirin") || medNameLower.includes("diclofenac") || medNameLower.includes("naproxen"))) {
-        isContraindicated = true;
-      } else if (allergies.includes("penicillin") && (medNameLower.includes("amoxicillin") || medNameLower.includes("ampicillin") || medNameLower.includes("penicillin"))) {
-        isContraindicated = true;
-      } else if (allergies.includes("sulfa") && medNameLower.includes("sulfamethoxazole")) {
-        isContraindicated = true;
-      }
-    }
-
-    if (isContraindicated) {
-      let subName = "";
-      let subDose = "";
-      let subNote = "";
-      let reason = "";
-
-      if (medNameLower.includes("amoxicillin")) {
-        subName = "Azithromycin 500mg (Brand: Azithral, Zithromax)";
-        subDose = "1 tablet daily before food";
-        subNote = "Safe alternative for active Penicillin allergy";
-        reason = "Penicillin Allergy Safe-Substitution";
-      } else if (medNameLower.includes("ibuprofen") || medNameLower.includes("diclofenac") || medNameLower.includes("aspirin")) {
-        subName = "Paracetamol 650mg (Brand: Calpol, Crocin)";
-        subDose = "1 tablet every 6-8 hours after food";
-        subNote = "Safe alternative for active NSAID allergy";
-        reason = "NSAID Allergy Safe-Substitution";
-      } else {
-        subName = "Paracetamol 500mg (Brand: Calpol, Crocin)";
-        subDose = "1 tablet after meals as needed";
-        subNote = "Substituted to avoid allergen exposure";
-        reason = "Allergen Avoidance Safe-Substitution";
-      }
+    if (safetyCheck.isContraindicated) {
+      const subName = safetyCheck.subName;
+      const subDose = safetyCheck.subDose;
+      const subNote = safetyCheck.subNote;
+      const reason = safetyCheck.reason;
 
       medicines.push({
         name: `🛡️ ${subName} (Safe Sub)`,
+        snomed: safetyCheck.subSnomed || "387584000",
         instructions: `${subDose} - ${subNote}`,
         duration: "5 Days"
       });
@@ -8088,13 +8338,14 @@ function completeClinicalConsultation() {
       allergyWarningHtml += `
         <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 77, 109, 0.08); padding:10px; border-radius:4px; margin-bottom:10px; font-size:0.8rem;">
           <strong>🛡️ SAFE PHARMACOTHERAPY ALTERNATIVE APPLIED:</strong><br>
-          The standard therapeutic prescription of <em>${med.name}</em> is contraindicated due to your reported <strong>Allergy to ${p.allergies}</strong>.<br>
-          <span style="color:var(--cyan); font-weight:bold;">Safe Alternative:</span> ${subName} (${reason}).
+          The standard therapeutic prescription of <em>${med.name}</em> is contraindicated (${reason}).<br>
+          <span style="color:var(--cyan); font-weight:bold;">Safe Alternative:</span> ${subName} (${subDose}).
         </div>
       `;
     } else {
       medicines.push({
         name: med.name,
+        snomed: med.snomed,
         instructions: med.dose + (med.note ? ` - ${med.note}` : ""),
         duration: "5 Days"
       });
@@ -9005,6 +9256,99 @@ function runSandboxInference(text) {
   listEl.innerHTML = html + diagnosticTraceHtml;
 }
 
+
+// ── CLINICAL PHARMACOTHERAPY SAFETY & CONTRAINDICATION ENGINE ──
+function checkSafetyContraindications(med, profile = {}, conditionKey = "") {
+  const allergies = (profile.allergies || "").toLowerCase().trim();
+  const medNameLower = (med.name || "").toLowerCase();
+  const notesLower = ((profile.notes || "") + " " + (profile.conditions || "")).toLowerCase();
+  const isPregnant = profile.isPregnant === true ||
+    notesLower.includes("pregnant") ||
+    conditionKey === "gestational hypertension" ||
+    (profile.gender && profile.gender.toLowerCase() === "female" && (conditionKey === "preeclampsia" || notesLower.includes("pregnancy")));
+
+  // Rule 1: Penicillin Allergy
+  if (allergies !== "none" && allergies.length > 0 && allergies.includes("penicillin") &&
+      (medNameLower.includes("amoxicillin") || medNameLower.includes("ampicillin") || medNameLower.includes("penicillin") || medNameLower.includes("augmentin"))) {
+    const isPediatric = conditionKey === "otitis media" || (profile.age && parseInt(profile.age, 10) < 12);
+    return {
+      isContraindicated: true,
+      reason: "Penicillin Allergy Safe-Substitution",
+      subName: isPediatric ? "Azithromycin 200mg/5mL Pediatric Suspension (Brand: Azithral)" : "Azithromycin 500mg (Brand: Azithral, Zithromax)",
+      subSnomed: "372822002",
+      subDose: isPediatric ? "10 mg/kg orally once daily for 3 days" : "500 mg orally once daily for 3-5 days",
+      subNote: "Safe macrolide alternative for active Penicillin allergy"
+    };
+  }
+
+  // Rule 2: NSAID / Aspirin Allergy
+  if (allergies !== "none" && allergies.length > 0 && (allergies.includes("nsaid") || allergies.includes("aspirin")) &&
+      (medNameLower.includes("ibuprofen") || medNameLower.includes("aspirin") || medNameLower.includes("diclofenac") || medNameLower.includes("naproxen") || medNameLower.includes("mefenamic"))) {
+    const isDysmenorrhea = conditionKey === "dysmenorrhea";
+    return {
+      isContraindicated: true,
+      reason: "NSAID Allergy Safe-Substitution",
+      subName: isDysmenorrhea ? "Drotaverine Hydrochloride 80mg (Brand: Drotin)" : "Paracetamol 650mg (Brand: Calpol, Crocin)",
+      subSnomed: isDysmenorrhea ? "387431007" : "387584000",
+      subDose: isDysmenorrhea ? "1 tablet twice daily after meals" : "1 tablet every 6-8 hours after food",
+      subNote: isDysmenorrhea ? "Selective antispasmodic safe for active NSAID allergy" : "Safe non-NSAID analgesic for active NSAID allergy"
+    };
+  }
+
+  // Rule 3: ACEi / ARB Contraindication in Pregnancy (Gestational Hypertension / Teratogenicity)
+  if (isPregnant && (medNameLower.includes("enalapril") || medNameLower.includes("ramipril") || medNameLower.includes("lisinopril") || medNameLower.includes("telmisartan") || medNameLower.includes("losartan") || medNameLower.includes("valsartan"))) {
+    return {
+      isContraindicated: true,
+      reason: "Teratogenic ACEi/ARB Block (Pregnancy Safe Substitution)",
+      subName: "Labetalol Hydrochloride 100mg (Brand: Labetamac, Trandate)",
+      subSnomed: "387467000",
+      subDose: "100 mg orally twice daily with meals (titrate to 400 mg TDS)",
+      subNote: "First-line antihypertensive in pregnancy; preserves uteroplacental blood flow and avoids fetal renal dysgenesis"
+    };
+  }
+
+  // Rule 4: Doxycycline in Pregnancy / Pediatric
+  if ((isPregnant || (profile.age && parseInt(profile.age, 10) < 8)) && (medNameLower.includes("doxycycline") || medNameLower.includes("tetracycline"))) {
+    return {
+      isContraindicated: true,
+      reason: "Pregnancy/Pediatric Tetracycline Contraindication",
+      subName: "Azithromycin 500mg (Brand: Azithral, Zithromax)",
+      subSnomed: "372822002",
+      subDose: "500 mg orally stat, then 250 mg daily for 4 days",
+      subNote: "Safe macrolide replacing contraindicated tetracycline (avoids dental staining & bone growth restriction)"
+    };
+  }
+
+  // Rule 5: Oral Fluconazole in Pregnancy (1st Trimester Risk)
+  if (isPregnant && medNameLower.includes("fluconazole")) {
+    return {
+      isContraindicated: true,
+      reason: "1st Trimester Oral Fluconazole Block (Topical Clotrimazole Safe Substitution)",
+      subName: "Clotrimazole 100mg Vaginal Pessaries (Brand: Candid V6)",
+      subSnomed: "387405005",
+      subDose: "1 pessary inserted deeply into vagina at bedtime for 6 consecutive nights",
+      subNote: "Topical imidazole antifungal safe during all trimesters of pregnancy; eliminates systemic teratogenic exposure"
+    };
+  }
+
+  // Rule 6: Generic allergy fallback
+  if (allergies !== "none" && allergies.length > 0 && medNameLower.includes(allergies)) {
+    return {
+      isContraindicated: true,
+      reason: "Allergen Avoidance Safe-Substitution",
+      subName: "Paracetamol 500mg (Brand: Calpol, Crocin)",
+      subSnomed: "387584000",
+      subDose: "1 tablet after meals as needed",
+      subNote: "Substituted to avoid direct allergen exposure"
+    };
+  }
+
+  return { isContraindicated: false };
+}
+if (typeof window !== 'undefined') {
+  window.checkSafetyContraindications = checkSafetyContraindications;
+}
+
 // ── CLINICAL CODES & EMERGENCIES HELPERS ────────────────
 function translateToPatientTerms(conditionKey) {
   const mapping = {
@@ -9019,7 +9363,16 @@ function translateToPatientTerms(conditionKey) {
     "high blood pressure": "Blood Pressure Management Guidelines",
     "diabetes": "Blood Sugar & Glycemic Control Guidelines",
     "eye pain": "Ocular Comfort & Eye Strain Triage",
-    "back pain": "Back & Spinal Musculoskeletal Support"
+    "back pain": "Back & Spinal Musculoskeletal Support",
+    "otitis media": "Pediatric Ear Infection & Otitis Care",
+    "neonatal jaundice": "Neonatal Jaundice & Infant Bilirubin Support",
+    "febrile seizure": "Pediatric Febrile Seizure & Emergency Care",
+    "hfmd": "Hand, Foot & Mouth Disease Recovery",
+    "dysmenorrhea": "Menstrual Cramps & Pelvic Pain Relief",
+    "pcos": "PCOS & Hormonal Balance Management",
+    "pelvic inflammatory disease": "Pelvic Inflammatory Disease Care",
+    "gestational hypertension": "Pregnancy Blood Pressure & Preeclampsia Safety",
+    "vaginal candidiasis": "Vaginal Yeast Infection & Comfort Care"
   };
   return mapping[conditionKey] || "General Symptoms Assessment";
 }
@@ -9081,6 +9434,51 @@ function compileRedFlags(conditionKey, vitals) {
       "Back pain with loss of bowel or bladder control (saddle anesthesia / Cauda Equina risk)",
       "Unexplained fever, severe night pain, or history of recent cancer",
       "Progressive weakness, numbness, or tingling radiating down both legs"
+    ],
+    "otitis media": [
+      "Swelling, redness, or severe tenderness behind the ear (suspected acute mastoiditis)",
+      "Child lethargic, unresponsive, or experiencing stiff neck and high fever (suspected meningitis)",
+      "Copious foul-smelling purulent or bloody discharge from the ear canal (eardrum perforation)"
+    ],
+    "neonatal jaundice": [
+      "Jaundice extending down to abdomen, legs, palms, or soles within first 24-48 hours",
+      "Infant abnormally sleepy, difficult to wake, weak suckling, or poor feeding",
+      "High-pitched abnormal cry, arching of back (opisthotonos), or dark urine / pale clay-colored stools"
+    ],
+    "febrile seizure": [
+      "Seizure lasting longer than 5 minutes or multiple convulsions within 24 hours",
+      "Child remains confused, limp, difficult to awaken, or unresponsive for > 30 minutes post-seizure",
+      "Stiff neck, persistent vomiting, or petechial purple spot rash (suspected pediatric meningitis)"
+    ],
+    "hfmd": [
+      "Inability to swallow liquids leading to dehydration (no wet diaper for > 6 hours, crying without tears)",
+      "Persistent high fever > 102°F not responding to antipyretics after 3 days",
+      "Lethargy, sudden limb jerking (myoclonus), rapid breathing, or neurological irritability (EV71 complication)"
+    ],
+    "dysmenorrhea": [
+      "Sudden, excruciating pelvic pain unresponsive to NSAIDs, accompanied by fainting or dizziness",
+      "Excessive menstrual bleeding soaking more than 2 sanitary pads per hour for over 2 consecutive hours",
+      "Pelvic pain accompanied by high fever, severe nausea, vomiting, or acute peritoneal tenderness"
+    ],
+    "pcos": [
+      "Sudden acute severe lower abdominal/pelvic pain (suspected ruptured ovarian cyst or ovarian torsion)",
+      "Prolonged, heavy abnormal uterine bleeding leading to pallor, postural dizziness, or tachycardia",
+      "Fasting blood sugar or HbA1c spiking into diabetic range with metabolic acanthosis nigricans"
+    ],
+    "pelvic inflammatory disease": [
+      "Severe lower abdominal pain with peritoneal rebound tenderness and high fever (> 101°F / 38.3°C)",
+      "Purulent cervical discharge with nausea, vomiting, or inability to tolerate oral medications",
+      "Suspected tubo-ovarian abscess or severe pain in a pregnant patient (emergency hospital admission required)"
+    ],
+    "gestational hypertension": [
+      "🚨 SEVERE MATERNAL WARNING: BP >= 160/110 mmHg or severe persistent frontotemporal headache",
+      "Visual disturbances (scintillating scotomas, blurred vision, flashes) or sudden facial/hand edema",
+      "Severe persistent epigastric or right upper quadrant pain (impending HELLP syndrome or liver capsule distension)"
+    ],
+    "vaginal candidiasis": [
+      "Severe vulvar erythema with fissures, extensive excoriation, or secondary bacterial skin infection",
+      "Accompanied by high fever, chills, pelvic pain, or foul-smelling purulent discharge (suspected PID)",
+      "Recurrent episodes (> 4 episodes/year) or severe dysuria with urinary retention"
     ]
   };
   

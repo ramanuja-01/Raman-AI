@@ -291,7 +291,8 @@ try {
     .replace(/\bclass TrieNode\b/g, 'global.TrieNode = class TrieNode')
     .replace(/\bclass Trie\b/g, 'global.Trie = class Trie')
     .replace(/\bclass NaiveBayesSymptomClassifier\b/g, 'global.NaiveBayesSymptomClassifier = class NaiveBayesSymptomClassifier')
-    .replace(/\bclass MarkovTextGenerator\b/g, 'global.MarkovTextGenerator = class MarkovTextGenerator');
+    .replace(/\bclass MarkovTextGenerator\b/g, 'global.MarkovTextGenerator = class MarkovTextGenerator')
+    .replace(/\bfunction checkSafetyContraindications\b/g, 'global.checkSafetyContraindications = function checkSafetyContraindications');
 
   // Indirect eval to run in global scope
   const indirectEval = eval;
@@ -1784,6 +1785,195 @@ async function runTest(name, fn) {
     ok = assert(narrative.soap.objective.includes("76 bpm") && narrative.soap.objective.includes("98%"), "SOAP Objective section integrates live vitals.") && ok;
     ok = assert(narrative.soap.assessment.includes("8A80.0"), "SOAP Assessment maps WHO ICD-11 code.") && ok;
     ok = assert(narrative.soap.plan.includes("Sumatriptan"), "SOAP Plan contains targeted medication guidance.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 33: Clinical Condition Expansion (ICD-11 & SNOMED CT) & Safety
+  // =========================================================================
+  await runTest("Clinical Condition Expansion (ICD-11 & SNOMED CT) & Safety Engine Verification", async () => {
+    let ok = true;
+
+    // 1. Validate MEDICAL_KB entries for all 9 pediatric & women's health conditions
+    const expectedConditions = {
+      "otitis media": { icd11: "AB00", medKey: "Amoxicillin", snomed: "372687006" },
+      "neonatal jaundice": { icd11: "KA60", medKey: "Phototherapy", snomed: "399248000" },
+      "febrile seizure": { icd11: "MB20.0", medKey: "Paracetamol", snomed: "387584000" },
+      "hfmd": { icd11: "1F03", medKey: "Choline Salicylate", snomed: "387213009" },
+      "dysmenorrhea": { icd11: "GA34.0", medKey: "Mefenamic Acid", snomed: "387525002" },
+      "pcos": { icd11: "5A80.1", medKey: "Metformin", snomed: "372567009" },
+      "pelvic inflammatory disease": { icd11: "GA00", medKey: "Ceftriaxone", snomed: "387342004" },
+      "gestational hypertension": { icd11: "JA21", medKey: "Labetalol", snomed: "387467000" },
+      "vaginal candidiasis": { icd11: "1F23.0", medKey: "Fluconazole", snomed: "387413009" }
+    };
+
+    for (const [key, spec] of Object.entries(expectedConditions)) {
+      const kbEntry = MEDICAL_KB[key];
+      ok = assert(Boolean(kbEntry), `MEDICAL_KB contains '${key}'.`) && ok;
+      if (kbEntry) {
+        ok = assert(kbEntry.icd11 === spec.icd11, `'${key}' maps to WHO ICD-11 code ${spec.icd11} (Got: ${kbEntry.icd11}).`) && ok;
+        const med = kbEntry.medications.find(m => m.name.toLowerCase().includes(spec.medKey.toLowerCase()));
+        ok = assert(Boolean(med), `'${key}' includes primary medication '${spec.medKey}'.`) && ok;
+        if (med) {
+          ok = assert(med.snomed === spec.snomed, `'${med.name}' maps to SNOMED CT ${spec.snomed} (Got: ${med.snomed}).`) && ok;
+        }
+      }
+    }
+
+    // 2. Validate CLINICAL_DICTS entity expansion
+    for (const key of Object.keys(expectedConditions)) {
+      const dict = CLINICAL_DICTS[key];
+      ok = assert(Array.isArray(dict) && dict.length >= 5, `CLINICAL_DICTS['${key}'] contains at least 5 biomedical terms (Got: ${dict ? dict.length : 0}).`) && ok;
+    }
+
+    // 3. Validate translateToPatientTerms
+    for (const key of Object.keys(expectedConditions)) {
+      const pt = translateToPatientTerms(key);
+      ok = assert(pt && pt !== "General Symptoms Assessment", `translateToPatientTerms('${key}') resolves patient label: '${pt}'.`) && ok;
+    }
+
+    // 4. Validate compileRedFlags
+    for (const key of Object.keys(expectedConditions)) {
+      const flags = compileRedFlags(key, null);
+      ok = assert(Array.isArray(flags) && flags.length >= 3, `compileRedFlags('${key}') provides at least 3 clinical red flags (Got: ${flags.length}).`) && ok;
+    }
+
+    // 5. High-confidence Bilingual Classifier Precision Benchmarks (> 70%)
+    const bilingualQueries = [
+      { text: "toddler ear tugging severe pain and high fever in infant earache", expected: "otitis media", lang: "EN" },
+      { text: "pila deha haladia padichi akhi haladia neonatal jaundice baby feeding poor", expected: "neonatal jaundice", lang: "OD/EN" },
+      { text: "pila jaro re kampana child convulsion shivering high fever body stiffness", expected: "febrile seizure", lang: "OD/EN" },
+      { text: "mouth sores child palm and soles rash blisters toddler hfmd", expected: "hfmd", lang: "EN" },
+      { text: "petare tana bitha period cramps severe menstrual pelvic pain menses bitha", expected: "dysmenorrhea", lang: "OD/EN" },
+      { text: "irregular periods facial hair hirsutism ovarian ultrasound cysts oligomenorrhea", expected: "pcos", lang: "EN" },
+      { text: "lower abdominal pain foul vaginal discharge cervical tenderness pid pelvic inflammatory", expected: "pelvic inflammatory disease", lang: "EN" },
+      { text: "garbhabastha uccha raktachapa high blood pressure in pregnancy severe headache preeclampsia", expected: "gestational hypertension", lang: "OD/EN" },
+      { text: "curd like cottage cheese vaginal discharge severe vulvar itching jonio kunda candidiasis", expected: "vaginal candidiasis", lang: "OD/EN" }
+    ];
+
+    for (const q of bilingualQueries) {
+      const res = slmClassifier.classify(q.text);
+      const top = res[0];
+      ok = assert(Boolean(top), `SLM classified query '${q.text.substring(0, 35)}...'`) && ok;
+      if (top) {
+        ok = assert(top.condition === q.expected, `Query (${q.lang}) correctly diagnosed as '${q.expected}' (Got: '${top.condition}').`) && ok;
+        ok = assert(top.confidence >= 70, `Classification confidence >= 70% (Got: ${top.confidence.toFixed(1)}%).`) && ok;
+      }
+    }
+
+    // 6. Safety Contraindications Engine Verification
+    const safetyFn = (typeof checkSafetyContraindications === 'function') 
+      ? checkSafetyContraindications 
+      : (window.checkSafetyContraindications || global.checkSafetyContraindications);
+
+    ok = assert(typeof safetyFn === 'function', "checkSafetyContraindications engine is defined and callable.") && ok;
+
+    if (safetyFn) {
+      // 6A. Penicillin allergy block in pediatric otitis media
+      const amoxMed = { name: "Amoxicillin 250mg/5mL Oral Suspension", snomed: "372687006", dose: "80 mg/kg/day" };
+      const penAllergyProfile = { name: "Child Patient", age: "3", allergies: "penicillin" };
+      const penCheck = safetyFn(amoxMed, penAllergyProfile, "otitis media");
+      ok = assert(penCheck.isContraindicated === true, "Safety Engine blocks Amoxicillin under Penicillin allergy.") && ok;
+      ok = assert(penCheck.subName.includes("Azithromycin"), `Penicillin allergy safely substituted with macrolide (Got: '${penCheck.subName}').`) && ok;
+      ok = assert(penCheck.subSnomed === "372822002", `Substituted Azithromycin has SNOMED CT 372822002 (Got: ${penCheck.subSnomed}).`) && ok;
+
+      // 6B. NSAID allergy block in dysmenorrhea
+      const mefMed = { name: "Mefenamic Acid 500mg & Dicyclomine 20mg", snomed: "387525002", dose: "1 tablet TDS" };
+      const nsaidAllergyProfile = { name: "Adolescent Patient", age: "19", allergies: "nsaid, aspirin" };
+      const nsaidCheck = safetyFn(mefMed, nsaidAllergyProfile, "dysmenorrhea");
+      ok = assert(nsaidCheck.isContraindicated === true, "Safety Engine blocks Mefenamic Acid under NSAID allergy.") && ok;
+      ok = assert(nsaidCheck.subName.includes("Drotaverine"), `NSAID allergy in dysmenorrhea safely substituted with Drotaverine (Got: '${nsaidCheck.subName}').`) && ok;
+      ok = assert(nsaidCheck.subSnomed === "387431007", `Substituted Drotaverine has SNOMED CT 387431007 (Got: ${nsaidCheck.subSnomed}).`) && ok;
+
+      // 6C. ACEi/ARB teratogenic block in pregnancy
+      const enalaprilMed = { name: "Enalapril Maleate 5mg", snomed: "387467000", dose: "5mg daily" };
+      const pregnantProfile = { name: "Maternal Patient", age: "29", gender: "female", isPregnant: true };
+      const pregCheck = safetyFn(enalaprilMed, pregnantProfile, "gestational hypertension");
+      ok = assert(pregCheck.isContraindicated === true, "Safety Engine intercepts teratogenic ACEi in pregnancy.") && ok;
+      ok = assert(pregCheck.subName.includes("Labetalol"), `Teratogenic ACEi substituted with first-line Labetalol (Got: '${pregCheck.subName}').`) && ok;
+      ok = assert(pregCheck.subSnomed === "387467000", `Substituted Labetalol has SNOMED CT 387467000 (Got: ${pregCheck.subSnomed}).`) && ok;
+
+      // 6D. 1st-trimester oral Fluconazole block with topical Clotrimazole substitution
+      const flucMed = { name: "Fluconazole 150mg Tablet", snomed: "387413009", dose: "150mg Stat" };
+      const flucPregCheck = safetyFn(flucMed, pregnantProfile, "vaginal candidiasis");
+      ok = assert(flucPregCheck.isContraindicated === true, "Safety Engine intercepts oral Fluconazole in pregnancy.") && ok;
+      ok = assert(flucPregCheck.subName.includes("Clotrimazole"), `Oral Fluconazole substituted with topical Clotrimazole pessaries (Got: '${flucPregCheck.subName}').`) && ok;
+      ok = assert(flucPregCheck.subSnomed === "387405005", `Substituted Clotrimazole has SNOMED CT 387405005 (Got: ${flucPregCheck.subSnomed}).`) && ok;
+    }
+
+    // 7. HL7 FHIR R4 Serialization for Expanded Clinical Conditions
+    const fhirModule = require('./fhir_exporter.js');
+    const fhirGen = (typeof generateFhirR4Bundle === 'function') 
+      ? generateFhirR4Bundle 
+      : (fhirModule.generateFhirR4Bundle || global.generateFhirR4Bundle);
+
+    ok = assert(typeof fhirGen === 'function', "generateFhirR4Bundle is available.") && ok;
+
+    if (fhirGen) {
+      const matProfile = { name: "Sunita Mohapatra", age: "28", gender: "female", blood: "O+" };
+      const matSession = {
+        healthId: "RMN-MAT-99",
+        condition: "Gestational Hypertension",
+        icd11: "JA21",
+        medications: [
+          { name: "Labetalol Hydrochloride 100mg", snomed: "387467000", dose: "100 mg orally twice daily" },
+          { name: "Low-Dose Aspirin 150mg", snomed: "387458008", dose: "150 mg bedtime" }
+        ]
+      };
+      const matVitals = { bp: "155/98", heartRate: "88", SpO2: "98", temp: "98.6" };
+
+      const fhirBundle = fhirGen(matProfile, matSession, matVitals);
+      ok = assert(fhirBundle.resourceType === "Bundle", "FHIR document bundle successfully instantiated.") && ok;
+      ok = assert(fhirBundle.type === "document", "Bundle type is 'document'.") && ok;
+
+      // Find Condition resource
+      const condEntry = fhirBundle.entry.find(e => e.resource.resourceType === "Condition");
+      ok = assert(Boolean(condEntry), "FHIR bundle includes Condition resource.") && ok;
+      if (condEntry) {
+        const coding = condEntry.resource.code.coding[0];
+        ok = assert(coding.system === "http://id.who.int/icd/release/11/mms", "Condition uses WHO ICD-11 coding system.") && ok;
+        ok = assert(coding.code === "JA21", `Condition ICD-11 code matches 'JA21' (Got: ${coding.code}).`) && ok;
+      }
+
+      // Find MedicationStatement resources
+      const medEntries = fhirBundle.entry.filter(e => e.resource.resourceType === "MedicationStatement");
+      ok = assert(medEntries.length === 2, `FHIR bundle includes 2 MedicationStatement entries (Got: ${medEntries.length}).`) && ok;
+      if (medEntries.length > 0) {
+        const labCoding = medEntries[0].resource.medicationCodeableConcept.coding[0];
+        ok = assert(labCoding.system === "http://snomed.info/sct", "Medication uses SNOMED CT coding system.") && ok;
+        ok = assert(labCoding.code === "387467000", `Medication SNOMED code matches '387467000' (Got: ${labCoding.code}).`) && ok;
+      }
+    }
+
+    // 8. WebGPU PK/PD Profiles & ODE Solver Verification for Expanded Drugs
+    const pkpdModule = require('./webgpu_pkpd.js');
+    const PkSimulator = (typeof RamanPkPdSimulator === 'function')
+      ? RamanPkPdSimulator
+      : (pkpdModule.RamanPkPdSimulator || global.RamanPkPdSimulator);
+
+    ok = assert(typeof PkSimulator === 'function', "RamanPkPdSimulator class is defined.") && ok;
+
+    if (PkSimulator) {
+      const profiles = pkpdModule.DRUG_PK_PROFILES;
+      const testDrugs = ["mefenamic_acid", "fluconazole", "labetalol"];
+
+      for (const drugKey of testDrugs) {
+        const drugProfile = profiles[drugKey];
+        ok = assert(Boolean(drugProfile), `DRUG_PK_PROFILES contains '${drugKey}'.`) && ok;
+        if (drugProfile) {
+          const res = PkSimulator.solveRk4(drugProfile, {}, 24.0, 96);
+          ok = assert(Boolean(res), `PK/PD simulator solved deterministic RK4 for '${drugKey}'.`) && ok;
+          if (res) {
+            ok = assert(res.cmax > 0, `'${drugKey}' reached positive Cmax: ${res.cmax.toFixed(3)} mg/L.`) && ok;
+            ok = assert(res.tmax > 0, `'${drugKey}' reached valid Tmax: ${res.tmax} h.`) && ok;
+            ok = assert(res.timeSeries.length === 97, `'${drugKey}' simulation produced 97 discrete time steps.`) && ok;
+            const endConc = res.timeSeries[res.timeSeries.length - 1].Cc;
+            ok = assert(endConc < res.cmax, `'${drugKey}' shows progressive elimination (Cc_end: ${endConc.toFixed(3)} < C_max).`) && ok;
+          }
+        }
+      }
+    }
 
     return ok;
   });
