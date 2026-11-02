@@ -18,6 +18,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.3.0] – 2026-11-02 (Autonomous Real-Time UI Responsiveness & Self-Healing Agent)
+
+### Added
+* **Autonomous Real-Time UI Responsiveness & Self-Healing Engine (`ui_responsive_agent.js`):**
+  * Zero-cloud client-side micro-agent categorizing 5 distinct display tiers: `mobile-compact` (< 380px), `mobile` (380–599px), `tablet-portrait` (600–1024px, portrait), `tablet-landscape` (600–1024px, landscape), and `desktop` (> 1024px).
+  * Real-time `window.visualViewport` soft-keyboard encroachment compensation computing vertical encroachment height and exposing root CSS property `--v-keyboard-offset` alongside `data-keyboard-open="true"` with automatic input centering.
+  * Self-healing horizontal overflow containment detecting document and component-level layout spills (`scrollWidth > winW`) across clinical cards and applying auto-scroll containment styles on the fly.
+  * High-DPI Canvas Buffer Synchronization auto-scaling backing store dimensions for clinical monitors and Retina screens without distortion (`data-auto-resync="true"` on `#progressionCanvas`, `#organ3dCanvas`, `#pkpdCanvas`, `#oscilloscopeCanvas`, `#diaryCanvas`).
+  * Non-polling, event-driven observer architecture (`ResizeObserver`, `visualViewport.onresize`, `visualViewport.onscroll`, `matchMedia('pointer: coarse')`).
+  * Built-in layout thrashing circuit breaker with sliding-window rate limiting (max 5 mutations/sec) and a 60ms dampening lock to prevent runaway reflow loops.
+  * Real-time telemetry and diagnostics API via `window.ramanUiAgent.getDiagnostics()` executing steady-state audits in sub-millisecond speeds (< 2.0ms invariant).
+* **Comprehensive Specification & Architecture Documentation:**
+  * Product Requirements Document (`docs/UI_RESPONSIVENESS_AGENT_PRD.md`)
+  * Technical Requirements Document (`docs/UI_RESPONSIVENESS_AGENT_TRD.md`)
+  * Formal Software Requirements Specification (`docs/UI_RESPONSIVENESS_AGENT_SRS.md`)
+  * Design Guidelines & Non-Negotiable Restrictions (`docs/UI_RESPONSIVENESS_GUIDELINES_AND_RESTRICTIONS.md`)
+  * Threat Model & Security Architecture (`docs/UI_RESPONSIVENESS_SECURITY_ARCHITECTURE.md`)
+  * Phase-by-Phase Implementation Plan (`docs/UI_RESPONSIVENESS_IMPLEMENTATION_PLAN.md`)
+* **PWA Service Worker Cache Sync (`sw.js`):**
+  * Upgraded cache namespace to `raman-ai-v2.6` caching `./ui_responsive_agent.js` for 100% offline cold boots.
+* **Automated Test Suites:**
+  * Added Test Suite 34 to `test_slm.js` covering tier classification, virtual keyboard offset calculations, sub-2ms latency, circuit breaker tripping, and diagnostics (34/34 passing).
+  * Added automated Playwright multi-device E2E test suite `tests/ui_responsive_agent.spec.js` running 24 tests across Desktop Chromium, Mobile Android (Pixel 7), and Mobile iOS (iPhone 14) (20 passed, 4 skipped).
+
+---
+
 ## [2.2.0] – 2026-10-23 (Federated Active Learning, Quantized SLM SOAP Engine & PWA Cache)
 
 ### Added

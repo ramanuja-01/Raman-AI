@@ -384,6 +384,65 @@ if (typeof self !== "undefined" && typeof self.postMessage === "function" && typ
   };
 }
 
+// ── DEDICATED MCP WORKER CLIENT ───────────────────────────────────────────
+const RamanMcpWorkerClient = {
+  worker: null,
+  pendingRequests: new Map(),
+  reqIdCounter: 100,
+
+  getWorker() {
+    if (this.worker) return this.worker;
+    if (typeof Worker === 'undefined') return null;
+    try {
+      this.worker = new Worker("mcp_agent_worker.js");
+      this.worker.onmessage = (e) => {
+        const msg = e.data;
+        if (!msg) return;
+
+        if (msg.type === "TELEMETRY_STEP") {
+          for (const req of this.pendingRequests.values()) {
+            if (req.onTelemetry) req.onTelemetry(msg);
+          }
+          return;
+        }
+
+        if (msg.id && this.pendingRequests.has(msg.id)) {
+          const { resolve, reject } = this.pendingRequests.get(msg.id);
+          this.pendingRequests.delete(msg.id);
+          if (msg.error) {
+            reject(new Error(msg.error.message || "MCP Worker Error"));
+          } else {
+            resolve(msg.result);
+          }
+        }
+      };
+      this.worker.onerror = (err) => {
+        console.warn("MCP Worker error, falling back:", err);
+        this.worker = null;
+      };
+      return this.worker;
+    } catch (e) {
+      console.warn("Could not instantiate mcp_agent_worker.js:", e);
+      this.worker = null;
+      return null;
+    }
+  },
+
+  async request(method, params, onTelemetry) {
+    const worker = this.getWorker();
+    if (!worker) return null; // Signal fallback
+    const id = ++this.reqIdCounter;
+    return new Promise((resolve, reject) => {
+      this.pendingRequests.set(id, { resolve, reject, onTelemetry });
+      worker.postMessage({ jsonrpc: "2.0", id, method, params });
+    });
+  }
+};
+
+if (typeof window !== "undefined") {
+  window.RamanMcpWorkerClient = RamanMcpWorkerClient;
+}
+
 // ── COMMONJS EXPORT (FOR CLI UNIT TESTS) ──────────────────────────────────
 if (typeof module !== "undefined" && module.exports) {
   module.exports = {
@@ -393,6 +452,7 @@ if (typeof module !== "undefined" && module.exports) {
     SelfHealingEngine,
     dispatchJsonRpc,
     extractBilingualTokens,
-    stemToken
+    stemToken,
+    RamanMcpWorkerClient
   };
 }

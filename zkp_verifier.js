@@ -130,13 +130,52 @@ class RamanZkpProver {
   }
 }
 
+// UI Handlers for Zero-Knowledge Proof (ZKP)
+function openZkpModal() {
+  if (typeof document === 'undefined') return;
+  const modal = document.getElementById("zkpModal");
+  if (modal) {
+    modal.style.display = "block";
+    const resultArea = document.getElementById("zkpResultArea");
+    if (resultArea) resultArea.style.display = "none";
+  }
+}
+
+async function executeZkpGeneration() {
+  if (typeof RamanZkpProver === 'undefined' || typeof document === 'undefined') return;
+  const select = document.getElementById("zkpCircuitSelect");
+  const circuitType = select ? select.value : "ALLERGY_ABSENCE";
+  const profile = (typeof window !== 'undefined' && typeof window.getProfile === 'function')
+    ? window.getProfile()
+    : (typeof getProfile === 'function' ? getProfile() : {});
+
+  const proof = await RamanZkpProver.generateProof(circuitType, profile, { allergen: "penicillin", minSpo2: 95 });
+  const resultArea = document.getElementById("zkpResultArea");
+  const statementText = document.getElementById("zkpStatementText");
+  const digestText = document.getElementById("zkpProofDigest");
+
+  if (resultArea && proof.status !== "FAILED_CONSTRAINT") {
+    resultArea.style.display = "block";
+    if (statementText) statementText.textContent = proof.statement;
+    if (digestText) digestText.textContent = `π: ${proof.proof.pi_a}... | ID: ${proof.publicSignals.proofId}`;
+    if (typeof window !== 'undefined' && window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+  } else if (proof.error) {
+    if (typeof alert === 'function') alert(`ZKP Prover Alert: ${proof.error}`);
+  }
+  return proof;
+}
+
 // Global initialization
 if (typeof window !== 'undefined') {
   window.RamanZkpProver = RamanZkpProver;
+  window.openZkpModal = openZkpModal;
+  window.executeZkpGeneration = executeZkpGeneration;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
-    RamanZkpProver
+    RamanZkpProver,
+    openZkpModal,
+    executeZkpGeneration
   };
 }

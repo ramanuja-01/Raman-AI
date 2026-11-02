@@ -21,6 +21,7 @@ async function loadRamanApp(page, fillProfile = true) {
       };
       try {
         localStorage.setItem('ramanai_profile', JSON.stringify(defaultProfile));
+        localStorage.removeItem('ramanai_expanded_corpus');
       } catch (e) {}
 
       const name = document.getElementById('patientName');

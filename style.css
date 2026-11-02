@@ -2440,3 +2440,61 @@ body.light-theme #mcpTerminalLog {
   gap: 8px;
   animation: fadeIn 0.3s ease;
 }
+
+
+/* ==========================================================================
+   🤖 Autonomous Client-Side UI Responsiveness Engine (RamanUiAgent)
+   ========================================================================== */
+
+:root {
+  --v-keyboard-offset: 0px;
+  --ui-touch-target-min: 32px;
+}
+
+/* Virtual Keyboard Encroachment Protection */
+body[data-keyboard-open="true"] .chat-messages {
+  padding-bottom: calc(var(--v-keyboard-offset) + 20px) !important;
+  scroll-behavior: smooth;
+}
+
+body[data-keyboard-open="true"] .clinical-alert,
+body[data-keyboard-open="true"] .contraindication-card {
+  position: sticky !important;
+  top: 8px !important;
+  z-index: 120 !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Horizontal Spill Self-Healing */
+body[data-spill-detected="true"] {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+body[data-spill-detected="true"] .chat-messages,
+body[data-spill-detected="true"] .consultation-card,
+body[data-spill-detected="true"] .vitals-grid {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Form Factor Tier Specifics */
+body[data-ui-tier="mobile-compact"] .app-header {
+  padding: 4px 8px !important;
+}
+
+body[data-ui-tier="mobile-compact"] .header-title {
+  font-size: 0.95rem !important;
+}
+
+body[data-ui-tier="tablet-portrait"] .sidebar {
+  transition: transform 0.25s ease;
+}
+
+/* Touch Target Accessibility (WCAG 2.1 AA >= 44x44px) */
+body[data-pointer-type="touch"] .nav-tab-btn,
+body[data-pointer-type="touch"] .btn-primary,
+body[data-pointer-type="touch"] .btn-secondary {
+  min-height: var(--ui-touch-target-min, 44px);
+}

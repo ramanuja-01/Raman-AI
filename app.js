@@ -151,10 +151,21 @@ function stemBilingualToken(w) {
   return w;
 }
 
+// Global Clinical Stop Words Set (Hoisted to eliminate per-call object allocations)
+const CLINICAL_STOP_WORDS = new Set([
+  "i", "have", "a", "feel", "feeling", "with", "after", "and", "the", "my", "so", "very", "on", "of", "to", "for", "in", "is", "me", "can", "what", "not", "at", "up", "am", "do", "it", "an", "be", "no", "or", "but", "was", "were", "been", "being", "did", "does", "has", "had", "will", "would", "could", "should", "may", "might", "shall", "this", "that", "these", "those", "by", "from", "as", "into", "about", "than", "which", "who", "whom", "if", "then", "when", "where", "how", "there", "here",
+  "heuchi", "laguchi", "asichi", "pura", "dehare", "deha", "hela", "ta", "hoichi", "ti", "bhal",
+  // Hinglish / Romanized Hindi stop words
+  "hai", "hian", "se", "ko", "ka", "ke", "ki", "tha", "thi", "he", "ho", "mera", "meri", "mujhe", "hota", "hoti", "rha", "raha", "rahi", "rhi", "hona", "sath", "aur", "pe", "par",
+  // Devanagari Hindi stop words
+  "है", "था", "थी", "थीं", "थे", "हैं", "को", "का", "के", "की", "से", "में", "और", "ने", "पर", "ही", "भी", "मुझे", "मेरा", "मेरी", "होता", "होती", "रहा", "रही", "रहे", "होना"
+]);
+
 // Trie Vocabulary Parser for O(L) dictionary lookups with fuzzy search support
 class Trie {
   constructor() {
     this.root = new TrieNode();
+    this._rowBuffers = Array.from({ length: 32 }, () => new Int32Array(64));
   }
 
   insert(word, category) {
@@ -169,44 +180,51 @@ class Trie {
     node.category = category;
   }
 
-  // Recursive Levenshtein search in Trie
+  // Recursive Levenshtein search in Trie with zero memory leak and pre-allocated row buffers
   searchFuzzy(word, maxDist = 1) {
     const results = [];
-    const searchRecursive = (node, letter, targetWord, currentRow, path) => {
-      const size = targetWord.length + 1;
-      const nextRow = new Array(size);
+    const size = word.length + 1;
+    if (size > 64) return results;
+    if (!this._rowBuffers) {
+      this._rowBuffers = Array.from({ length: 32 }, () => new Int32Array(64));
+    }
+    const searchRecursive = (node, letter, targetWord, currentRow, path, depth) => {
+      if (depth >= 31) return;
+      const nextRow = this._rowBuffers[depth + 1];
       nextRow[0] = currentRow[0] + 1;
+      let minVal = nextRow[0];
 
       for (let i = 1; i < size; i++) {
         const insertCost = nextRow[i - 1] + 1;
         const deleteCost = currentRow[i] + 1;
-        let replaceCost = 0;
-        if (targetWord[i - 1] !== letter) {
-          replaceCost = currentRow[i - 1] + 1;
-        } else {
-          replaceCost = currentRow[i - 1];
-        }
-        nextRow[i] = Math.min(insertCost, deleteCost, replaceCost);
+        const replaceCost = (targetWord[i - 1] === letter) ? currentRow[i - 1] : currentRow[i - 1] + 1;
+        const cost = insertCost < deleteCost ? (insertCost < replaceCost ? insertCost : replaceCost) : (deleteCost < replaceCost ? deleteCost : replaceCost);
+        nextRow[i] = cost;
+        if (cost < minVal) minVal = cost;
       }
 
       if (nextRow[size - 1] <= maxDist && node.isWord) {
         results.push({ word: path, category: node.category, dist: nextRow[size - 1] });
       }
 
-      if (Math.min(...nextRow) <= maxDist) {
-        for (const childChar of Object.keys(node.children)) {
-          searchRecursive(node.children[childChar], childChar, targetWord, nextRow, path + childChar);
+      if (minVal <= maxDist) {
+        for (const childChar in node.children) {
+          if (Object.prototype.hasOwnProperty.call(node.children, childChar)) {
+            searchRecursive(node.children[childChar], childChar, targetWord, nextRow, path + childChar, depth + 1);
+          }
         }
       }
     };
 
-    const currentRow = new Array(word.length + 1);
-    for (let i = 0; i <= word.length; i++) {
+    const currentRow = this._rowBuffers[0];
+    for (let i = 0; i < size; i++) {
       currentRow[i] = i;
     }
 
-    for (const childChar of Object.keys(this.root.children)) {
-      searchRecursive(this.root.children[childChar], childChar, word, currentRow, childChar);
+    for (const childChar in this.root.children) {
+      if (Object.prototype.hasOwnProperty.call(this.root.children, childChar)) {
+        searchRecursive(this.root.children[childChar], childChar, word, currentRow, childChar, 0);
+      }
     }
 
     return results;
@@ -222,10 +240,11 @@ class Trie {
     // Fuzzy search on stemmed words to increase match rate
     const words = rawWords.map(w => stemBilingualToken(w));
     
-    const checkPhrase = (phrase) => {
+    const checkPhrase = (phrase, isUnigram) => {
       let node = this.root;
       let isMatch = true;
-      for (const char of phrase) {
+      for (let ci = 0; ci < phrase.length; ci++) {
+        const char = phrase[ci];
         if (!node.children[char]) {
           isMatch = false;
           break;
@@ -234,28 +253,26 @@ class Trie {
       }
       if (isMatch && node.isWord) {
         matches.push({ word: phrase, category: node.category, dist: 0 });
-      } else {
-        // Run spelling correction recursive search for edit distance 1
-        if (phrase.length > 4) {
-          const fuzzyList = this.searchFuzzy(phrase, 1);
-          if (fuzzyList.length > 0) {
-            fuzzyList.sort((a, b) => a.dist - b.dist);
-            matches.push({ word: fuzzyList[0].word, category: fuzzyList[0].category, dist: fuzzyList[0].dist });
-          }
+      } else if (isUnigram && phrase.length > 4 && !CLINICAL_STOP_WORDS.has(phrase)) {
+        // Run spelling correction recursive search only for unigram tokens with edit distance 1
+        const fuzzyList = this.searchFuzzy(phrase, 1);
+        if (fuzzyList.length > 0) {
+          fuzzyList.sort((a, b) => a.dist - b.dist);
+          matches.push({ word: fuzzyList[0].word, category: fuzzyList[0].category, dist: fuzzyList[0].dist });
         }
       }
     };
     
     for (let i = 0; i < words.length; i++) {
-      // Unigram
-      checkPhrase(words[i]);
+      // Unigram (supports edit-distance-1 fuzzy typo correction)
+      checkPhrase(words[i], true);
       // Bigram
       if (i < words.length - 1) {
-        checkPhrase(words[i] + " " + words[i+1]);
+        checkPhrase(words[i] + " " + words[i+1], false);
       }
       // Trigram
       if (i < words.length - 2) {
-        checkPhrase(words[i] + " " + words[i+1] + " " + words[i+2]);
+        checkPhrase(words[i] + " " + words[i+1] + " " + words[i+2], false);
       }
     }
     return matches;
@@ -294,6 +311,39 @@ class NaiveBayesSymptomClassifier {
     this.mlpb4 = null;        // C bias
     this.vocabIndices = new Map();
     this.conditions = [];
+
+    // Reusable TypedArray buffers for zero-allocation inference
+    this._infer_z1 = null;
+    this._infer_a1 = null;
+    this._infer_z2 = null;
+    this._infer_a2 = null;
+    this._infer_z3 = null;
+    this._infer_a3 = null;
+    this._infer_z4 = null;
+    this._infer_exps = null;
+  }
+
+  _initInferenceBuffers() {
+    const C = (this.mlpW4 && this.mlpW4[0]) ? this.mlpW4[0].length : (this.conditions.length || 32);
+    const H1 = this.H1 || 32;
+    const H2 = this.H2 || 16;
+    const H3 = this.H3 || 8;
+    if (!this._infer_z1 || this._infer_z1.length !== H1) {
+      this._infer_z1 = new Float32Array(H1);
+      this._infer_a1 = new Float32Array(H1);
+    }
+    if (!this._infer_z2 || this._infer_z2.length !== H2) {
+      this._infer_z2 = new Float32Array(H2);
+      this._infer_a2 = new Float32Array(H2);
+    }
+    if (!this._infer_z3 || this._infer_z3.length !== H3) {
+      this._infer_z3 = new Float32Array(H3);
+      this._infer_a3 = new Float32Array(H3);
+    }
+    if (!this._infer_z4 || this._infer_z4.length !== C) {
+      this._infer_z4 = new Float32Array(C);
+      this._infer_exps = new Float32Array(C);
+    }
   }
 
   tokenize(text) {
@@ -302,20 +352,11 @@ class NaiveBayesSymptomClassifier {
       .trim();
     const words = cleanText.split(/\s+/).filter(w => w.length > 1);
     
-    const stopWords = new Set([
-      "i", "have", "a", "feel", "feeling", "with", "after", "and", "the", "my", "so", "very", "on", "of", "to", "for", "in", "is", "me", "can", "what", "not", "at", "up", "am", "do", "it", "an", "be", "no", "or", "but", "was", "were", "been", "being", "did", "does", "has", "had", "will", "would", "could", "should", "may", "might", "shall", "this", "that", "these", "those", "by", "from", "as", "into", "about", "than", "which", "who", "whom", "if", "then", "when", "where", "how", "there", "here",
-      "heuchi", "laguchi", "asichi", "pura", "dehare", "deha", "hela", "ta", "hoichi", "ti", "bhal",
-      // Hinglish / Romanized Hindi stop words
-      "hai", "hian", "se", "ko", "ka", "ke", "ki", "tha", "thi", "he", "ho", "mera", "meri", "mujhe", "hota", "hoti", "rha", "raha", "rahi", "rhi", "hona", "sath", "aur", "pe", "par",
-      // Devanagari Hindi stop words
-      "है", "था", "थी", "थीं", "थे", "हैं", "को", "का", "के", "की", "से", "में", "और", "ने", "पर", "ही", "भी", "मुझे", "मेरा", "मेरी", "होता", "होती", "रहा", "रही", "रहे", "होना"
-    ]);
     const tokens = [];
-    
     const stemmedWords = words.map(w => stemBilingualToken(w));
     
     for (const w of stemmedWords) {
-      if (!stopWords.has(w) && w.length > 1) {
+      if (!CLINICAL_STOP_WORDS.has(w) && w.length > 1) {
         tokens.push(w);
       }
     }
@@ -337,7 +378,7 @@ class NaiveBayesSymptomClassifier {
 
     // Extract subword character n-grams to handle typos and spelling variants
     for (const w of words) {
-      if (!stopWords.has(w) && w.length >= 4) {
+      if (!CLINICAL_STOP_WORDS.has(w) && w.length >= 4) {
         // Extract char 3-grams
         for (let i = 0; i <= w.length - 3; i++) {
           tokens.push("c3:" + w.substring(i, i + 3));
@@ -398,7 +439,7 @@ class NaiveBayesSymptomClassifier {
         const vector = {};
         for (const [token, count] of Object.entries(tf)) {
           let val = count * (this.idf[token] || 1.0);
-          if (token.startsWith("c3:") || token.startsWith("c4:")) {
+          if (token.length > 3 && token.charCodeAt(0) === 99 && (token.charCodeAt(1) === 51 || token.charCodeAt(1) === 52) && token.charCodeAt(2) === 58) {
             val *= 0.5;
           }
           vector[token] = val;
@@ -501,6 +542,12 @@ class NaiveBayesSymptomClassifier {
       }
     }
 
+    this.nbLogDenom = {};
+    const vocabSize = this.vocabulary.size;
+    for (const condition of conditions) {
+      this.nbLogDenom[condition] = Math.log((this.nbClassTotals[condition] || 0) + vocabSize);
+    }
+
     // 5. Train Multi-Layer Perceptron (MLP)
     this.conditions = Object.keys(corpus);
     const C = this.conditions.length;
@@ -565,7 +612,21 @@ class NaiveBayesSymptomClassifier {
       return row;
     });
 
-    // MLP Training Epochs
+    // MLP Training Epochs (Using reusable forward/backward TypedArrays to prevent heap allocation churn)
+    const z1 = new Float32Array(H1);
+    const a1 = new Float32Array(H1);
+    const z2 = new Float32Array(H2);
+    const a2 = new Float32Array(H2);
+    const z3 = new Float32Array(H3);
+    const a3 = new Float32Array(H3);
+    const z4 = new Float32Array(C);
+    const exps = new Float32Array(C);
+    const a4 = new Float32Array(C);
+    const d4 = new Float32Array(C);
+    const d3 = new Float32Array(H3);
+    const d2 = new Float32Array(H2);
+    const d1 = new Float32Array(H1);
+
     const mlpEpochs = 40;
     for (let epoch = 0; epoch < mlpEpochs; epoch++) {
       // Use LCG seeded shuffling to maintain determinism
@@ -583,9 +644,8 @@ class NaiveBayesSymptomClassifier {
         const yIdx = this.conditions.indexOf(sample.label);
         if (yIdx === -1) continue;
 
-        // Forward propagation
+        // Forward propagation (zero-allocation buffer reuse)
         // Layer 1
-        const z1 = new Float32Array(H1);
         z1.set(this.mlpb1);
         for (const [token, x_val] of Object.entries(sample.vector)) {
           const vIdx = this.vocabIndices.get(token);
@@ -597,13 +657,11 @@ class NaiveBayesSymptomClassifier {
           }
         }
 
-        const a1 = new Float32Array(H1);
         for (let j = 0; j < H1; j++) {
           a1[j] = Math.max(0, z1[j]);
         }
 
         // Layer 2
-        const z2 = new Float32Array(H2);
         z2.set(this.mlpb2);
         for (let j = 0; j < H1; j++) {
           const a1_val = a1[j];
@@ -615,13 +673,11 @@ class NaiveBayesSymptomClassifier {
           }
         }
 
-        const a2 = new Float32Array(H2);
         for (let l = 0; l < H2; l++) {
           a2[l] = Math.max(0, z2[l]);
         }
 
         // Layer 3
-        const z3 = new Float32Array(H3);
         z3.set(this.mlpb3);
         for (let l = 0; l < H2; l++) {
           const a2_val = a2[l];
@@ -633,13 +689,11 @@ class NaiveBayesSymptomClassifier {
           }
         }
 
-        const a3 = new Float32Array(H3);
         for (let m = 0; m < H3; m++) {
           a3[m] = Math.max(0, z3[m]);
         }
 
         // Layer 4 (Output)
-        const z4 = new Float32Array(C);
         z4.set(this.mlpb4);
         for (let m = 0; m < H3; m++) {
           const a3_val = a3[m];
@@ -655,24 +709,21 @@ class NaiveBayesSymptomClassifier {
         for (let k = 0; k < C; k++) {
           if (z4[k] > maxZ4) maxZ4 = z4[k];
         }
-        const exps = new Float32Array(C);
         let sumExps = 0;
         for (let k = 0; k < C; k++) {
           exps[k] = Math.exp(z4[k] - maxZ4);
           sumExps += exps[k];
         }
-        const a4 = new Float32Array(C);
         for (let k = 0; k < C; k++) {
           a4[k] = sumExps > 0 ? exps[k] / sumExps : 0;
         }
 
-        // Backpropagation
-        const d4 = new Float32Array(C);
+        // Backpropagation (zero-allocation buffer reuse)
         for (let k = 0; k < C; k++) {
           d4[k] = a4[k] - (k === yIdx ? 1.0 : 0.0);
         }
 
-        const d3 = new Float32Array(H3);
+        d3.fill(0);
         for (let m = 0; m < H3; m++) {
           if (z3[m] > 0) {
             let sum = 0;
@@ -684,7 +735,7 @@ class NaiveBayesSymptomClassifier {
           }
         }
 
-        const d2 = new Float32Array(H2);
+        d2.fill(0);
         for (let l = 0; l < H2; l++) {
           if (z2[l] > 0) {
             let sum = 0;
@@ -696,7 +747,7 @@ class NaiveBayesSymptomClassifier {
           }
         }
 
-        const d1 = new Float32Array(H1);
+        d1.fill(0);
         for (let j = 0; j < H1; j++) {
           if (z1[j] > 0) {
             let sum = 0;
@@ -751,21 +802,24 @@ class NaiveBayesSymptomClassifier {
         }
       }
     }
+
+    // Pre-allocate instance inference buffers
+    this._initInferenceBuffers();
   }
 
   expandModelCapacity(targetConditionCount, targetVocabSize) {
-    const C_current = this.conditions.length;
+    const C_current = (this.mlpW4 && this.mlpW4[0]) ? this.mlpW4[0].length : this.conditions.length;
     const C_target = targetConditionCount || C_current;
 
     // Dynamically scale hidden layer widths if vocabulary exceeds 1500
-    if (targetVocabSize && targetVocabSize > 1500 && this.H1 === 32) {
+    if (targetVocabSize && targetVocabSize > 1500) {
       this.H1 = 64;
       this.H2 = 32;
       this.H3 = 16;
     }
 
-    // Expand output classes if target condition count increases
-    if (C_target > C_current && this.mlpW4 && this.mlpW4.length > 0) {
+    // Expand or adapt output classes if target condition count differs
+    if (this.mlpW4 && this.mlpW4.length > 0 && (C_target !== this.mlpW4[0].length || C_target > C_current)) {
       const H3 = this.H3 || 8;
       const limit4 = Math.sqrt(6 / (H3 + C_target));
       let seed = 42 + C_target;
@@ -777,9 +831,9 @@ class NaiveBayesSymptomClassifier {
       const newMlpW4 = Array.from({ length: H3 }, (row, m) => {
         const newRow = new Float32Array(C_target);
         if (this.mlpW4[m]) {
-          newRow.set(this.mlpW4[m].subarray(0, C_current));
+          newRow.set(this.mlpW4[m].subarray(0, Math.min(this.mlpW4[m].length, C_target)));
         }
-        for (let k = C_current; k < C_target; k++) {
+        for (let k = Math.min(this.mlpW4[m] ? this.mlpW4[m].length : 0, C_target); k < C_target; k++) {
           newRow[k] = (seededRandom() - 0.5) * 2 * limit4;
         }
         return newRow;
@@ -788,10 +842,13 @@ class NaiveBayesSymptomClassifier {
 
       const newMlpb4 = new Float32Array(C_target);
       if (this.mlpb4) {
-        newMlpb4.set(this.mlpb4.subarray(0, C_current));
+        newMlpb4.set(this.mlpb4.subarray(0, Math.min(this.mlpb4.length, C_target)));
       }
       this.mlpb4 = newMlpb4;
     }
+
+    // Refresh pre-allocated inference buffers
+    this._initInferenceBuffers();
 
     return {
       H1: this.H1,
@@ -807,126 +864,160 @@ class NaiveBayesSymptomClassifier {
       return Object.keys(this.weights).map(c => ({ condition: c, confidence: 0, score: 0 }));
     }
 
-    // 1. Build Query TF-IDF Vector
+    // 1. Build Query TF-IDF Vector & Sparse Entry List
     const queryTf = {};
-    for (const token of tokens) {
+    for (let i = 0; i < tokens.length; i++) {
+      const token = tokens[i];
       if (this.vocabulary.has(token)) {
         queryTf[token] = (queryTf[token] || 0) + 1;
       }
     }
 
-    const queryVector = {};
-    for (const [token, count] of Object.entries(queryTf)) {
-      let val = count * (this.idf[token] || 1.0);
-      if (token.startsWith("c3:") || token.startsWith("c4:")) {
+    let sumSq = 0;
+    let sumValidIdf = 0;
+    const queryEntries = [];
+    for (const token in queryTf) {
+      const count = queryTf[token];
+      const termIdf = this.idf[token] || 1.0;
+      sumValidIdf += count * termIdf;
+      let val = count * termIdf;
+      if (token.length > 3 && token.charCodeAt(0) === 99 && (token.charCodeAt(1) === 51 || token.charCodeAt(1) === 52) && token.charCodeAt(2) === 58) {
         val *= 0.5;
       }
-      queryVector[token] = val;
-    }
-
-    let sumSq = 0;
-    for (const val of Object.values(queryVector)) {
       sumSq += val * val;
+      queryEntries.push({ token, val, count, termIdf, normVal: 0 });
     }
-    const queryMagnitude = Math.sqrt(sumSq);
 
+    const queryMagnitude = Math.sqrt(sumSq);
+    const normFactor = queryMagnitude > 0 ? (1.0 / queryMagnitude) : 0;
     const normQueryVector = {};
-    if (queryMagnitude > 0) {
-      for (const [token, val] of Object.entries(queryVector)) {
-        normQueryVector[token] = val / queryMagnitude;
+    for (let i = 0; i < queryEntries.length; i++) {
+      const entry = queryEntries[i];
+      entry.normVal = entry.val * normFactor;
+      normQueryVector[entry.token] = entry.normVal;
+    }
+
+    // 2. Compute Multinomial Naive Bayes scores with O(K) sparse matching
+    const conditionKeys = this.conditions && this.conditions.length > 0 ? this.conditions : Object.keys(this.weights);
+    const numConditions = conditionKeys.length;
+
+    if (!this.nbLogDenom) {
+      this.nbLogDenom = {};
+      const V = this.vocabulary.size;
+      for (let c = 0; c < numConditions; c++) {
+        const cond = conditionKeys[c];
+        this.nbLogDenom[cond] = Math.log((this.nbClassTotals[cond] || 0) + V);
       }
     }
 
-    // 2. Compute Multinomial Naive Bayes scores
     const nbScores = {};
-    const vocabSize = this.vocabulary.size;
-    for (const condition of Object.keys(this.weights)) {
-      let logProb = this.nbPriors[condition];
-      const classTotal = this.nbClassTotals[condition] || 0;
-      
-      for (const token of tokens) {
-        if (this.vocabulary.has(token)) {
-          const count = this.nbWordCounts[condition][token] || 0;
-          const termIdf = this.idf[token] || 1.0;
-          logProb += termIdf * Math.log((count + 1) / (classTotal + vocabSize));
+    let nbSum = 0;
+    for (let c = 0; c < numConditions; c++) {
+      const condition = conditionKeys[c];
+      let logProb = this.nbPriors[condition] - (this.nbLogDenom[condition] * sumValidIdf);
+      const wc = this.nbWordCounts[condition];
+      if (wc) {
+        for (let i = 0; i < queryEntries.length; i++) {
+          const item = queryEntries[i];
+          const count = wc[item.token];
+          if (count) {
+            logProb += item.count * item.termIdf * Math.log(count + 1);
+          }
         }
       }
       nbScores[condition] = logProb;
+      nbSum += logProb;
     }
 
-    const nbValues = Object.values(nbScores);
-    const meanNb = nbValues.reduce((a, b) => a + b, 0) / nbValues.length;
+    const meanNb = numConditions > 0 ? (nbSum / numConditions) : 0;
     const normNbScores = {};
-    for (const condition of Object.keys(nbScores)) {
+    for (let c = 0; c < numConditions; c++) {
+      const condition = conditionKeys[c];
       normNbScores[condition] = nbScores[condition] - meanNb;
     }
 
-    // Run MLP Forward Pass
-    const C = this.conditions.length;
+    // Run MLP Forward Pass using pre-allocated reusable typed buffers
+    this._initInferenceBuffers();
+    const C = (this.mlpW4 && this.mlpW4[0]) ? this.mlpW4[0].length : numConditions;
     const H1 = this.H1 || 32;
     const H2 = this.H2 || 16;
     const H3 = this.H3 || 8;
-    const z1 = new Float32Array(H1);
+
+    const z1 = this._infer_z1;
     z1.set(this.mlpb1);
-    for (const [token, x_val] of Object.entries(normQueryVector)) {
-      const idx = this.vocabIndices.get(token);
+    for (let i = 0; i < queryEntries.length; i++) {
+      const qe = queryEntries[i];
+      const idx = this.vocabIndices.get(qe.token);
       if (idx !== undefined) {
         const w1_row = this.mlpW1[idx];
-        for (let j = 0; j < H1; j++) {
-          z1[j] += x_val * w1_row[j];
+        if (w1_row) {
+          const x_val = qe.normVal;
+          for (let j = 0; j < H1; j++) {
+            z1[j] += x_val * w1_row[j];
+          }
         }
       }
     }
-    const a1 = new Float32Array(H1);
+    const a1 = this._infer_a1;
     for (let j = 0; j < H1; j++) {
       a1[j] = Math.max(0, z1[j]);
     }
-    const z2 = new Float32Array(H2);
+
+    const z2 = this._infer_z2;
     z2.set(this.mlpb2);
     for (let j = 0; j < H1; j++) {
       const a1_val = a1[j];
       if (a1_val > 0) {
         const w2_row = this.mlpW2[j];
-        for (let l = 0; l < H2; l++) {
-          z2[l] += a1_val * w2_row[l];
+        if (w2_row) {
+          for (let l = 0; l < H2; l++) {
+            z2[l] += a1_val * w2_row[l];
+          }
         }
       }
     }
-    const a2 = new Float32Array(H2);
+    const a2 = this._infer_a2;
     for (let l = 0; l < H2; l++) {
       a2[l] = Math.max(0, z2[l]);
     }
-    const z3 = new Float32Array(H3);
+
+    const z3 = this._infer_z3;
     z3.set(this.mlpb3);
     for (let l = 0; l < H2; l++) {
       const a2_val = a2[l];
       if (a2_val > 0) {
         const w3_row = this.mlpW3[l];
-        for (let m = 0; m < H3; m++) {
-          z3[m] += a2_val * w3_row[m];
+        if (w3_row) {
+          for (let m = 0; m < H3; m++) {
+            z3[m] += a2_val * w3_row[m];
+          }
         }
       }
     }
-    const a3 = new Float32Array(H3);
+    const a3 = this._infer_a3;
     for (let m = 0; m < H3; m++) {
       a3[m] = Math.max(0, z3[m]);
     }
-    const z4 = new Float32Array(C);
+
+    const z4 = this._infer_z4;
     z4.set(this.mlpb4);
     for (let m = 0; m < H3; m++) {
       const a3_val = a3[m];
       if (a3_val > 0) {
         const w4_row = this.mlpW4[m];
-        for (let k = 0; k < C; k++) {
-          z4[k] += a3_val * w4_row[k];
+        if (w4_row) {
+          for (let k = 0; k < C; k++) {
+            z4[k] += a3_val * w4_row[k];
+          }
         }
       }
     }
+
     let maxZ4 = -Infinity;
     for (let k = 0; k < C; k++) {
       if (z4[k] > maxZ4) maxZ4 = z4[k];
     }
-    const mlpExps = new Float32Array(C);
+    const mlpExps = this._infer_exps;
     let mlpSum = 0;
     for (let k = 0; k < C; k++) {
       mlpExps[k] = Math.exp(z4[k] - maxZ4);
@@ -935,25 +1026,32 @@ class NaiveBayesSymptomClassifier {
     const mlpLogProbs = {};
     for (let k = 0; k < C; k++) {
       const prob = mlpSum > 0 ? mlpExps[k] / mlpSum : 0;
-      mlpLogProbs[this.conditions[k]] = Math.log(prob + 1e-15);
+      const cond = this.conditions[k] || `condition_${k}`;
+      mlpLogProbs[cond] = Math.log(prob + 1e-15);
     }
     const mlpValues = Object.values(mlpLogProbs);
     const meanMlp = mlpValues.reduce((a, b) => a + b, 0) / mlpValues.length;
     const normMlpScores = {};
-    for (const condition of Object.keys(mlpLogProbs)) {
-      normMlpScores[condition] = mlpLogProbs[condition] - meanMlp;
+    for (let c = 0; c < numConditions; c++) {
+      const condition = conditionKeys[c];
+      normMlpScores[condition] = (mlpLogProbs[condition] !== undefined ? mlpLogProbs[condition] : 0) - meanMlp;
     }
 
     // 3. Compute SVM Margin decision values + Naive Bayes & MLP ensemble fusions
     const scores = {};
-    for (const condition of Object.keys(this.weights)) {
+    for (let c = 0; c < numConditions; c++) {
+      const condition = conditionKeys[c];
       const w = this.weights[condition];
-      const b = this.biases[condition];
+      const b = this.biases[condition] || 0;
       
       let dotProduct = 0;
-      for (const [token, val] of Object.entries(normQueryVector)) {
-        if (w[token] !== undefined) {
-          dotProduct += w[token] * val;
+      if (w) {
+        for (let i = 0; i < queryEntries.length; i++) {
+          const qe = queryEntries[i];
+          const wVal = w[qe.token];
+          if (wVal !== undefined) {
+            dotProduct += wVal * qe.normVal;
+          }
         }
       }
       
@@ -964,29 +1062,35 @@ class NaiveBayesSymptomClassifier {
     // 4. Inject Trie-based fuzzy phrase matches as margin shifts
     const trieMatches = this.trie.search(text);
     const trieBoost = {};
-    for (const match of trieMatches) {
+    for (let i = 0; i < trieMatches.length; i++) {
+      const match = trieMatches[i];
       const termIdf = this.idf[match.word] || 1.0;
       const discount = match.dist > 0 ? 0.75 : 1.0;
       trieBoost[match.category] = (trieBoost[match.category] || 0) + (0.25 * termIdf * discount);
     }
 
-    for (const condition of Object.keys(scores)) {
+    for (let c = 0; c < numConditions; c++) {
+      const condition = conditionKeys[c];
       if (trieBoost[condition]) {
         scores[condition] += trieBoost[condition];
       }
     }
 
     // 5. Inject Clinician active learning posterior offset deltas
-    for (const condition of Object.keys(scores)) {
-      let clinicianDelta = 0;
-      if (window.localClinicianDeltas && window.localClinicianDeltas[condition]) {
-        for (const token of tokens) {
-          if (window.localClinicianDeltas[condition][token] !== undefined) {
-            clinicianDelta += window.localClinicianDeltas[condition][token];
+    if (window.localClinicianDeltas) {
+      for (let c = 0; c < numConditions; c++) {
+        const condition = conditionKeys[c];
+        if (window.localClinicianDeltas[condition]) {
+          let clinicianDelta = 0;
+          for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i];
+            if (window.localClinicianDeltas[condition][token] !== undefined) {
+              clinicianDelta += window.localClinicianDeltas[condition][token];
+            }
           }
+          scores[condition] += clinicianDelta;
         }
       }
-      scores[condition] += clinicianDelta;
     }
 
     const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
@@ -1021,7 +1125,7 @@ class NaiveBayesSymptomClassifier {
     const queryVector = {};
     for (const [token, count] of Object.entries(queryTf)) {
       let val = count * (this.idf[token] || 1.0);
-      if (token.startsWith("c3:") || token.startsWith("c4:")) {
+      if (token.length > 3 && token.charCodeAt(0) === 99 && (token.charCodeAt(1) === 51 || token.charCodeAt(1) === 52) && token.charCodeAt(2) === 58) {
         val *= 0.5;
       }
       queryVector[token] = val;
@@ -9543,6 +9647,27 @@ async function deriveEncryptionKey(password, salt) {
   );
 }
 
+function uint8ArrayToBase64(bytes) {
+  let binary = '';
+  const len = bytes.byteLength;
+  const chunkSize = 8192;
+  for (let i = 0; i < len; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+    binary += String.fromCharCode.apply(null, chunk);
+  }
+  return btoa(binary);
+}
+
+function base64ToUint8Array(base64) {
+  const binary = atob(base64);
+  const len = binary.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
 async function encryptBackup(text, password) {
   const enc = new TextEncoder();
   const salt = crypto.getRandomValues(new Uint8Array(16));
@@ -9555,7 +9680,7 @@ async function encryptBackup(text, password) {
   );
   const saltHex = Array.from(salt).map(b => b.toString(16).padStart(2, '0')).join('');
   const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
-  const ciphertextBase64 = btoa(String.fromCharCode(...new Uint8Array(ciphertext)));
+  const ciphertextBase64 = uint8ArrayToBase64(new Uint8Array(ciphertext));
   return { saltHex, ivHex, ciphertextBase64 };
 }
 
@@ -9563,7 +9688,7 @@ async function decryptBackup(saltHex, ivHex, ciphertextBase64, password) {
   const dec = new TextDecoder();
   const salt = new Uint8Array(saltHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
   const iv = new Uint8Array(ivHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-  const ciphertext = new Uint8Array(atob(ciphertextBase64).split('').map(c => c.charCodeAt(0)));
+  const ciphertext = base64ToUint8Array(ciphertextBase64);
   const key = await deriveEncryptionKey(password, salt);
   try {
     const plaintext = await crypto.subtle.decrypt(
@@ -10386,10 +10511,17 @@ const BioTelemetrySFX = {
   enabled: true,
 
   init() {
-    if (this.ctx) return;
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext) {
-      this.ctx = new AudioContext();
+    if (this.ctx) {
+      if (this.ctx.state === 'suspended') {
+        try { this.ctx.resume(); } catch(e){}
+      }
+      return;
+    }
+    const AudioCtx = (typeof window !== 'undefined' && (window.AudioContext || window.webkitAudioContext)) || (typeof AudioContext !== 'undefined' ? AudioContext : null);
+    if (AudioCtx) {
+      try {
+        this.ctx = new AudioCtx();
+      } catch(e){}
     }
   },
 
@@ -10406,14 +10538,19 @@ const BioTelemetrySFX = {
       gain.connect(this.ctx.destination);
 
       osc.type = "sine";
-      osc.frequency.setValueAtTime(1500, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.04);
+      const t = this.ctx.currentTime;
+      osc.frequency.setValueAtTime(1500, t);
+      osc.frequency.exponentialRampToValueAtTime(800, t + 0.04);
 
-      gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.04);
+      gain.gain.setValueAtTime(0.08, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
 
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.04);
+      osc.onended = () => {
+        try { osc.disconnect(); gain.disconnect(); } catch(e){}
+      };
+
+      osc.start(t);
+      osc.stop(t + 0.04);
     } catch(e){}
   },
 
@@ -10432,20 +10569,25 @@ const BioTelemetrySFX = {
       gain.connect(this.ctx.destination);
 
       osc.type = "triangle";
-      osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1600, this.ctx.currentTime + 0.5);
+      const t = this.ctx.currentTime;
+      osc.frequency.setValueAtTime(300, t);
+      osc.frequency.exponentialRampToValueAtTime(1600, t + 0.5);
 
       filter.type = "lowpass";
       filter.Q.value = 5;
-      filter.frequency.setValueAtTime(400, this.ctx.currentTime);
-      filter.frequency.exponentialRampToValueAtTime(2000, this.ctx.currentTime + 0.5);
+      filter.frequency.setValueAtTime(400, t);
+      filter.frequency.exponentialRampToValueAtTime(2000, t + 0.5);
 
-      gain.gain.setValueAtTime(0.06, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.1, this.ctx.currentTime + 0.1);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+      gain.gain.setValueAtTime(0.06, t);
+      gain.gain.linearRampToValueAtTime(0.1, t + 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
 
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.5);
+      osc.onended = () => {
+        try { osc.disconnect(); filter.disconnect(); gain.disconnect(); } catch(e){}
+      };
+
+      osc.start(t);
+      osc.stop(t + 0.5);
     } catch(e){}
   },
 
@@ -10470,6 +10612,10 @@ const BioTelemetrySFX = {
         gain.gain.setValueAtTime(0.0, t + i * 0.22);
         gain.gain.linearRampToValueAtTime(0.1, t + i * 0.22 + 0.02);
         gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.22 + 0.18);
+
+        osc.onended = () => {
+          try { osc.disconnect(); gain.disconnect(); } catch(e){}
+        };
 
         osc.start(t + i * 0.22);
         osc.stop(t + i * 0.22 + 0.18);
@@ -10510,8 +10656,18 @@ const BioTelemetrySFX = {
       gain.gain.setValueAtTime(0.04, t);
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
 
-      osc1.start();
-      osc2.start();
+      let endedCount = 0;
+      const cleanup = () => {
+        endedCount++;
+        if (endedCount >= 2) {
+          try { osc1.disconnect(); osc2.disconnect(); filter.disconnect(); gain.disconnect(); } catch(e){}
+        }
+      };
+      osc1.onended = cleanup;
+      osc2.onended = cleanup;
+
+      osc1.start(t);
+      osc2.start(t);
       osc1.stop(t + 0.25);
       osc2.stop(t + 0.25);
     } catch(e){}
@@ -10533,6 +10689,9 @@ const BioTelemetrySFX = {
       osc1.frequency.setValueAtTime(600, t);
       gain1.gain.setValueAtTime(0.05, t);
       gain1.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+      osc1.onended = () => {
+        try { osc1.disconnect(); gain1.disconnect(); } catch(e){}
+      };
       osc1.start(t);
       osc1.stop(t + 0.12);
 
@@ -10545,6 +10704,9 @@ const BioTelemetrySFX = {
       gain2.gain.setValueAtTime(0.0, t + 0.08);
       gain2.gain.linearRampToValueAtTime(0.06, t + 0.09);
       gain2.gain.exponentialRampToValueAtTime(0.001, t + 0.24);
+      osc2.onended = () => {
+        try { osc2.disconnect(); gain2.disconnect(); } catch(e){}
+      };
       osc2.start(t + 0.08);
       osc2.stop(t + 0.24);
     } catch(e){}
@@ -10576,8 +10738,18 @@ const BioTelemetrySFX = {
       gain.gain.setValueAtTime(0.04, t);
       gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
 
-      osc1.start();
-      osc2.start();
+      let endedCount = 0;
+      const cleanup = () => {
+        endedCount++;
+        if (endedCount >= 2) {
+          try { osc1.disconnect(); osc2.disconnect(); gain.disconnect(); } catch(e){}
+        }
+      };
+      osc1.onended = cleanup;
+      osc2.onended = cleanup;
+
+      osc1.start(t);
+      osc2.start(t);
       osc1.stop(t + 0.25);
       osc2.stop(t + 0.25);
     } catch(e){}
@@ -10596,14 +10768,19 @@ const BioTelemetrySFX = {
       gain.connect(this.ctx.destination);
 
       osc.type = "sine";
-      osc.frequency.setValueAtTime(2000, this.ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.015);
+      const t = this.ctx.currentTime;
+      osc.frequency.setValueAtTime(2000, t);
+      osc.frequency.exponentialRampToValueAtTime(1200, t + 0.015);
 
-      gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.015);
+      gain.gain.setValueAtTime(0.02, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.015);
 
-      osc.start();
-      osc.stop(this.ctx.currentTime + 0.015);
+      osc.onended = () => {
+        try { osc.disconnect(); gain.disconnect(); } catch(e){}
+      };
+
+      osc.start(t);
+      osc.stop(t + 0.015);
     } catch(e){}
   }
 };

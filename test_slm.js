@@ -126,7 +126,8 @@ const mockDocument = {
   removeEventListener() {},
   querySelector() { return null; },
   querySelectorAll() { return []; },
-  body: makeMockElement()
+  body: makeMockElement(),
+  documentElement: makeMockElement()
 };
 
 const mockWindow = {
@@ -143,6 +144,10 @@ const mockWindow = {
 };
 
 global.localStorage = mockLocalStorage;
+mockWindow.addEventListener = () => {};
+mockWindow.removeEventListener = () => {};
+mockWindow.innerWidth = 1024;
+mockWindow.innerHeight = 768;
 global.indexedDB = mockIndexedDB;
 global.document = mockDocument;
 global.window = mockWindow;
@@ -1974,6 +1979,62 @@ async function runTest(name, fn) {
         }
       }
     }
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 34: Autonomous Real-Time UI Responsiveness & Self-Healing Agent ──
+  // =========================================================================
+  await runTest("Autonomous Real-Time UI Responsiveness & Self-Healing Agent Verification", async () => {
+    let ok = true;
+
+    const { RamanUiAgent } = require('./ui_responsive_agent.js');
+    ok = assert(typeof RamanUiAgent === 'function', "RamanUiAgent class is exported and defined.") && ok;
+
+    const agent = new RamanUiAgent({ skipAutoInit: true, maxMutationsPerSec: 5, dampeningMs: 10 });
+    ok = assert(agent.version === "2.3.0", `RamanUiAgent version is '2.3.0' (Got: ${agent.version}).`) && ok;
+
+    // 1. Viewport Tier Classification
+    ok = assert(agent.classifyTier(360, 640) === 'mobile-compact', "Classifies 360x640 as 'mobile-compact'.") && ok;
+    ok = assert(agent.classifyTier(412, 915) === 'mobile', "Classifies 412x915 as 'mobile'.") && ok;
+    ok = assert(agent.classifyTier(768, 1024) === 'tablet-portrait', "Classifies 768x1024 as 'tablet-portrait'.") && ok;
+    ok = assert(agent.classifyTier(1024, 768) === 'tablet-landscape', "Classifies 1024x768 as 'tablet-landscape'.") && ok;
+    ok = assert(agent.classifyTier(1920, 1080) === 'desktop', "Classifies 1920x1080 as 'desktop'.") && ok;
+
+    // 2. Virtual Keyboard Encroachment & Offset Handling
+    global.window.visualViewport = { width: 390, height: 500 };
+    global.window.innerHeight = 844;
+    agent.handleViewportChange();
+    ok = assert(agent.isKeyboardOpen === true, "Flags keyboard as open when vertical delta > 120px.") && ok;
+    ok = assert(agent.keyboardOffset === 344, `Computes accurate keyboard height offset: 344px (Got: ${agent.keyboardOffset}px).`) && ok;
+
+    // Reset visual viewport
+    global.window.visualViewport.height = 844;
+    agent.handleViewportChange();
+    ok = assert(agent.isKeyboardOpen === false, "Flags keyboard as closed when height matches innerHeight.") && ok;
+    ok = assert(agent.keyboardOffset === 0, "Resets keyboard height offset to 0px.") && ok;
+
+    // 3. Execution of Audit & Correction Cycle
+    agent.auditAndCorrect();
+    ok = assert(agent.totalAudits >= 1, "Audit cycle incremented totalAudits counter.") && ok;
+    ok = assert(agent.lastAuditLatencyMs < 2.0, `Audit execution latency < 2.0ms (Got: ${agent.lastAuditLatencyMs}ms).`) && ok;
+
+    // 4. Circuit Breaker Simulation
+    agent.resetCircuitBreaker();
+    for (let i = 0; i < 10; i++) {
+      agent.mutationTimestamps.push(Date.now());
+    }
+    agent.auditAndCorrect();
+    ok = assert(agent.circuitBreakerTripped === true, "Circuit breaker trips when mutation frequency exceeds threshold.") && ok;
+
+    // 5. Diagnostics API
+    agent.resetCircuitBreaker();
+    const diag = agent.getDiagnostics();
+    ok = assert(Boolean(diag) && typeof diag === 'object', "getDiagnostics() returns structured object.") && ok;
+    ok = assert(diag.version === "2.3.0", "Diagnostics reports matching engine version.") && ok;
+    ok = assert(typeof diag.executionLatencyMs === 'number', "Diagnostics reports numeric latency metric.") && ok;
+    ok = assert(diag.circuitBreakerTripped === false, "Diagnostics confirms circuit breaker is healthy.") && ok;
 
     return ok;
   });
