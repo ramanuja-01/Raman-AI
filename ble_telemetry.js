@@ -98,16 +98,92 @@ function parseSFloat(val) {
 
 function calculateHrvMetrics(rrIntervals) {
   if (!rrIntervals || rrIntervals.length < 2) return null;
+  const n = rrIntervals.length;
+  let sum = 0;
   let sumSquares = 0;
-  for (let i = 1; i < rrIntervals.length; i++) {
-    const diff = rrIntervals[i] - rrIntervals[i - 1];
-    sumSquares += diff * diff;
+  let count50 = 0;
+
+  for (let i = 0; i < n; i++) {
+    sum += rrIntervals[i];
+    if (i > 0) {
+      const diff = rrIntervals[i] - rrIntervals[i - 1];
+      sumSquares += diff * diff;
+      if (Math.abs(diff) > 50) count50++;
+    }
   }
-  const rmssd = Math.round(Math.sqrt(sumSquares / (rrIntervals.length - 1)));
+
+  const meanRr = Math.round(sum / n);
+  const heartRate = meanRr > 0 ? Math.round(60000 / meanRr) : 0;
+  const rmssd = Math.round(Math.sqrt(sumSquares / (n - 1)));
+  const pnn50 = Math.round((count50 / (n - 1)) * 100);
+
+  // SDNN (Standard Deviation of NN Intervals)
+  let varianceSum = 0;
+  for (let i = 0; i < n; i++) {
+    const diffMean = rrIntervals[i] - meanRr;
+    varianceSum += diffMean * diffMean;
+  }
+  const sdnn = Math.round(Math.sqrt(varianceSum / n));
+  const cv = meanRr > 0 ? parseFloat((sdnn / meanRr).toFixed(4)) : 0;
+
+  // Rhythm classification (ESC/NASPE & Pan-Tompkins criteria)
+  let rhythm = "NORMAL_SINUS_RHYTHM";
+  let alertLevel = "NORMAL";
+  let interpretation = "Normal physiological autonomic modulation and rhythm regularity.";
+
+  if (cv >= 0.12) {
+    rhythm = "POSSIBLE_ATRIAL_FIBRILLATION";
+    alertLevel = "WARNING";
+    interpretation = "High R-R interval entropy and marked variance indicative of irregular rhythm or potential atrial fibrillation.";
+  } else if (cv >= 0.10) {
+    rhythm = "INCREASED_ECTOPIC_BURDEN";
+    alertLevel = "CAUTION";
+    interpretation = "Moderate variability suggesting frequent premature ventricular/atrial complexes.";
+  } else if (heartRate < 60) {
+    rhythm = "SINUS_BRADYCARDIA";
+    alertLevel = heartRate < 45 ? "WARNING" : "CAUTION";
+    interpretation = "Sinus bradycardia observed. Monitor for symptomatic fatigue or chronotropic incompetence.";
+  } else if (heartRate > 100) {
+    rhythm = "SINUS_TACHYCARDIA";
+    alertLevel = heartRate > 120 ? "WARNING" : "CAUTION";
+    interpretation = "Sinus tachycardia detected. Check for fever, pain, dehydration, or hemodynamic instability.";
+  }
+
+  // Baevsky's Stress Index (SI) approximation
+  const binRadius = 25;
+  let modeCount = 0;
+  for (let i = 0; i < n; i++) {
+    if (Math.abs(rrIntervals[i] - meanRr) <= binRadius) modeCount++;
+  }
+  const amo = (modeCount / n) * 100;
+  const moSec = meanRr / 1000;
+  let minRr = rrIntervals[0];
+  let maxRr = rrIntervals[0];
+  for (let i = 1; i < n; i++) {
+    if (rrIntervals[i] < minRr) minRr = rrIntervals[i];
+    if (rrIntervals[i] > maxRr) maxRr = rrIntervals[i];
+  }
+  const mxdmnSec = Math.max(0.05, (maxRr - minRr) / 1000);
+  const stressIndex = Math.round(amo / (2 * moSec * mxdmnSec));
+
   return {
     rmssd,
+    sdnn,
+    pnn50,
+    meanRr,
+    heartRate,
+    cv,
+    rhythm,
+    alertLevel,
+    interpretation,
+    stressIndex,
+    sampleCount: n,
     timestamp: Date.now()
   };
+}
+
+function analyzeCardiacRhythm(rrIntervals) {
+  return calculateHrvMetrics(rrIntervals);
 }
 
 function parsePulseOximeterMeasurement(dataView) {
@@ -670,6 +746,7 @@ if (typeof window !== 'undefined') {
   window.parseXiaomiBattery = parseXiaomiBattery;
   window.parseXiaomiSpO2 = parseXiaomiSpO2;
   window.calculateHrvMetrics = calculateHrvMetrics;
+  window.analyzeCardiacRhythm = analyzeCardiacRhythm;
   window.isXiaomiBrand = isXiaomiBrand;
   window.XIAOMI_UUIDS = XIAOMI_UUIDS;
   window.XIAOMI_COMMANDS = XIAOMI_COMMANDS;
@@ -684,6 +761,7 @@ if (typeof module !== 'undefined' && module.exports) {
     parseXiaomiBattery,
     parseXiaomiSpO2,
     calculateHrvMetrics,
+    analyzeCardiacRhythm,
     isXiaomiBrand,
     parseSFloat,
     XIAOMI_UUIDS,

@@ -62,6 +62,20 @@ class RamanZkpProver {
         break;
       }
 
+      case "CRITICAL_DETERIORATION_ABSENCE": {
+        const news2Score = parseInt(privateWitness.news2Score || (privateWitness.clinicalScores && privateWitness.clinicalScores.news2 && privateWitness.clinicalScores.news2.score) || "0", 10);
+        const qsofaScore = parseInt(privateWitness.qsofaScore || (privateWitness.clinicalScores && privateWitness.clinicalScores.qsofa && privateWitness.clinicalScores.qsofa.score) || "0", 10);
+        const shockIndex = parseFloat(privateWitness.shockIndex || (privateWitness.clinicalScores && privateWitness.clinicalScores.shockIndex && privateWitness.clinicalScores.shockIndex.value) || "0.6");
+
+        const maxNews2 = publicSignals.maxNews2 || 4;
+        const maxQsofa = publicSignals.maxQsofa || 1;
+        const maxSi = publicSignals.maxShockIndex || 0.9;
+
+        claimSatisfied = (news2Score <= maxNews2) && (qsofaScore <= maxQsofa) && (shockIndex <= maxSi);
+        statement = `Claim: Patient attested free from acute physiological deterioration (NEWS2 <= ${maxNews2}, qSOFA <= ${maxQsofa}, Shock Index <= ${maxSi})`;
+        break;
+      }
+
       default:
         throw new Error(`Unsupported ZKP criterion type: ${criterionType}`);
     }

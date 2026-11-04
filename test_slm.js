@@ -297,7 +297,9 @@ try {
     .replace(/\bclass Trie\b/g, 'global.Trie = class Trie')
     .replace(/\bclass NaiveBayesSymptomClassifier\b/g, 'global.NaiveBayesSymptomClassifier = class NaiveBayesSymptomClassifier')
     .replace(/\bclass MarkovTextGenerator\b/g, 'global.MarkovTextGenerator = class MarkovTextGenerator')
-    .replace(/\bfunction checkSafetyContraindications\b/g, 'global.checkSafetyContraindications = function checkSafetyContraindications');
+    .replace(/\bfunction checkSafetyContraindications\b/g, 'global.checkSafetyContraindications = function checkSafetyContraindications')
+    .replace(/\bfunction calculateClinicalScores\b/g, 'global.calculateClinicalScores = function calculateClinicalScores')
+    .replace(/\bfunction updateLiveTriageHud\b/g, 'global.updateLiveTriageHud = function updateLiveTriageHud');
 
   // Indirect eval to run in global scope
   const indirectEval = eval;
@@ -2035,6 +2037,347 @@ async function runTest(name, fn) {
     ok = assert(diag.version === "2.3.0", "Diagnostics reports matching engine version.") && ok;
     ok = assert(typeof diag.executionLatencyMs === 'number', "Diagnostics reports numeric latency metric.") && ok;
     ok = assert(diag.circuitBreakerTripped === false, "Diagnostics confirms circuit breaker is healthy.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 35: Standardized Physiological Triage Scoring (NEWS2, qSOFA, Shock Index & eGFR)
+  // =========================================================================
+  await runTest("Standardized Physiological Triage Scoring (NEWS2, qSOFA, Shock Index & eGFR)", async () => {
+    let ok = true;
+
+    const scoreFn = (typeof calculateClinicalScores === 'function') 
+      ? calculateClinicalScores 
+      : (window.calculateClinicalScores || global.calculateClinicalScores);
+
+    ok = assert(typeof scoreFn === 'function', "calculateClinicalScores is defined and callable.") && ok;
+
+    // 1. Normal Hemodynamics & Vitals Test
+    const normalVitals = { heartRate: "72", SpO2: "98", bp: "120/80", respirationRate: "16", temp: "98.6", consciousness: "A" };
+    const normalProfile = { age: "35", weight: "70", gender: "male", creatinine: "1.0" };
+    const normalScores = scoreFn(normalVitals, normalProfile);
+
+    ok = assert(normalScores.news2.score === 0, `Normal vitals yield NEWS2 score 0 (Got: ${normalScores.news2.score}).`) && ok;
+    ok = assert(normalScores.news2.tier === "LOW", `Normal vitals classified into 'LOW' risk tier (Got: ${normalScores.news2.tier}).`) && ok;
+    ok = assert(normalScores.news2.hasRedScore === false, "Normal vitals have no red parameters.") && ok;
+    ok = assert(normalScores.qsofa.score === 0, `Normal vitals yield qSOFA score 0 (Got: ${normalScores.qsofa.score}).`) && ok;
+    ok = assert(normalScores.qsofa.highRisk === false, "Normal vitals have low sepsis risk.") && ok;
+    ok = assert(normalScores.shockIndex.value === 0.60, `Normal Shock Index is 0.60 (Got: ${normalScores.shockIndex.value}).`) && ok;
+    ok = assert(normalScores.shockIndex.isElevated === false, "Normal Shock Index is not elevated.") && ok;
+    ok = assert(normalScores.renal.crclMlMin >= 90, `Normal male eGFR/CrCl >= 90 mL/min (Got: ${normalScores.renal.crclMlMin}).`) && ok;
+
+    // 2. Critical Deterioration & Sepsis Shock Test
+    const criticalVitals = { heartRate: "135", SpO2: "89", bp: "85/55", respirationRate: "26", temp: "103.0", consciousness: "A" };
+    const criticalScores = scoreFn(criticalVitals, normalProfile);
+
+    ok = assert(criticalScores.news2.score >= 12, `Critical deterioration yields high NEWS2 >= 12 (Got: ${criticalScores.news2.score}).`) && ok;
+    ok = assert(criticalScores.news2.tier === "HIGH", `Critical vitals classified into 'HIGH' risk tier (Got: ${criticalScores.news2.tier}).`) && ok;
+    ok = assert(criticalScores.news2.hasRedScore === true, "Critical vitals trigger red parameter alert.") && ok;
+    ok = assert(criticalScores.qsofa.score === 2, `Critical vitals yield qSOFA score 2 (SBP<=100 + RR>=22) (Got: ${criticalScores.qsofa.score}).`) && ok;
+    ok = assert(criticalScores.qsofa.highRisk === true, "Critical vitals flag high sepsis risk.") && ok;
+    ok = assert(criticalScores.shockIndex.value > 0.9, `Critical vitals trigger Shock Index > 0.9 (Got: ${criticalScores.shockIndex.value}).`) && ok;
+    ok = assert(criticalScores.shockIndex.isElevated === true, "Shock Index flagged as critically elevated.") && ok;
+
+    // 3. Renal Clearance Cockcroft-Gault Verification
+    const renalProfile = { age: "75", weight: "60", gender: "female", creatinine: "2.8" };
+    const renalScores = scoreFn(normalVitals, renalProfile);
+    ok = assert(renalScores.renal.crclMlMin <= 20, `Severe renal impairment calculated accurately (Got: ${renalScores.renal.crclMlMin} mL/min).`) && ok;
+    ok = assert(renalScores.renal.isImpaired === true, "Severe renal impairment flagged when CrCl < 30 mL/min.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 36: CPIC Pharmacogenomics & Renal Clearance (eGFR) Dosing Safety Engine
+  // =========================================================================
+  await runTest("CPIC Pharmacogenomics & Renal Clearance (eGFR) Dosing Safety Engine", async () => {
+    let ok = true;
+
+    const safetyFn = (typeof checkSafetyContraindications === 'function')
+      ? checkSafetyContraindications
+      : (window.checkSafetyContraindications || global.checkSafetyContraindications);
+
+    ok = assert(typeof safetyFn === 'function', "checkSafetyContraindications is callable.") && ok;
+
+    // 1. Renal Titration: Metformin Block in Severe Renal Impairment (eGFR < 30)
+    const renalPatient = { age: "65", gender: "male", eGFR: 24, notes: "Type 2 Diabetes, Diabetic Nephropathy Stage 4" };
+    const metforminMed = { name: "Metformin Hydrochloride 500mg (Brand: Glycomet)", dose: "500 mg twice daily" };
+    const renalCheck = safetyFn(metforminMed, renalPatient, "diabetes");
+
+    ok = assert(renalCheck.isContraindicated === true, "Metformin is contraindicated in severe renal impairment (eGFR < 30).") && ok;
+    ok = assert(renalCheck.subName.includes("Linagliptin"), `Safely substituted Metformin with renal-safe Linagliptin (Got: '${renalCheck.subName}').`) && ok;
+    ok = assert(renalCheck.subSnomed === "429503001", `Linagliptin SNOMED code matches 429503001 (Got: ${renalCheck.subSnomed}).`) && ok;
+
+    // 2. Renal Titration: Ciprofloxacin 50% Dosage Reduction
+    const ciproMed = { name: "Ciprofloxacin 500mg (Brand: Ciplox)", dose: "500 mg twice daily" };
+    const ciproCheck = safetyFn(ciproMed, renalPatient, "fever");
+    ok = assert(ciproCheck.isContraindicated === true, "Standard Ciprofloxacin 500mg flagged for renal titration.") && ok;
+    ok = assert(ciproCheck.subName.includes("250mg Renal-Adjusted"), `Dose adjusted to 250mg Renal-Adjusted (Got: '${ciproCheck.subName}').`) && ok;
+
+    // 3. CPIC Level A: CYP2C19 Poor Metabolizer with Clopidogrel
+    const cyp2c19Patient = { name: "Rajesh", age: "54", genomicTraits: ["cyp2c19"], notes: "Post-PCI Stent, CYP2C19 *2/*2 Poor Metabolizer" };
+    const clopidogrelMed = { name: "Clopidogrel 75mg (Brand: Plavix, Deplatt)", dose: "75 mg once daily" };
+    const cyp2c19Check = safetyFn(clopidogrelMed, cyp2c19Patient, "chest pain");
+
+    ok = assert(cyp2c19Check.isContraindicated === true, "Clopidogrel contraindicated under CYP2C19 poor metabolizer phenotype.") && ok;
+    ok = assert(cyp2c19Check.subName.includes("Ticagrelor"), `Substituted with CPIC Level A alternative Ticagrelor (Got: '${cyp2c19Check.subName}').`) && ok;
+    ok = assert(cyp2c19Check.subSnomed === "444901007", `Ticagrelor SNOMED code matches 444901007 (Got: ${cyp2c19Check.subSnomed}).`) && ok;
+
+    // 4. CPIC Level A: CYP2D6 Ultrarapid Metabolizer with Codeine
+    const cyp2d6Patient = { name: "Anita", age: "42", genomicTraits: ["cyp2d6"], notes: "CYP2D6 Ultrarapid Metabolizer" };
+    const codeineMed = { name: "Codeine Phosphate 30mg", dose: "30 mg every 6 hours" };
+    const cyp2d6Check = safetyFn(codeineMed, cyp2d6Patient, "cough");
+
+    ok = assert(cyp2d6Check.isContraindicated === true, "Codeine contraindicated under CYP2D6 ultrarapid metabolizer phenotype.") && ok;
+    ok = assert(cyp2d6Check.subName.includes("Combiflam") || cyp2d6Check.subName.includes("Paracetamol"), `Substituted with safe non-codeine alternative (Got: '${cyp2d6Check.subName}').`) && ok;
+
+    // 5. CPIC Level A: SLCO1B1 Poor Function with Atorvastatin
+    const slco1b1Patient = { name: "Manoj", age: "58", genomicTraits: ["slco1b1"], notes: "Hyperlipidemia, SLCO1B1 521T>C carrier" };
+    const statinMed = { name: "Atorvastatin Calcium 40mg (Brand: Lipitor, Atorva)", dose: "40 mg once daily at night" };
+    const statinCheck = safetyFn(statinMed, slco1b1Patient, "high blood pressure");
+
+    ok = assert(statinCheck.isContraindicated === true, "Atorvastatin contraindicated under SLCO1B1 poor function.") && ok;
+    ok = assert(statinCheck.subName.includes("Rosuvastatin"), `Substituted with lower myotoxicity Rosuvastatin (Got: '${statinCheck.subName}').`) && ok;
+    ok = assert(statinCheck.subSnomed === "407543004", `Rosuvastatin SNOMED code matches 407543004 (Got: ${statinCheck.subSnomed}).`) && ok;
+
+    // 6. Test checkPgxConflicts expanded coverage
+    const pgxConflicts = window.checkPgxConflicts(cyp2c19Patient, [clopidogrelMed]);
+    ok = assert(pgxConflicts.length >= 1, "checkPgxConflicts successfully flags Clopidogrel conflict for CYP2C19.") && ok;
+    ok = assert(pgxConflicts[0].subName.includes("Ticagrelor"), "checkPgxConflicts suggests Ticagrelor alternative.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 37: HL7 FHIR R4 IPS Document Bundle, ZKP Proofs & Grounded SOAP Verification
+  // =========================================================================
+  await runTest("HL7 FHIR R4 IPS Document Bundle, ZKP Proofs & Grounded SOAP Verification", async () => {
+    let ok = true;
+
+    // 1. FHIR R4 Bundle with Allergies & International Clinical Scores
+    const fhirModule = require('./fhir_exporter.js');
+    const profileWithAllergy = {
+      name: "Debasis Jena",
+      age: "45",
+      gender: "male",
+      blood: "A+",
+      allergies: "Penicillin",
+      heartRate: "88",
+      SpO2: "96",
+      bp: "135/85"
+    };
+
+    const sessionData = {
+      healthId: "RMN-IPS-77",
+      condition: "Hypertensive Crisis",
+      icd11: "BA00",
+      clinicalScores: {
+        news2: { score: 3, tier: "LOW", risk: "Low Risk" },
+        qsofa: { score: 1, highRisk: false, recommendation: "qSOFA < 2: Low immediate sepsis risk." },
+        shockIndex: { value: 0.65, status: "Normal Hemodynamics", isElevated: false },
+        renal: { crclMlMin: 85.2, stage: "G2 (Mildly Decreased)" }
+      },
+      medications: [
+        { name: "Amlodipine Besylate 5mg", snomed: "386864001", dose: "5 mg orally daily" }
+      ]
+    };
+
+    const ipsBundle = fhirModule.generateFhirR4Bundle(profileWithAllergy, sessionData, profileWithAllergy);
+
+    ok = assert(ipsBundle.resourceType === "Bundle", "Bundle resourceType is 'Bundle'.") && ok;
+    ok = assert(ipsBundle.type === "document", "Bundle conforms to document type.") && ok;
+
+    // Check AllergyIntolerance Resource
+    const allergyEntry = ipsBundle.entry.find(e => e.resource.resourceType === "AllergyIntolerance");
+    ok = assert(Boolean(allergyEntry), "FHIR Bundle contains AllergyIntolerance resource.") && ok;
+    ok = assert(allergyEntry.resource.code.coding[0].code === "91936005", `AllergyIntolerance coded with Penicillin SNOMED CT '91936005' (Got: ${allergyEntry.resource.code.coding[0].code}).`) && ok;
+
+    // Check Clinical Score Observations
+    const news2Obs = ipsBundle.entry.find(e => e.resource.resourceType === "Observation" && e.resource.code && e.resource.code.coding[0].code === "96552-5");
+    ok = assert(Boolean(news2Obs), "FHIR Bundle contains NEWS2 Total Score Observation (LOINC 96552-5).") && ok;
+    ok = assert(news2Obs.resource.valueInteger === 3, `NEWS2 Observation matches value 3 (Got: ${news2Obs.resource.valueInteger}).`) && ok;
+
+    const qsofaObs = ipsBundle.entry.find(e => e.resource.resourceType === "Observation" && e.resource.code && e.resource.code.coding[0].code === "96790-1");
+    ok = assert(Boolean(qsofaObs), "FHIR Bundle contains qSOFA Observation (LOINC 96790-1).") && ok;
+
+    const siObs = ipsBundle.entry.find(e => e.resource.resourceType === "Observation" && e.resource.code && e.resource.code.coding[0].code === "76503-2");
+    ok = assert(Boolean(siObs), "FHIR Bundle contains Shock Index Observation (LOINC 76503-2).") && ok;
+    ok = assert(siObs.resource.valueQuantity.value === 0.65, "Shock Index value matches 0.65.") && ok;
+
+    // 2. Zero-Knowledge Proof: CRITICAL_DETERIORATION_ABSENCE
+    const zkpModule = require('./zkp_verifier.js');
+    const stableWitness = { news2Score: 2, qsofaScore: 0, shockIndex: 0.62 };
+    const zkpProof = await zkpModule.RamanZkpProver.generateProof("CRITICAL_DETERIORATION_ABSENCE", stableWitness, { maxNews2: 4 });
+
+    ok = assert(zkpProof.protocol === "RAMAN-ZKP-GROTH16-CIRCUIT-v1", "ZKP proof generated under Groth16 circuit protocol.") && ok;
+    const zkpVerified = zkpModule.RamanZkpProver.verifyProof(zkpProof);
+    ok = assert(zkpVerified.isValid === true, "ZKP Proof of deterioration absence verifies with zero knowledge disclosure.") && ok;
+
+    // 3. Grounded Epistemic Verification for Quantized SLM
+    const slmModule = require('./quantized_slm.js');
+    const qSlm = new slmModule.RamanQuantizedSlm();
+    const mockContext = {
+      profile: { name: "Debasis", age: "45", gender: "male" },
+      condition: "Hypertensive Crisis",
+      icd11: "BA00",
+      vitals: { heartRate: "88", bp: "135/85", SpO2: "96", temp: "98.6" },
+      medications: [{ name: "Amlodipine Besylate 5mg", dose: "5 mg orally daily" }],
+      precautions: ["Reduce sodium intake", "Monitor blood pressure daily"]
+    };
+
+    const narrative = qSlm.generateClinicalNarrative(mockContext);
+    const groundingAudit = qSlm.verifyClinicalGrounding(narrative, mockContext);
+
+    ok = assert(groundingAudit.isGrounded === true, "Generated SOAP note verified as strictly grounded.") && ok;
+    ok = assert(groundingAudit.groundingScore >= 0.8, `Grounding score exceeds 0.8 (Got: ${groundingAudit.groundingScore}).`) && ok;
+    ok = assert(groundingAudit.hallucinationRisk === "LOW_RISK_GROUNDED", "Hallucination risk assessed as LOW_RISK_GROUNDED.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 38: Live Physiological Triage HUD & Expanded CPIC Guidelines (Warfarin & Azathioprine)
+  // =========================================================================
+  await runTest("Live Physiological Triage HUD & Expanded CPIC Guidelines (Warfarin & Azathioprine)", async () => {
+    let ok = true;
+
+    // 1. Live Physiological Triage HUD Verification
+    const hudUpdate = (typeof updateLiveTriageHud === 'function')
+      ? updateLiveTriageHud
+      : (window.updateLiveTriageHud || global.updateLiveTriageHud);
+
+    ok = assert(typeof hudUpdate === 'function', "updateLiveTriageHud function is defined and available.") && ok;
+
+    // Setup mock elements for live HUD
+    const hudNews2Val = mockDocument.getElementById("hudNews2Val");
+    const hudQsofaVal = mockDocument.getElementById("hudQsofaVal");
+    const hudShockIndexVal = mockDocument.getElementById("hudShockIndexVal");
+    const liveTriageOverallBadge = mockDocument.getElementById("liveTriageOverallBadge");
+
+    mockDocument.getElementById("patientBP").value = "120/80";
+    mockDocument.getElementById("patientHR").value = "72";
+    mockDocument.getElementById("patientTemp").value = "98.6";
+    mockDocument.getElementById("patientSpO2").value = "98";
+
+    hudUpdate();
+    ok = assert(String(hudNews2Val.textContent) === "0", `HUD sets NEWS2 score to 0 on normal vitals (Got: ${hudNews2Val.textContent}).`) && ok;
+    ok = assert(String(hudQsofaVal.textContent) === "0", `HUD sets qSOFA score to 0 on normal vitals (Got: ${hudQsofaVal.textContent}).`) && ok;
+    ok = assert(hudShockIndexVal.textContent === "0.60", `HUD sets Shock Index to 0.60 (Got: ${hudShockIndexVal.textContent}).`) && ok;
+    ok = assert(liveTriageOverallBadge.textContent === "STABLE", `HUD badge reports 'STABLE' (Got: ${liveTriageOverallBadge.textContent}).`) && ok;
+
+    // Simulate acute crisis input: SBP 80, HR 140, Temp 104, SpO2 88
+    mockDocument.getElementById("patientBP").value = "80/50";
+    mockDocument.getElementById("patientHR").value = "140";
+    mockDocument.getElementById("patientTemp").value = "104.0";
+    mockDocument.getElementById("patientSpO2").value = "88";
+
+    hudUpdate();
+    ok = assert(parseInt(hudNews2Val.textContent, 10) >= 10, `HUD dynamically reflects high NEWS2 >= 10 under acute crisis (Got: ${hudNews2Val.textContent}).`) && ok;
+    ok = assert(liveTriageOverallBadge.textContent === "CRITICAL ALERT", `HUD badge dynamically transitions to 'CRITICAL ALERT' (Got: ${liveTriageOverallBadge.textContent}).`) && ok;
+
+    // 2. Extended CPIC Guidelines: Warfarin under CYP2C9 / VKORC1 Sensitivity
+    const warfarinPatient = { name: "Bikash", age: "62", genomicTraits: ["cyp2c9", "vkorc1"], notes: "Atrial Fibrillation, VKORC1 -1639G>A carrier" };
+    const warfarinMed = { name: "Warfarin Sodium 5mg (Brand: Coumadin)", dose: "5 mg once daily" };
+    const warfarinCheck = checkSafetyContraindications(warfarinMed, warfarinPatient, "chest pain");
+
+    ok = assert(warfarinCheck.isContraindicated === true, "Warfarin contraindicated under CYP2C9/VKORC1 sensitivity.") && ok;
+    ok = assert(warfarinCheck.subName.includes("Apixaban"), `Warfarin safely substituted with CPIC alternative Apixaban (Got: '${warfarinCheck.subName}').`) && ok;
+    ok = assert(warfarinCheck.subSnomed === "444901007", `Apixaban SNOMED code matches 444901007 (Got: ${warfarinCheck.subSnomed}).`) && ok;
+
+    // 3. Extended CPIC Guidelines: Azathioprine under TPMT / NUDT15 Deficiency
+    const tpmtPatient = { name: "Sasmita", age: "38", genomicTraits: ["tpmt"], notes: "Systemic Lupus Erythematosus, TPMT Poor Metabolizer" };
+    const azathioprineMed = { name: "Azathioprine 50mg (Brand: Imuran)", dose: "50 mg twice daily" };
+    const tpmtCheck = checkSafetyContraindications(azathioprineMed, tpmtPatient, "joint pain");
+
+    ok = assert(tpmtCheck.isContraindicated === true, "Azathioprine contraindicated under TPMT deficiency.") && ok;
+    ok = assert(tpmtCheck.subName.includes("Methotrexate"), `Azathioprine safely substituted with Methotrexate (Got: '${tpmtCheck.subName}').`) && ok;
+    ok = assert(tpmtCheck.subSnomed === "387494002", `Methotrexate SNOMED code matches 387494002 (Got: ${tpmtCheck.subSnomed}).`) && ok;
+
+    // 4. Extended checkPgxConflicts Verification
+    const pgxConflicts = window.checkPgxConflicts(warfarinPatient, [warfarinMed]);
+    ok = assert(pgxConflicts.some(c => c.trait.includes("CYP2C9") && c.subName.includes("Apixaban")), "checkPgxConflicts flags Warfarin CYP2C9/VKORC1 risk.") && ok;
+
+    const tpmtConflicts = window.checkPgxConflicts(tpmtPatient, [azathioprineMed]);
+    ok = assert(tpmtConflicts.some(c => c.trait.includes("TPMT") && c.subName.includes("Methotrexate")), "checkPgxConflicts flags Azathioprine TPMT/NUDT15 risk.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 39: Offline QR Health Card Matrix & Real-Time Arrhythmia Analysis
+  // =========================================================================
+  await runTest("Offline QR Health Card Matrix & Real-Time Arrhythmia Analysis", async () => {
+    let ok = true;
+
+    // 1. Standalone Offline QR Code Matrix Generator (ISO/IEC 18004:2015)
+    const qrModule = require('./qr_code.js');
+    ok = assert(typeof qrModule.encode === 'function', "qrModule.encode is defined.") && ok;
+    ok = assert(typeof qrModule.toSvg === 'function', "qrModule.toSvg is defined.") && ok;
+
+    const testText = "RAMAN-TEST-DATA-170";
+    const qrMatrix = qrModule.encode(testText, 'M');
+    ok = assert(qrMatrix && qrMatrix.size > 20, `QR matrix size is valid (>20): ${qrMatrix.size}.`) && ok;
+    ok = assert(Array.isArray(qrMatrix.modules) && qrMatrix.modules.length === qrMatrix.size, "QR matrix modules row count matches matrix size.") && ok;
+
+    // 2. Vector SVG Rendering
+    const svgStr = qrModule.toSvg(testText, { size: 120, margin: 2 });
+    ok = assert(svgStr.startsWith("<svg") && svgStr.endsWith("</svg>"), "QR toSvg outputs valid SVG tags.") && ok;
+    ok = assert(svgStr.includes("width=\"120\"") && svgStr.includes("height=\"120\""), "QR SVG applies requested dimensions (120x120).") && ok;
+    ok = assert(svgStr.includes("<path d=\""), "QR SVG renders vector path modules.") && ok;
+
+    // 3. SMART Health Card / FHIR IPS Tamper-Evident Payload Generation
+    const mockProfile = { name: "Raman", age: "34", gender: "Male", healthId: "RMN-E3B9F2" };
+    const mockSession = { healthId: "RMN-E3B9F2", icd11: "BA41" };
+    const mockScores = {
+      news2: { score: 2, riskTier: "LOW" },
+      qsofa: { score: 0 },
+      shockIndex: { index: 0.62 },
+      renal: { crclMlMin: 98.4 }
+    };
+    const mockZkp = { proof: { pi_a: "a1b2c3d4e5f678901234567890abcdef" } };
+
+    const payloadJson = qrModule.generateHealthCardPayload(mockProfile, mockSession, mockScores, mockZkp);
+    const parsedPayload = JSON.parse(payloadJson);
+
+    ok = assert(parsedPayload.iss === "RAMAN-AI-OFFLINE-TRIAGE", "Payload issuer is 'RAMAN-AI-OFFLINE-TRIAGE'.") && ok;
+    ok = assert(parsedPayload.hid === "RMN-E3B9F2", "Payload Health ID matches 'RMN-E3B9F2'.") && ok;
+    ok = assert(parsedPayload.dx === "BA41", "Payload diagnosis matches ICD-11 'BA41'.") && ok;
+    ok = assert(parsedPayload.tri.n2 === 2, "Payload triage embeds NEWS2 score 2.") && ok;
+    ok = assert(parsedPayload.tri.qs === 0, "Payload triage embeds qSOFA score 0.") && ok;
+    ok = assert(parsedPayload.tri.tier === "LOW", "Payload triage embeds risk tier 'LOW'.") && ok;
+    ok = assert(parsedPayload.zkp === "a1b2c3d4e5f678901234567890abcdef", "Payload embeds tamper-proof Groth16 ZKP digest.") && ok;
+
+    // 4. Real-time Arrhythmia & Cardiac Rhythm Analysis (Pan-Tompkins & ESC/NASPE)
+    const bleModule = require('./ble_telemetry.js');
+    ok = assert(typeof bleModule.analyzeCardiacRhythm === 'function', "analyzeCardiacRhythm function is defined.") && ok;
+
+    // Test Normal Sinus Rhythm (RR around 800ms = 75 bpm, low variance)
+    const normalRr = [800, 810, 795, 805, 800, 815, 790, 805];
+    const normalCardiac = bleModule.calculateHrvMetrics(normalRr);
+    ok = assert(normalCardiac.rhythm === "NORMAL_SINUS_RHYTHM", `Regular rhythm classified as NORMAL_SINUS_RHYTHM (Got: ${normalCardiac.rhythm}).`) && ok;
+    ok = assert(normalCardiac.heartRate >= 70 && normalCardiac.heartRate <= 80, `Mean HR accurately calculated (Got: ${normalCardiac.heartRate} bpm).`) && ok;
+    ok = assert(normalCardiac.cv < 0.10, `Normal rhythm coefficient of variation is < 0.10 (Got: ${normalCardiac.cv}).`) && ok;
+    ok = assert(normalCardiac.sdnn > 0, `SDNN is positive (Got: ${normalCardiac.sdnn} ms).`) && ok;
+
+    // Test Sinus Bradycardia (RR around 1300ms = ~46 bpm)
+    const bradyRr = [1300, 1310, 1290, 1305, 1315, 1295];
+    const bradyCardiac = bleModule.calculateHrvMetrics(bradyRr);
+    ok = assert(bradyCardiac.rhythm === "SINUS_BRADYCARDIA", `Low HR classified as SINUS_BRADYCARDIA (Got: ${bradyCardiac.rhythm}).`) && ok;
+    ok = assert(bradyCardiac.heartRate < 60, `Bradycardia HR < 60 (Got: ${bradyCardiac.heartRate} bpm).`) && ok;
+
+    // Test Sinus Tachycardia (RR around 480ms = ~125 bpm)
+    const tachyRr = [480, 485, 475, 480, 490, 470];
+    const tachyCardiac = bleModule.calculateHrvMetrics(tachyRr);
+    ok = assert(tachyCardiac.rhythm === "SINUS_TACHYCARDIA", `High HR classified as SINUS_TACHYCARDIA (Got: ${tachyCardiac.rhythm}).`) && ok;
+    ok = assert(tachyCardiac.heartRate > 100, `Tachycardia HR > 100 (Got: ${tachyCardiac.heartRate} bpm).`) && ok;
+
+    // Test Possible Atrial Fibrillation / High Irregularity (Chaotic RR intervals with CV >= 0.12)
+    const afibRr = [600, 950, 620, 1050, 710, 1100, 650, 990];
+    const afibCardiac = bleModule.calculateHrvMetrics(afibRr);
+    ok = assert(afibCardiac.rhythm === "POSSIBLE_ATRIAL_FIBRILLATION", `Chaotic intervals flagged as POSSIBLE_ATRIAL_FIBRILLATION (Got: ${afibCardiac.rhythm}).`) && ok;
+    ok = assert(afibCardiac.cv >= 0.12, `AFib CV exceeds 0.12 threshold (Got: ${afibCardiac.cv}).`) && ok;
+    ok = assert(afibCardiac.alertLevel === "WARNING", "AFib alertLevel is 'WARNING'.") && ok;
 
     return ok;
   });

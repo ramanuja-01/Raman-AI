@@ -259,7 +259,201 @@ function generateFhirR4Bundle(profile, sessionData = {}, vitals = {}) {
     });
   }
 
-  // 3E. Wearable Device Resource (if connected)
+  // 3E. Clinical Triage Score Observations (NEWS2, qSOFA, Shock Index, eGFR)
+  const clinicalScores = sessionData.clinicalScores || 
+    (typeof calculateClinicalScores === 'function' ? calculateClinicalScores(activeVitals, profile) : null);
+
+  if (clinicalScores) {
+    // 3E-1. NEWS2 Total Score (LOINC 96552-5)
+    if (clinicalScores.news2 && typeof clinicalScores.news2.score === 'number') {
+      entries.push({
+        fullUrl: `urn:uuid:obs-news2-${Date.now()}`,
+        resource: {
+          resourceType: "Observation",
+          status: "final",
+          category: [{
+            coding: [{
+              system: "http://terminology.hl7.org/CodeSystem/observation-category",
+              code: "survey",
+              display: "Survey"
+            }]
+          }],
+          code: {
+            coding: [{
+              system: "http://loinc.org",
+              code: "96552-5",
+              display: "National Early Warning Score 2 total"
+            }]
+          },
+          subject: { reference: `urn:uuid:${patientId}` },
+          effectiveDateTime: timestamp,
+          valueInteger: clinicalScores.news2.score,
+          interpretation: [{
+            coding: [{
+              system: "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+              code: clinicalScores.news2.tier,
+              display: clinicalScores.news2.risk
+            }]
+          }]
+        }
+      });
+    }
+
+    // 3E-2. qSOFA Sepsis Screening Score (LOINC 96790-1)
+    if (clinicalScores.qsofa && typeof clinicalScores.qsofa.score === 'number') {
+      entries.push({
+        fullUrl: `urn:uuid:obs-qsofa-${Date.now()}`,
+        resource: {
+          resourceType: "Observation",
+          status: "final",
+          category: [{
+            coding: [{
+              system: "http://terminology.hl7.org/CodeSystem/observation-category",
+              code: "survey",
+              display: "Survey"
+            }]
+          }],
+          code: {
+            coding: [{
+              system: "http://loinc.org",
+              code: "96790-1",
+              display: "quick Sequential Organ Failure Assessment total score"
+            }]
+          },
+          subject: { reference: `urn:uuid:${patientId}` },
+          effectiveDateTime: timestamp,
+          valueInteger: clinicalScores.qsofa.score,
+          note: [{ text: clinicalScores.qsofa.recommendation }]
+        }
+      });
+    }
+
+    // 3E-3. Shock Index (LOINC 76503-2)
+    if (clinicalScores.shockIndex && typeof clinicalScores.shockIndex.value === 'number') {
+      entries.push({
+        fullUrl: `urn:uuid:obs-si-${Date.now()}`,
+        resource: {
+          resourceType: "Observation",
+          status: "final",
+          category: [{
+            coding: [{
+              system: "http://terminology.hl7.org/CodeSystem/observation-category",
+              code: "vital-signs",
+              display: "Vital Signs"
+            }]
+          }],
+          code: {
+            coding: [{
+              system: "http://loinc.org",
+              code: "76503-2",
+              display: "Shock Index"
+            }]
+          },
+          subject: { reference: `urn:uuid:${patientId}` },
+          effectiveDateTime: timestamp,
+          valueQuantity: {
+            value: clinicalScores.shockIndex.value,
+            unit: "{beats/min}/{mmHg}",
+            system: "http://unitsofmeasure.org",
+            code: "{beats/min}/{mm[Hg]}"
+          },
+          interpretation: [{
+            text: clinicalScores.shockIndex.status
+          }]
+        }
+      });
+    }
+
+    // 3E-4. Renal Creatinine Clearance / eGFR (LOINC 33914-3)
+    if (clinicalScores.renal && typeof clinicalScores.renal.crclMlMin === 'number') {
+      entries.push({
+        fullUrl: `urn:uuid:obs-crcl-${Date.now()}`,
+        resource: {
+          resourceType: "Observation",
+          status: "final",
+          category: [{
+            coding: [{
+              system: "http://terminology.hl7.org/CodeSystem/observation-category",
+              code: "laboratory",
+              display: "Laboratory"
+            }]
+          }],
+          code: {
+            coding: [{
+              system: "http://loinc.org",
+              code: "33914-3",
+              display: "Glomerular filtration rate/1.73 sq M.predicted"
+            }]
+          },
+          subject: { reference: `urn:uuid:${patientId}` },
+          effectiveDateTime: timestamp,
+          valueQuantity: {
+            value: clinicalScores.renal.crclMlMin,
+            unit: "mL/min/1.73m2",
+            system: "http://unitsofmeasure.org",
+            code: "mL/min/1.73m2"
+          },
+          interpretation: [{
+            text: clinicalScores.renal.stage
+          }]
+        }
+      });
+    }
+  }
+
+  // 3F. AllergyIntolerance Resource (International Patient Summary Standard)
+  const allergiesStr = (profile.allergies || "").toLowerCase().trim();
+  if (allergiesStr && allergiesStr !== "none") {
+    let allergenSnomed = "419199007";
+    let allergenDisplay = profile.allergies;
+
+    if (allergiesStr.includes("penicillin")) {
+      allergenSnomed = "91936005";
+      allergenDisplay = "Allergy to penicillin";
+    } else if (allergiesStr.includes("nsaid") || allergiesStr.includes("aspirin")) {
+      allergenSnomed = "292044008";
+      allergenDisplay = "Allergy to aspirin / NSAID";
+    } else if (allergiesStr.includes("sulfa")) {
+      allergenSnomed = "91939003";
+      allergenDisplay = "Allergy to sulfonamide";
+    }
+
+    entries.push({
+      fullUrl: `urn:uuid:allergy-${Date.now()}`,
+      resource: {
+        resourceType: "AllergyIntolerance",
+        clinicalStatus: {
+          coding: [{
+            system: "http://terminology.hl7.org/CodeSystem/allergyintolerance-clinical",
+            code: "active",
+            display: "Active"
+          }]
+        },
+        verificationStatus: {
+          coding: [{
+            system: "http://terminology.hl7.org/CodeSystem/allergyintolerance-verification",
+            code: "confirmed",
+            display: "Confirmed"
+          }]
+        },
+        type: "allergy",
+        category: ["medication"],
+        criticality: "high",
+        code: {
+          coding: [{
+            system: "http://snomed.info/sct",
+            code: allergenSnomed,
+            display: allergenDisplay
+          }],
+          text: profile.allergies
+        },
+        patient: { reference: `urn:uuid:${patientId}` },
+        recordedDate: timestamp
+      }
+    });
+  }
+
+  // 3G. Wearable Device Resource (if connected)
   const deviceModel = vitals.deviceModel || profile.deviceModel || (typeof window !== 'undefined' && window.ramanBle && window.ramanBle.deviceModel ? window.ramanBle.deviceModel : null);
   if (deviceModel) {
     const devId = `device-${healthId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}-wearable`;

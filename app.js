@@ -4100,6 +4100,9 @@ function updateProfileCompleteness(skipGreeting = false) {
   if (el) el.addEventListener('input', () => {
     updateProfileCompleteness(false);
     saveProfile();
+    if (typeof updateLiveTriageHud === 'function') {
+      updateLiveTriageHud();
+    }
     if (id === 'patientHR' && typeof window.updateOscilloscopeHeartRate === 'function') {
       window.updateOscilloscopeHeartRate(el.value);
     }
@@ -4112,6 +4115,73 @@ function updateProfileCompleteness(skipGreeting = false) {
     }
   });
 });
+
+// ── Live Physiological Deterioration Triage (NEWS2, qSOFA, Shock Index) HUD ──
+function updateLiveTriageHud() {
+  if (typeof document === 'undefined') return;
+  const bpInput = document.getElementById("patientBP");
+  const hrInput = document.getElementById("patientHR");
+  const tempInput = document.getElementById("patientTemp");
+  const spo2Input = document.getElementById("patientSpO2");
+  const hudBadge = document.getElementById("liveTriageOverallBadge");
+  const news2Val = document.getElementById("hudNews2Val");
+  const news2Tier = document.getElementById("hudNews2Tier");
+  const qsofaVal = document.getElementById("hudQsofaVal");
+  const qsofaRisk = document.getElementById("hudQsofaRisk");
+  const shockVal = document.getElementById("hudShockIndexVal");
+  const egfrVal = document.getElementById("hudEgfrVal");
+
+  if (!news2Val) return;
+
+  const vitals = {
+    bp: (bpInput && bpInput.value) ? bpInput.value : "120/80",
+    heartRate: (hrInput && hrInput.value) ? hrInput.value : "72",
+    temp: (tempInput && tempInput.value) ? tempInput.value : "98.6",
+    SpO2: (spo2Input && spo2Input.value) ? spo2Input.value : "98"
+  };
+
+  const p = (typeof getProfile === 'function') ? getProfile() : {};
+  const scores = (typeof calculateClinicalScores === 'function') ? calculateClinicalScores(vitals, p) : null;
+  if (!scores) return;
+
+  news2Val.textContent = String(scores.news2.score);
+  if (news2Tier) news2Tier.textContent = `(${scores.news2.tier})`;
+  if (qsofaVal) qsofaVal.textContent = String(scores.qsofa.score);
+  if (qsofaRisk) qsofaRisk.textContent = scores.qsofa.highRisk ? "(ALERT)" : "(NORMAL)";
+  if (shockVal) shockVal.textContent = scores.shockIndex.value.toFixed(2);
+  if (egfrVal) egfrVal.textContent = `${scores.renal.crclMlMin} mL/m`;
+
+  // Visual indicators & styling
+  if (scores.news2.tier === "HIGH" || scores.qsofa.highRisk || scores.shockIndex.isElevated) {
+    if (hudBadge) {
+      hudBadge.textContent = "CRITICAL ALERT";
+      hudBadge.style.background = "rgba(255, 77, 109, 0.25)";
+      hudBadge.style.color = "var(--red-warn)";
+      hudBadge.style.border = "1px solid var(--red-warn)";
+    }
+    news2Val.style.color = "var(--red-warn)";
+  } else if (scores.news2.tier === "MEDIUM") {
+    if (hudBadge) {
+      hudBadge.textContent = "URGENT REVIEW";
+      hudBadge.style.background = "rgba(255, 204, 0, 0.2)";
+      hudBadge.style.color = "#ffcc00";
+      hudBadge.style.border = "1px solid #ffcc00";
+    }
+    news2Val.style.color = "#ffcc00";
+  } else {
+    if (hudBadge) {
+      hudBadge.textContent = "STABLE";
+      hudBadge.style.background = "rgba(0, 255, 179, 0.15)";
+      hudBadge.style.color = "var(--teal)";
+      hudBadge.style.border = "1px solid rgba(0, 255, 179, 0.3)";
+    }
+    news2Val.style.color = "var(--teal)";
+  }
+
+  if (qsofaVal) qsofaVal.style.color = scores.qsofa.highRisk ? "var(--red-warn)" : "var(--cyan)";
+  if (shockVal) shockVal.style.color = scores.shockIndex.isElevated ? "var(--red-warn)" : "var(--accent)";
+}
+window.updateLiveTriageHud = updateLiveTriageHud;
 
 // ── Chat Functions ──────────────────────────────────────
 function getProfile() {
@@ -7317,6 +7387,23 @@ window.downloadPrescriptionPDF = function(data) {
   
   const currentDate = new Date().toLocaleDateString('en-IN', { day:'2-digit', month:'long', year:'numeric', hour:'2-digit', minute:'2-digit' });
   const p = getProfile();
+
+  // Generate Offline SMART Health Card / FHIR IPS Vector QR Code
+  let qrSvgMarkup = '';
+  try {
+    const qrEngine = (typeof RamanQrCode !== 'undefined') ? RamanQrCode : (window.RamanQrCode || null);
+    if (qrEngine && typeof qrEngine.toSvg === 'function') {
+      const qrPayload = qrEngine.generateHealthCardPayload(
+        p,
+        { healthId: data.healthId || currentHealthId, icd11: data.icd11 },
+        data.clinicalScores || (typeof calculateClinicalScores === 'function' ? calculateClinicalScores(data.vitals || {}, p) : null),
+        window._activeZkpProof || null
+      );
+      qrSvgMarkup = qrEngine.toSvg(qrPayload, { size: 105, margin: 1, darkColor: '#0284c7', lightColor: '#ffffff' });
+    }
+  } catch (qrErr) {
+    console.warn("Offline QR code generation notice:", qrErr);
+  }
   
   const html = `
     <!DOCTYPE html>
@@ -7656,9 +7743,17 @@ window.downloadPrescriptionPDF = function(data) {
             <p>Simulation Framework: Local Client-Side Inference Sandbox</p>
             <p>Simulator ID: ${data.healthId || 'RAMAN-HID-170'}</p>
           </div>
-          <div class="rx-badge">
-            <h2>Rx</h2>
-            <p>SIMULATED THERAPEUTIC Rx</p>
+          <div class="rx-badge" style="display:flex; align-items:center; gap:16px;">
+            ${qrSvgMarkup ? `
+              <div style="text-align:center; background:#ffffff; border:1px solid #bae6fd; padding:4px 6px; border-radius:6px; box-shadow:0 2px 6px rgba(2,132,199,0.1);">
+                ${qrSvgMarkup}
+                <div style="font-size:0.55rem; color:#0284c7; font-family:'Orbitron', sans-serif; font-weight:bold; letter-spacing:0.5px; margin-top:3px;">SMART HEALTH QR</div>
+              </div>
+            ` : ''}
+            <div>
+              <h2>Rx</h2>
+              <p>SIMULATED THERAPEUTIC Rx</p>
+            </div>
           </div>
         </div>
         
@@ -8363,6 +8458,11 @@ function completeClinicalConsultation() {
       defaultMetricVal = "30%";
   }
 
+  // Standardized physiological scoring from literature (NEWS2, qSOFA, Shock Index, eGFR)
+  const clinicalScores = (typeof calculateClinicalScores === 'function')
+    ? calculateClinicalScores(activeConsultation.vitals, p)
+    : null;
+
   // Calculate severe/moderate/mild dynamic staging
   let stageText = "Stage 1 (Mild)";
   let stageLevel = 1;
@@ -8382,21 +8482,29 @@ function completeClinicalConsultation() {
     (hr && (hrVal > 120 || hrVal < 48)) || 
     category === "chest pain" || 
     symptoms.includes("Chest Pain") ||
-    (bp && (sysBP > 165 || diaBP > 102))
+    (bp && (sysBP > 165 || diaBP > 102)) ||
+    (clinicalScores && (clinicalScores.news2.score >= 7 || clinicalScores.shockIndex.isElevated))
   ) {
     stageText = "Stage 3 (Severe / Critical Risk)";
     stageLevel = 3;
     severityReason = "Critical metabolic or physiological deregulation detected. Urgent specialist review needed.";
+    if (clinicalScores && (clinicalScores.news2.score >= 7 || clinicalScores.shockIndex.isElevated)) {
+      severityReason += ` [NEWS2: ${clinicalScores.news2.score} (${clinicalScores.news2.tier}), Shock Index: ${clinicalScores.shockIndex.value}]`;
+    }
   } else if (
     (spo2 && spo2Val < 95) || 
     (temp && tempVal > 100.5) || 
     (hr && (hrVal > 100 || hrVal < 60)) || 
     (bp && (sysBP > 140 || diaBP > 90)) ||
-    duration === "More than 2 weeks"
+    duration === "More than 2 weeks" ||
+    (clinicalScores && clinicalScores.news2.score >= 5)
   ) {
     stageText = "Stage 2 (Moderate / Developing)";
     stageLevel = 2;
     severityReason = "Elevated vital abnormalities or persistent symptom onset.";
+    if (clinicalScores && clinicalScores.news2.score >= 5) {
+      severityReason += ` [NEWS2: ${clinicalScores.news2.score} (${clinicalScores.news2.tier})]`;
+    }
   }
 
   // Dynamic metric values based on severity
@@ -8562,6 +8670,7 @@ function completeClinicalConsultation() {
     precautions: precautions,
     urgencyWarning: urgencyWarning,
     redFlags: redFlags,
+    clinicalScores: clinicalScores,
     latency: (performance.now() - wizardStartTime).toFixed(3)
   };
 
@@ -8610,6 +8719,27 @@ function completeClinicalConsultation() {
               temp ? `Temp: ${temp}°F` : '',
               spo2 ? `SpO2: ${spo2}%` : ''
             ].filter(Boolean).join(' | ')}</strong>
+          </div>
+          ` : ''}
+          ${clinicalScores ? `
+          <div style="grid-column: span 2; border-top: 1px dashed rgba(0, 229, 255, 0.2); padding-top: 8px; margin-top: 4px;">
+            <span style="color:var(--text-muted); font-size:0.72rem; letter-spacing:0.5px; display:block; margin-bottom:5px;">
+              🔬 CLINICAL PHYSIOLOGICAL CDSS (EVIDENCE-BASED TRIAGE):
+            </span>
+            <div style="display:flex; flex-wrap:wrap; gap:6px;">
+              <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; background:${clinicalScores.news2.tier === 'HIGH' ? 'rgba(255,77,109,0.2)' : clinicalScores.news2.tier === 'MEDIUM' ? 'rgba(255,204,0,0.18)' : 'rgba(0,255,179,0.12)'}; color:${clinicalScores.news2.tier === 'HIGH' ? 'var(--red-warn)' : clinicalScores.news2.tier === 'MEDIUM' ? '#ffcc00' : 'var(--teal)'}; border:1px solid ${clinicalScores.news2.tier === 'HIGH' ? 'var(--red-warn)' : clinicalScores.news2.tier === 'MEDIUM' ? '#ffcc00' : 'rgba(0,255,179,0.3)'};">
+                NEWS2: ${clinicalScores.news2.score} (${clinicalScores.news2.tier})
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; background:${clinicalScores.qsofa.highRisk ? 'rgba(255,77,109,0.2)' : 'rgba(0,229,255,0.12)'}; color:${clinicalScores.qsofa.highRisk ? 'var(--red-warn)' : 'var(--cyan)'}; border:1px solid ${clinicalScores.qsofa.highRisk ? 'var(--red-warn)' : 'rgba(0,229,255,0.3)'};">
+                qSOFA: ${clinicalScores.qsofa.score} ${clinicalScores.qsofa.highRisk ? '(SEPSIS RISK)' : '(NORMAL)'}
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; background:${clinicalScores.shockIndex.isElevated ? 'rgba(255,77,109,0.2)' : 'rgba(255,0,160,0.12)'}; color:${clinicalScores.shockIndex.isElevated ? 'var(--red-warn)' : 'var(--accent)'}; border:1px solid ${clinicalScores.shockIndex.isElevated ? 'var(--red-warn)' : 'rgba(255,0,160,0.3)'};">
+                Shock Index: ${clinicalScores.shockIndex.value}
+              </span>
+              <span style="display:inline-flex; align-items:center; gap:4px; padding:3px 8px; border-radius:4px; font-size:0.75rem; font-weight:bold; background:${clinicalScores.renal.isImpaired ? 'rgba(255,77,109,0.2)' : 'rgba(168,85,247,0.12)'}; color:${clinicalScores.renal.isImpaired ? 'var(--red-warn)' : 'var(--purple)'}; border:1px solid ${clinicalScores.renal.isImpaired ? 'var(--red-warn)' : 'rgba(168,85,247,0.3)'};">
+                eGFR: ${clinicalScores.renal.crclMlMin} mL/min
+              </span>
+            </div>
           </div>
           ` : ''}
           <div style="grid-column: span 2; border-top: 1px dashed rgba(0, 229, 255, 0.15); padding-top: 5px;">
@@ -8676,6 +8806,9 @@ function completeClinicalConsultation() {
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:15px;">
           <button id="btnDownloadPrescription" style="background:var(--teal); border:none; padding:10px 18px; border-radius:6px; font-weight:bold; color:#0f172a; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; justify-content:center; gap:6px; box-shadow:0 0 12px rgba(0,255,179,0.3); transition:all 0.3s; width:100%; font-family:var(--font-head);">
             📋 DOWNLOAD CLINICAL PDF PRESCRIPTION (PRINT-READY A4)
+          </button>
+          <button id="btnViewDigitalHealthCard" onclick="window.openDigitalHealthCardModal()" style="background:rgba(0,229,255,0.12); border:1px solid var(--cyan); padding:8px 14px; border-radius:6px; font-weight:bold; color:var(--cyan); cursor:pointer; font-size:0.8rem; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.2s; font-family:var(--font-head);">
+            📱 VIEW SMART DIGITAL HEALTH CARD & OFFLINE VERIFICATION QR
           </button>
           <div style="font-size:0.7rem; color:var(--text-muted); text-align:center;">
             Simulated lab test results pushed to local Health Vault. Click on the sidebar Vault entries to inspect full visual files and adjust real-time metrics!
@@ -8792,7 +8925,102 @@ function bindConsultationEvents() {
       alert("No active prescription data resolved. Please re-run clinical consultation.");
     }
   });
+
+  document.body.addEventListener('click', e => {
+    const btn = e.target.closest('#btnViewDigitalHealthCard');
+    if (!btn) return;
+    window.openDigitalHealthCardModal();
+  });
 }
+
+window.openDigitalHealthCardModal = function() {
+  const p = getProfile();
+  const rx = window._activeRxData || {};
+  const hid = rx.healthId || currentHealthId || 'RMN-E3B9F2';
+  const icd11 = rx.icd11 || 'BA41';
+  const condition = rx.condition || rx.conditionClinician || 'Clinical Triage Evaluation';
+  const vitals = rx.vitals || {
+    bp: p.bp || '120/80',
+    heartRate: p.heartRate || '72',
+    temp: p.temp || '98.6',
+    SpO2: p.SpO2 || '98'
+  };
+
+  const scores = rx.clinicalScores || (typeof calculateClinicalScores === 'function' ? calculateClinicalScores(vitals, p) : {
+    news2: { score: 0, tier: 'LOW' },
+    qsofa: { score: 0, highRisk: false },
+    shockIndex: { value: '0.60', isElevated: false },
+    renal: { crclMlMin: 95.0, isImpaired: false }
+  });
+
+  const qrEngine = (typeof RamanQrCode !== 'undefined') ? RamanQrCode : (window.RamanQrCode || null);
+  let qrSvg = '';
+  let qrPayloadStr = '';
+  if (qrEngine) {
+    qrPayloadStr = qrEngine.generateHealthCardPayload(p, { healthId: hid, icd11 }, scores, window._activeZkpProof || null);
+    qrSvg = qrEngine.toSvg(qrPayloadStr, { size: 180, margin: 2, darkColor: '#0f172a', lightColor: '#ffffff' });
+  }
+
+  const existing = document.getElementById('digitalHealthCardModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'digitalHealthCardModal';
+  modal.style.cssText = 'position:fixed; inset:0; z-index:999999; background:rgba(15,23,42,0.85); backdrop-filter:blur(10px); display:flex; align-items:center; justify-content:center; padding:16px;';
+  
+  modal.innerHTML = `
+    <div style="background:#0f172a; border:2px solid var(--cyan); border-radius:16px; max-width:440px; width:100%; padding:24px; box-shadow:0 0 30px rgba(0,229,255,0.25); color:#f8fafc; font-family:var(--font-main, sans-serif); position:relative;">
+      <button onclick="document.getElementById('digitalHealthCardModal').remove()" style="position:absolute; top:14px; right:14px; background:none; border:none; color:var(--text-muted); font-size:1.4rem; cursor:pointer; line-height:1;">&times;</button>
+      
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:10px;">
+        <span style="font-size:1.5rem;">📱</span>
+        <div>
+          <h3 style="margin:0; font-family:var(--font-head); color:var(--cyan); font-size:1.1rem; letter-spacing:0.5px;">SMART DIGITAL HEALTH CARD</h3>
+          <div style="font-size:0.7rem; color:var(--text-muted);">Offline W3C / HL7 FHIR IPS Verification Standard</div>
+        </div>
+      </div>
+
+      <div style="text-align:center; background:#ffffff; padding:12px; border-radius:12px; margin-bottom:16px; box-shadow:0 4px 15px rgba(0,0,0,0.4); display:flex; flex-direction:column; align-items:center;">
+        ${qrSvg}
+        <div style="font-size:0.65rem; color:#475569; font-weight:bold; font-family:'Orbitron', sans-serif; margin-top:6px;">
+          SCAN OFFLINE WITH CAMERA / BARCODE APP
+        </div>
+      </div>
+
+      <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; font-size:0.8rem; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:var(--text-muted);">Patient:</span>
+          <strong>${p.name || 'Anonymous Patient'} (${p.age || '34'}Y / ${p.gender || 'M'})</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:var(--text-muted);">Health ID:</span>
+          <span style="font-family:'Orbitron', sans-serif; color:var(--teal); font-weight:bold;">${hid}</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+          <span style="color:var(--text-muted);">ICD-11 Assessment:</span>
+          <span>${condition} <strong style="color:var(--cyan);">(${icd11})</strong></span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-top:8px; padding-top:6px; border-top:1px dashed rgba(255,255,255,0.1); font-size:0.75rem;">
+          <span>NEWS2: <strong style="color:${scores.news2 && scores.news2.tier === 'HIGH' ? 'var(--red-warn)' : 'var(--teal)'};">${scores.news2 ? scores.news2.score : 0}</strong></span>
+          <span>qSOFA: <strong style="color:var(--cyan);">${scores.qsofa ? scores.qsofa.score : 0}</strong></span>
+          <span>Shock Index: <strong style="color:var(--accent);">${scores.shockIndex ? scores.shockIndex.value : '0.60'}</strong></span>
+          <span>eGFR: <strong style="color:var(--purple);">${scores.renal ? scores.renal.crclMlMin : '90'}</strong></span>
+        </div>
+      </div>
+
+      <div style="display:flex; gap:8px;">
+        <button onclick="navigator.clipboard.writeText('${encodeURIComponent(qrPayloadStr)}').then(()=>{this.textContent='✓ Copied Payload!';setTimeout(()=>{this.textContent='📋 Copy Payload'},1500)})" style="flex:1; background:rgba(0,229,255,0.15); border:1px solid var(--cyan); color:var(--cyan); padding:8px; border-radius:6px; font-size:0.78rem; font-weight:bold; cursor:pointer;">
+          📋 Copy Payload
+        </button>
+        <button onclick="document.getElementById('digitalHealthCardModal').remove()" style="flex:1; background:var(--teal); border:none; color:#0f172a; padding:8px; border-radius:6px; font-size:0.78rem; font-weight:bold; cursor:pointer;">
+          Done
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+};
 
 function cleanAIResponse(text) {
   if (!text) return text;
@@ -9435,7 +9663,145 @@ function checkSafetyContraindications(med, profile = {}, conditionKey = "") {
     };
   }
 
-  // Rule 6: Generic allergy fallback
+  // Rule 6: Renal Function / eGFR Clearance Dosing (Cockcroft-Gault & KDIGO Guidelines)
+  const eGFR = profile.eGFR || profile.crcl || (profile.renal && profile.renal.crclMlMin) || null;
+  const hasSevereRenalImpairment = (eGFR !== null && eGFR < 30) ||
+    notesLower.includes("renal failure") ||
+    notesLower.includes("ckd stage 4") ||
+    notesLower.includes("ckd stage 5") ||
+    notesLower.includes("severe renal impairment");
+
+  if (hasSevereRenalImpairment) {
+    if (medNameLower.includes("metformin")) {
+      return {
+        isContraindicated: true,
+        reason: "Severe Renal Impairment (eGFR < 30 mL/min) Metformin Block (Lactic Acidosis Risk)",
+        subName: "Linagliptin 5mg (Brand: Trajenta)",
+        subSnomed: "429503001",
+        subDose: "5 mg orally once daily with or without food",
+        subNote: "Renally safe DPP-4 inhibitor requiring zero dosage titration under severe renal impairment"
+      };
+    }
+    if (medNameLower.includes("ciprofloxacin")) {
+      return {
+        isContraindicated: true,
+        reason: "Renal Clearance Impairment (CrCl < 30 mL/min) 50% Dosage Reduction",
+        subName: "Ciprofloxacin 250mg Renal-Adjusted (Brand: Cifran)",
+        subSnomed: "387532007",
+        subDose: "250 mg orally every 12 hours after food",
+        subNote: "Dose titrated downwards by 50% to prevent cumulative systemic and neurotoxic accumulation"
+      };
+    }
+  }
+
+  // Rule 7: Pharmacogenomic (CPIC Level A/B) Phenotype-Guided Safety
+  const genomicTraits = Array.isArray(profile.genomicTraits) ? profile.genomicTraits.map(t => t.toLowerCase()) : [];
+  
+  // 7A: CYP2C19 Poor Metabolizer -> Clopidogrel Inefficacy
+  if ((genomicTraits.includes("cyp2c19") || (profile.cyp2c19 && profile.cyp2c19.toLowerCase().includes("poor")) || notesLower.includes("cyp2c19 poor")) &&
+      medNameLower.includes("clopidogrel")) {
+    return {
+      isContraindicated: true,
+      reason: "CPIC Level A: CYP2C19 Poor Metabolizer (Loss of Clopidogrel Bioactivation)",
+      subName: "Ticagrelor 90mg (Brand: Brilinta)",
+      subSnomed: "444901007",
+      subDose: "90 mg orally twice daily with or without food",
+      subNote: "Direct-acting P2Y12 receptor antagonist completely bypassing CYP2C19 bioactivation pathway"
+    };
+  }
+
+  // 7B: CYP2D6 Ultrarapid Metabolizer -> Fatal Opioid Toxic Conversion Risk
+  if ((genomicTraits.includes("cyp2d6") || (profile.cyp2d6 && profile.cyp2d6.toLowerCase().includes("ultrarapid")) || notesLower.includes("cyp2d6 ultrarapid")) &&
+      (medNameLower.includes("codeine") || medNameLower.includes("tramadol"))) {
+    return {
+      isContraindicated: true,
+      reason: "CPIC Level A: CYP2D6 Ultrarapid Metabolizer (Fatal Respiratory Depression & Toxicity Risk)",
+      subName: "Paracetamol 650mg + Ibuprofen 400mg (Brand: Combiflam)",
+      subSnomed: "387584000",
+      subDose: "1 tablet every 8 hours after food",
+      subNote: "Multi-modal non-opioid analgesic avoiding dangerous hyper-rapid morphine generation"
+    };
+  }
+
+  // 7C: SLCO1B1 521T>C (rs4149056) Poor Function -> Statin Myopathy / Rhabdomyolysis Risk
+  if ((genomicTraits.includes("slco1b1") || (profile.slco1b1 && profile.slco1b1.toLowerCase().includes("poor")) || notesLower.includes("slco1b1")) &&
+      (medNameLower.includes("simvastatin") || medNameLower.includes("atorvastatin"))) {
+    return {
+      isContraindicated: true,
+      reason: "CPIC Level A: SLCO1B1 Poor Transporter (High Statin-Induced Myopathy / Rhabdomyolysis Risk)",
+      subName: "Rosuvastatin Calcium 5mg (Brand: Rozavel, Crestor)",
+      subSnomed: "407543004",
+      subDose: "5 mg orally once daily at bedtime",
+      subNote: "Hydrophilic statin with low SLCO1B1 transport dependence and significantly reduced myotoxicity"
+    };
+  }
+
+  // 7D: HLA-B*5701 Positive -> Fatal Hypersensitivity Reaction
+  if ((genomicTraits.includes("hla-b5701") || genomicTraits.includes("hla-b*5701") || profile.hla_b5701 === true || notesLower.includes("hla-b*5701") || notesLower.includes("hla-b5701")) &&
+      medNameLower.includes("abacavir")) {
+    return {
+      isContraindicated: true,
+      reason: "CPIC Level A: HLA-B*5701 Presence (Fatal Hypersensitivity Reaction Risk)",
+      subName: "Tenofovir Disoproxil Fumarate 300mg (Brand: Viread)",
+      subSnomed: "414777006",
+      subDose: "300 mg orally once daily with food",
+      subNote: "First-line NRTI alternative providing potent viral suppression without HLA-B*5701 cross-reactivity"
+    };
+  }
+
+  // 7E: G6PD Deficiency -> Hemolytic Anemia Risk
+  if ((genomicTraits.includes("g6pd") || profile.g6pdDeficiency === true || notesLower.includes("g6pd")) &&
+      (medNameLower.includes("nitrofurantoin") || medNameLower.includes("dapsone") || medNameLower.includes("primaquine") || medNameLower.includes("sulfonamide"))) {
+    return {
+      isContraindicated: true,
+      reason: "CPIC / FDA: G6PD Deficiency (Severe Erythrocyte Oxidative Hemolysis Risk)",
+      subName: "Ciprofloxacin 500mg (Brand: Ciplox)",
+      subSnomed: "387532007",
+      subDose: "500 mg orally twice daily after meals",
+      subNote: "Safe fluoroquinolone bactericidal alternative devoid of erythrocyte oxidative fragility"
+    };
+  }
+
+  // 7F: CYP2C9 / VKORC1 Sensitivity -> Severe Warfarin Bleeding Risk
+  if ((genomicTraits.includes("cyp2c9") || genomicTraits.includes("vkorc1") || notesLower.includes("cyp2c9") || notesLower.includes("vkorc1")) &&
+      medNameLower.includes("warfarin")) {
+    return {
+      isContraindicated: true,
+      reason: "CPIC Level A: CYP2C9/VKORC1 Sensitivity (Severe Hemorrhagic Risk)",
+      subName: "Apixaban 5mg (Brand: Eliquis)",
+      subSnomed: "444901007",
+      subDose: "5 mg orally twice daily with or without food",
+      subNote: "Direct Factor Xa inhibitor with predictable kinetics avoiding CYP2C9/VKORC1 hypersensitivity bleeding"
+    };
+  }
+
+  // 7G: TPMT / NUDT15 Intermediate/Poor Metabolizer -> Fatal Thiopurine Myelosuppression
+  if ((genomicTraits.includes("tpmt") || genomicTraits.includes("nudt15") || notesLower.includes("tpmt") || notesLower.includes("nudt15")) &&
+      (medNameLower.includes("azathioprine") || medNameLower.includes("mercaptopurine"))) {
+    return {
+      isContraindicated: true,
+      reason: "CPIC Level A: TPMT/NUDT15 Deficiency (Severe Fatal Bone Marrow Suppression & Pancytopenia)",
+      subName: "Methotrexate 15mg (Brand: Folitrax)",
+      subSnomed: "387494002",
+      subDose: "15 mg orally once weekly with folic acid supplementation",
+      subNote: "Non-thiopurine disease-modifying immunomodulator avoiding toxic thioguanine accumulation"
+    };
+  }
+
+  // 7H: DPYD Deficiency -> Fatal Fluoropyrimidine Neuro/Enterotoxicity
+  if ((genomicTraits.includes("dpyd") || notesLower.includes("dpyd")) &&
+      (medNameLower.includes("fluorouracil") || medNameLower.includes("capecitabine"))) {
+    return {
+      isContraindicated: true,
+      reason: "CPIC Level A: DPYD Deficiency (Severe Fluoropyrimidine Neuro/Enterotoxicity Risk)",
+      subName: "Alternative Non-Fluoropyrimidine Regimen (Consult Medical Oncology)",
+      subSnomed: "387584000",
+      subDose: "Specialist oncology consultation mandatory before initiation",
+      subNote: "Dihydropyrimidine dehydrogenase deficiency prevents catabolism, precipitating lethal toxicity"
+    };
+  }
+
+  // Rule 8: Generic allergy fallback
   if (allergies !== "none" && allergies.length > 0 && medNameLower.includes(allergies)) {
     return {
       isContraindicated: true,
@@ -9451,6 +9817,154 @@ function checkSafetyContraindications(med, profile = {}, conditionKey = "") {
 }
 if (typeof window !== 'undefined') {
   window.checkSafetyContraindications = checkSafetyContraindications;
+}
+if (typeof global !== 'undefined') {
+  global.checkSafetyContraindications = checkSafetyContraindications;
+}
+
+// ── STANDARDIZED CLINICAL SCORING ENGINE (NEWS2, qSOFA, SHOCK INDEX & eGFR) ──
+/**
+ * Computes validated international physiological scores for acute deterioration & sepsis triage:
+ * 1. NEWS2 (National Early Warning Score 2 - Royal College of Physicians, 2017)
+ * 2. qSOFA (quick Sequential Organ Failure Assessment - Sepsis-3, JAMA 2016)
+ * 3. Shock Index (SI = Heart Rate / Systolic BP - Allgöwer & Burri / Rady et al.)
+ * 4. Cockcroft-Gault Creatinine Clearance & eGFR Staging (Levey et al.)
+ */
+function calculateClinicalScores(vitals = {}, profile = {}) {
+  const hr = parseFloat(vitals.heartRate || vitals.hr || profile.heartRate || 72);
+  const spo2 = parseFloat(vitals.SpO2 || vitals.spo2 || profile.SpO2 || 98);
+  const tempF = parseFloat(vitals.temp || profile.temp || 98.6);
+  const tempC = (tempF - 32) * (5 / 9);
+
+  let sysBP = 120;
+  let diaBP = 80;
+  const bpStr = (vitals.bp || profile.bp || "120/80").toString();
+  if (bpStr.includes("/")) {
+    const parts = bpStr.split("/").map(Number);
+    sysBP = parts[0] || 120;
+    diaBP = parts[1] || 80;
+  }
+
+  const rr = parseFloat(vitals.respirationRate || vitals.rr || 16);
+  const cvpu = vitals.consciousness || vitals.acvpu || "A"; // Alert
+
+  // 1. NEWS2 Calculation
+  let news2 = 0;
+  const breakdown = {};
+
+  // Respiration Rate
+  if (rr <= 8) { news2 += 3; breakdown.rr = 3; }
+  else if (rr >= 9 && rr <= 11) { news2 += 1; breakdown.rr = 1; }
+  else if (rr >= 12 && rr <= 20) { breakdown.rr = 0; }
+  else if (rr >= 21 && rr <= 24) { news2 += 2; breakdown.rr = 2; }
+  else if (rr >= 25) { news2 += 3; breakdown.rr = 3; }
+
+  // Oxygen Saturation (Scale 1)
+  if (spo2 <= 91) { news2 += 3; breakdown.spo2 = 3; }
+  else if (spo2 >= 92 && spo2 <= 93) { news2 += 2; breakdown.spo2 = 2; }
+  else if (spo2 >= 94 && spo2 <= 95) { news2 += 1; breakdown.spo2 = 1; }
+  else { breakdown.spo2 = 0; }
+
+  // Systolic Blood Pressure
+  if (sysBP <= 90) { news2 += 3; breakdown.sysBP = 3; }
+  else if (sysBP >= 91 && sysBP <= 100) { news2 += 2; breakdown.sysBP = 2; }
+  else if (sysBP >= 101 && sysBP <= 110) { news2 += 1; breakdown.sysBP = 1; }
+  else if (sysBP >= 111 && sysBP <= 219) { breakdown.sysBP = 0; }
+  else if (sysBP >= 220) { news2 += 3; breakdown.sysBP = 3; }
+
+  // Heart Rate
+  if (hr <= 40) { news2 += 3; breakdown.hr = 3; }
+  else if (hr >= 41 && hr <= 50) { news2 += 1; breakdown.hr = 1; }
+  else if (hr >= 51 && hr <= 90) { breakdown.hr = 0; }
+  else if (hr >= 91 && hr <= 110) { news2 += 1; breakdown.hr = 1; }
+  else if (hr >= 111 && hr <= 130) { news2 += 2; breakdown.hr = 2; }
+  else if (hr >= 131) { news2 += 3; breakdown.hr = 3; }
+
+  // Consciousness (ACVPU)
+  if (cvpu !== "A" && cvpu !== "Alert") { news2 += 3; breakdown.cvpu = 3; }
+  else { breakdown.cvpu = 0; }
+
+  // Body Temperature (°C)
+  if (tempC <= 35.0) { news2 += 3; breakdown.temp = 3; }
+  else if (tempC >= 35.1 && tempC <= 36.0) { news2 += 1; breakdown.temp = 1; }
+  else if (tempC >= 36.1 && tempC <= 38.0) { breakdown.temp = 0; }
+  else if (tempC >= 38.1 && tempC <= 39.0) { news2 += 1; breakdown.temp = 1; }
+  else if (tempC >= 39.1) { news2 += 2; breakdown.temp = 2; }
+
+  const hasRedScore = Object.values(breakdown).some(v => v === 3);
+  let news2Tier = "LOW";
+  let news2Risk = "Low Risk (Ward-level clinical monitoring every 12 hours)";
+  if (news2 >= 7) {
+    news2Tier = "HIGH";
+    news2Risk = "High Risk (Critical emergency clinical escalation & Critical Care Review)";
+  } else if (news2 >= 5 || hasRedScore) {
+    news2Tier = "MEDIUM";
+    news2Risk = "Medium Risk (Urgent clinical review / monitoring every 4-6 hours)";
+  }
+
+  // 2. qSOFA (Quick Sepsis-related Organ Failure Assessment)
+  let qsofa = 0;
+  if (sysBP <= 100) qsofa += 1;
+  if (rr >= 22) qsofa += 1;
+  if (cvpu !== "A" && cvpu !== "Alert") qsofa += 1;
+  const isQsofaHigh = qsofa >= 2;
+
+  // 3. Shock Index (SI = HR / SBP)
+  const shockIndex = sysBP > 0 ? parseFloat((hr / sysBP).toFixed(2)) : 0.6;
+  let shockState = "Normal Hemodynamics (SI 0.5 - 0.7)";
+  if (shockIndex > 0.9) {
+    shockState = "Critical Occult Shock / Left Ventricular Strain (SI > 0.9)";
+  } else if (shockIndex >= 0.7) {
+    shockState = "Mild Hemodynamic Instability (SI 0.7 - 0.9)";
+  }
+
+  // 4. Cockcroft-Gault Creatinine Clearance (eGFR)
+  const age = parseFloat(profile.age || 40);
+  const weight = parseFloat(profile.weight || 70); // kg
+  const scr = parseFloat(profile.creatinine || profile.scr || 1.0); // mg/dL
+  const isFemale = (profile.gender || "").toLowerCase() === "female";
+  let crcl = ((140 - age) * weight) / (72 * scr);
+  if (isFemale) crcl *= 0.85;
+  crcl = parseFloat(crcl.toFixed(1));
+
+  let renalStage = "G1 (Normal: eGFR >= 90)";
+  if (crcl < 15) renalStage = "G5 (Kidney Failure: eGFR < 15)";
+  else if (crcl < 30) renalStage = "G4 (Severe Impairment: eGFR 15-29)";
+  else if (crcl < 60) renalStage = "G3 (Moderate Impairment: eGFR 30-59)";
+  else if (crcl < 90) renalStage = "G2 (Mildly Decreased: eGFR 60-89)";
+
+  return {
+    news2: {
+      score: news2,
+      tier: news2Tier,
+      risk: news2Risk,
+      hasRedScore,
+      breakdown
+    },
+    qsofa: {
+      score: qsofa,
+      highRisk: isQsofaHigh,
+      recommendation: isQsofaHigh
+        ? "qSOFA >= 2: Severe risk of sepsis-related in-hospital mortality. Immediate blood cultures & lactate requisition advised."
+        : "qSOFA < 2: Low immediate sepsis risk."
+    },
+    shockIndex: {
+      value: shockIndex,
+      status: shockState,
+      isElevated: shockIndex > 0.9
+    },
+    renal: {
+      crclMlMin: crcl,
+      stage: renalStage,
+      isImpaired: crcl < 30
+    }
+  };
+}
+if (typeof window !== 'undefined') {
+  window.calculateClinicalScores = calculateClinicalScores;
+}
+if (typeof global !== 'undefined') {
+  global.calculateClinicalScores = calculateClinicalScores;
 }
 
 // ── CLINICAL CODES & EMERGENCIES HELPERS ────────────────
@@ -11012,6 +11526,66 @@ window.checkPgxConflicts = function(profile, medications) {
           severity: "Moderate",
           reason: "Analgesic Efficacy Failure. Codeine and Tramadol are prodrugs requiring CYP2D6-mediated conversion to active morphine/O-desmethyltramadol. In poor metabolizers, this conversion fails completely.",
           subName: "Ibuprofen 400mg (Non-opioid Analgesic Alternative)"
+        });
+      }
+    }
+
+    if (traits.includes("cyp2c19")) {
+      if (medNameLower.includes("clopidogrel")) {
+        conflicts.push({
+          medName: med.name,
+          trait: "CYP2C19 Poor Metabolizer",
+          severity: "Critical",
+          reason: "Antiplatelet Inefficacy. Clopidogrel requires CYP2C19 bioactivation to active thiol metabolite; poor metabolizers suffer significantly elevated stent thrombosis and recurrent myocardial infarction risks.",
+          subName: "Ticagrelor 90mg (Brand: Brilinta)"
+        });
+      }
+    }
+
+    if (traits.includes("slco1b1")) {
+      if (medNameLower.includes("simvastatin") || medNameLower.includes("atorvastatin")) {
+        conflicts.push({
+          medName: med.name,
+          trait: "SLCO1B1 Decreased Function",
+          severity: "High",
+          reason: "Severe Myopathy / Rhabdomyolysis Risk. Impaired hepatic OATP1B1 uptake leads to high systemic statin exposure and skeletal muscle toxicity.",
+          subName: "Rosuvastatin Calcium 5mg (Brand: Rozavel, Crestor)"
+        });
+      }
+    }
+
+    if (traits.includes("cyp2c9") || traits.includes("vkorc1")) {
+      if (medNameLower.includes("warfarin")) {
+        conflicts.push({
+          medName: med.name,
+          trait: "CYP2C9/VKORC1 Sensitivity",
+          severity: "Critical",
+          reason: "Severe Hemorrhage Risk. Marked sensitivity and reduced clearance of S-warfarin can lead to catastrophic supra-therapeutic anticoagulation.",
+          subName: "Apixaban 5mg (Brand: Eliquis)"
+        });
+      }
+    }
+
+    if (traits.includes("tpmt") || traits.includes("nudt15")) {
+      if (medNameLower.includes("azathioprine") || medNameLower.includes("mercaptopurine")) {
+        conflicts.push({
+          medName: med.name,
+          trait: "TPMT/NUDT15 Deficiency",
+          severity: "Critical",
+          reason: "Fatal Myelosuppression Risk. Thiopurine methyltransferase / NUDT15 deficiency leads to toxic thioguanine nucleotide accumulation, causing severe life-threatening pancytopenia.",
+          subName: "Methotrexate 15mg (Brand: Folitrax)"
+        });
+      }
+    }
+
+    if (traits.includes("dpyd")) {
+      if (medNameLower.includes("fluorouracil") || medNameLower.includes("capecitabine")) {
+        conflicts.push({
+          medName: med.name,
+          trait: "DPYD Deficiency",
+          severity: "Critical",
+          reason: "Fatal Fluoropyrimidine Toxicity. Impaired DPYD enzyme activity causes massive accumulation of active fluorouracil metabolites, causing lethal enteropathy and neurotoxicity.",
+          subName: "Alternative Non-Fluoropyrimidine Regimen (Consult Medical Oncology)"
         });
       }
     }

@@ -1,5 +1,5 @@
 /* ===== RAMAN AI – Service Worker (sw.js) ===== */
-const CACHE_NAME = 'raman-ai-v2.6';
+const CACHE_NAME = 'raman-ai-v2.8';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -10,6 +10,7 @@ const STATIC_ASSETS = [
   './ble_telemetry.js',
   './fhir_exporter.js',
   './zkp_verifier.js',
+  './qr_code.js',
   './webgpu_volumetric.js',
   './webgpu_pkpd.js',
   './hybrid_search.js',
