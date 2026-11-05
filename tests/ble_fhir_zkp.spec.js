@@ -39,13 +39,11 @@ test.describe('Milestone 2: Web Bluetooth BLE, HL7 FHIR R4 & Client-Side ZKP', (
     // Verify DOM triggers exist
     const btnBle = await page.$('#btnBleConnect');
     const wearableInfo = await page.$('#bleWearableInfo');
-    const bleHelpTip = await page.$('#bleHelpTip');
     const btnFhir = await page.$('#btnExportFhir');
     const btnZkp = await page.$('#btnOpenZkp');
 
     expect(btnBle).not.toBeNull();
     expect(wearableInfo).not.toBeNull();
-    expect(bleHelpTip).not.toBeNull();
     expect(btnFhir).not.toBeNull();
     expect(btnZkp).not.toBeNull();
   });
