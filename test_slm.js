@@ -2382,6 +2382,181 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  // =========================================================================
+  // ── TEST SUITE 40: Expanded Tropical Infectious Disease Knowledge Base ───
+  // =========================================================================
+  await runTest("Expanded Tropical Disease Knowledge Base & Clinical Safety Rules", async () => {
+    let ok = true;
+
+    // 1. Dengue Classification & Triaging
+    const dengueTokens = slmClassifier.classify("sudden high fever severe retro-orbital eye pain breakbone joint ache");
+    const topDengue = dengueTokens[0] ? dengueTokens[0].condition : "";
+    ok = assert(topDengue === "dengue", `Query triaged as 'dengue' (Got: '${topDengue}').`) && ok;
+    ok = assert(MEDICAL_KB["dengue"].icd11 === "1D20.0", "Dengue matches ICD-11 '1D20.0'.") && ok;
+
+    // 2. Dengue Strict NSAID Contraindication & Paracetamol Substitution
+    const ibuprofenMed = { name: "Ibuprofen 400mg", snomed: "387584000" };
+    const dengueNsaidCheck = checkSafetyContraindications(ibuprofenMed, {}, "dengue");
+    ok = assert(dengueNsaidCheck.isContraindicated === true, "NSAID strictly contraindicated under active Dengue.") && ok;
+    ok = assert(dengueNsaidCheck.subName.includes("Paracetamol"), `NSAID safely substituted with Paracetamol (Got: '${dengueNsaidCheck.subName}').`) && ok;
+
+    // 3. Typhoid Classification & Relative Bradycardia
+    const typhoidTokens = slmClassifier.classify("step-ladder high fever coated tongue rose spots bradycardia malaise");
+    const topTyphoid = typhoidTokens[0] ? typhoidTokens[0].condition : "";
+    ok = assert(topTyphoid === "typhoid", `Query triaged as 'typhoid' (Got: '${topTyphoid}').`) && ok;
+    ok = assert(MEDICAL_KB["typhoid"].icd11 === "1A07.0", "Typhoid matches ICD-11 '1A07.0'.") && ok;
+
+    // 4. Malaria Classification & G6PD Safety
+    const malariaTokens = slmClassifier.classify("cyclical high fever chills rigor drenching sweats headache plasmodium");
+    const topMalaria = malariaTokens[0] ? malariaTokens[0].condition : "";
+    ok = assert(topMalaria === "malaria", `Query triaged as 'malaria' (Got: '${topMalaria}').`) && ok;
+    ok = assert(MEDICAL_KB["malaria"].icd11 === "1F40", "Malaria matches ICD-11 '1F40'.") && ok;
+
+    const primaquineMed = { name: "Primaquine Phosphate 15mg", snomed: "387405005" };
+    const g6pdMalariaCheck = checkSafetyContraindications(primaquineMed, { g6pdDeficiency: true }, "malaria");
+    ok = assert(g6pdMalariaCheck.isContraindicated === true, "Primaquine strictly blocked under G6PD deficiency.") && ok;
+
+    // 5. Acute Gastroenteritis Classification
+    const gastroTokens = slmClassifier.classify("acute gastroenteritis watery diarrhea severe vomiting abdominal cramps dehydration");
+    const topGastro = gastroTokens[0] ? gastroTokens[0].condition : "";
+    ok = assert(topGastro === "gastroenteritis", `Query triaged as 'gastroenteritis' (Got: '${topGastro}').`) && ok;
+    ok = assert(MEDICAL_KB["gastroenteritis"].icd11 === "1A40.0", "Gastroenteritis matches ICD-11 '1A40.0'.") && ok;
+
+    // 6. Chikungunya & Scrub Typhus
+    const chikunTokens = slmClassifier.classify("chikungunya high fever severe crippling joint pain polyarthralgia maculopapular rash");
+    const topChikun = chikunTokens[0] ? chikunTokens[0].condition : "";
+    ok = assert(topChikun === "chikungunya", `Query triaged as 'chikungunya' (Got: '${topChikun}').`) && ok;
+
+    const scrubTokens = slmClassifier.classify("scrub typhus high fever black eschar cigarette burn mark lymphadenopathy");
+    const topScrub = scrubTokens[0] ? scrubTokens[0].condition : "";
+    ok = assert(topScrub === "scrub typhus", `Query triaged as 'scrub typhus' (Got: '${topScrub}').`) && ok;
+    ok = assert(MEDICAL_KB["scrub typhus"].icd11 === "1C30.1", "Scrub Typhus matches ICD-11 '1C30.1'.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 41: Web Crypto Asymmetric Digital Signatures (ECDSA P-256) ─
+  // =========================================================================
+  await runTest("Web Crypto Asymmetric Digital Signatures (ECDSA P-256) & Verification", async () => {
+    let ok = true;
+    const { RamanSignatureEngine, ramanSignatureEngine } = require('./digital_signature.js');
+
+    ok = assert(typeof RamanSignatureEngine === "function", "RamanSignatureEngine class is defined.") && ok;
+    ok = assert(!!ramanSignatureEngine, "ramanSignatureEngine singleton is instantiated.") && ok;
+
+    // 1. Key generation & initialization
+    const keyInfo = await ramanSignatureEngine.initialize();
+    ok = assert(keyInfo.algorithm === "ECDSA-P256-SHA256", "Signature engine algorithm is ECDSA-P256-SHA256.") && ok;
+    ok = assert(!!keyInfo.publicKeyJwk && keyInfo.publicKeyJwk.kty === "EC", "Exported public key is standard EC JWK.") && ok;
+
+    // 2. Sign canonical clinical payload
+    const testPayload = {
+      hid: "RMN-A109E",
+      patient: "Raman",
+      dx: "1D20.0",
+      triageScores: { news2: 2, qsofa: 0, shockIndex: 0.65 }
+    };
+
+    const signatureResult = await ramanSignatureEngine.signPayload(testPayload);
+    ok = assert(typeof signatureResult.signature === "string" && signatureResult.signature.length > 30, "Generated Base64 digital signature.") && ok;
+    ok = assert(typeof signatureResult.payloadDigestSha256 === "string" && signatureResult.payloadDigestSha256.length === 64, "Generated 64-character SHA-256 payload digest.") && ok;
+
+    // 3. Verify valid signature
+    const verification = await RamanSignatureEngine.verifySignature(testPayload, signatureResult.signature, signatureResult.publicKeyJwk);
+    ok = assert(verification.valid === true, "Cryptographic signature successfully validated against public key.") && ok;
+
+    // 4. Tamper Detection: modifying any field in payload MUST trigger cryptographic rejection
+    const tamperedPayload = { ...testPayload, dx: "1A07.0" }; // Tampered diagnosis
+    const tamperedVerification = await RamanSignatureEngine.verifySignature(tamperedPayload, signatureResult.signature, signatureResult.publicKeyJwk);
+    ok = assert(tamperedVerification.valid === false, "Tampered payload correctly rejected by cryptographic verifier.") && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 42: Multilingual Speech Dictation Engine & Normalization ──
+  // =========================================================================
+  await runTest("Multilingual Speech Dictation Engine & Phonetic Normalization", async () => {
+    let ok = true;
+    const { RamanSpeechEngine, ramanSpeechEngine } = require('./stt_dictation.js');
+
+    ok = assert(typeof RamanSpeechEngine === "function", "RamanSpeechEngine class is defined.") && ok;
+    ok = assert(!!ramanSpeechEngine, "ramanSpeechEngine singleton is instantiated.") && ok;
+
+    // 1. Language switching
+    ramanSpeechEngine.setLanguage("hi-IN");
+    ok = assert(ramanSpeechEngine.currentLanguage === "hi-IN", "Dictation language switched to 'hi-IN'.") && ok;
+    ramanSpeechEngine.setLanguage("or-IN");
+    ok = assert(ramanSpeechEngine.currentLanguage === "or-IN", "Dictation language switched to 'or-IN'.") && ok;
+    ramanSpeechEngine.setLanguage("en-IN");
+    ok = assert(ramanSpeechEngine.currentLanguage === "en-IN", "Dictation language reverted to 'en-IN'.") && ok;
+
+    // 2. Phonetic medical normalization tests
+    const rawSpeech1 = "i have severe dengu and tyfoid with vomting";
+    const normalized1 = RamanSpeechEngine.normalizeClinicalSpeech(rawSpeech1);
+    ok = assert(normalized1.includes("dengue"), `Normalized 'dengu' to 'dengue' (Got: '${normalized1}').`) && ok;
+    ok = assert(normalized1.includes("typhoid"), `Normalized 'tyfoid' to 'typhoid' (Got: '${normalized1}').`) && ok;
+    ok = assert(normalized1.includes("vomiting"), `Normalized 'vomting' to 'vomiting' (Got: '${normalized1}').`) && ok;
+
+    // 3. Vernacular symptom normalizations
+    const rawSpeech2 = "bahut tez bukhar hai aur dast ulti ho raha hai";
+    const normalized2 = RamanSpeechEngine.normalizeClinicalSpeech(rawSpeech2);
+    ok = assert(normalized2.includes("fever"), `Normalized 'bukhar' to 'fever' (Got: '${normalized2}').`) && ok;
+    ok = assert(normalized2.includes("acute gastroenteritis"), `Normalized 'dast' to 'acute gastroenteritis' (Got: '${normalized2}').`) && ok;
+
+    const rawSpeech3 = "patient has maleria with chikangunya";
+    const normalized3 = RamanSpeechEngine.normalizeClinicalSpeech(rawSpeech3);
+    ok = assert(normalized3.includes("malaria"), `Normalized 'maleria' to 'malaria' (Got: '${normalized3}').`) && ok;
+    ok = assert(normalized3.includes("chikungunya"), `Normalized 'chikangunya' to 'chikungunya' (Got: '${normalized3}').`) && ok;
+
+    return ok;
+  });
+
+  // =========================================================================
+  // ── TEST SUITE 43: 4-Chamber Cardiac/Hepatic Raymarching & RK4 Clearance ──
+  // =========================================================================
+  await runTest("4-Chamber Cardiac/Hepatic Raymarching & Multi-Drug PK/PD RK4 Curves", async () => {
+    let ok = true;
+    const volumetricModule = require('./webgpu_volumetric.js');
+    const Renderer = volumetricModule.RamanVolumetricRenderer;
+
+    // 1. Dual-phase 4-chamber cardiac + hepatic SDF evaluation
+    const anatomyEval = Renderer.evaluateAnatomySDF([0, -0.1, 0], 75, 16, 0.5);
+    ok = assert(typeof anatomyEval.distance === "number", "evaluateAnatomySDF evaluates continuous distance.") && ok;
+    ok = assert(typeof anatomyEval.liverDist === "number", "Hepatic liver distance component calculated.") && ok;
+    ok = assert(typeof anatomyEval.heartDist === "number", "4-chamber cardiac distance component calculated.") && ok;
+
+    // Test Liver region classification in right hypochondrium ([x=0.5, y=0.6, z=0.0])
+    const liverEval = Renderer.evaluateAnatomySDF([-0.5, -0.65, 0], 75, 16, 0.0);
+    ok = assert(typeof liverEval.liverDist === "number", "Right hypochondrium computes liver SDF.") && ok;
+
+    // 2. Multi-drug PK/PD RK4 differential solver
+    const pkpdModule = require('./webgpu_pkpd.js');
+    const Simulator = pkpdModule.RamanPkPdSimulator;
+    const profiles = pkpdModule.DRUG_PK_PROFILES;
+
+    // Verify newly registered drug profiles
+    ok = assert(!!profiles.ciprofloxacin, "Ciprofloxacin profile defined.") && ok;
+    ok = assert(!!profiles.azithromycin, "Azithromycin profile defined.") && ok;
+    ok = assert(!!profiles.artemisinin, "Artemisinin profile defined.") && ok;
+    ok = assert(!!profiles.doxycycline, "Doxycycline profile defined.") && ok;
+
+    // 3. Solve Ciprofloxacin with and without eGFR renal impairment
+    const ciproNormal = Simulator.solveRk4(profiles.ciprofloxacin, { egfr: 90 }, 24.0, 96);
+    const ciproImpaired = Simulator.solveRk4(profiles.ciprofloxacin, { egfr: 25 }, 24.0, 96);
+
+    ok = assert(ciproNormal.cmax > 0, `Normal Ciprofloxacin Cmax: ${ciproNormal.cmax} mg/L.`) && ok;
+    ok = assert(ciproImpaired.cmax > ciproNormal.cmax, `Renal impairment (eGFR 25) elevates peak concentration: ${ciproImpaired.cmax} mg/L.`) && ok;
+
+    // Verify Doxycycline long half-life clearance
+    const doxySim = Simulator.solveRk4(profiles.doxycycline, {}, 24.0, 96);
+    ok = assert(doxySim.drug === "Doxycycline", "Doxycycline solved successfully.") && ok;
+    ok = assert(doxySim.timeSeries[doxySim.timeSeries.length - 1].Cc > 0.1, "Doxycycline retains plasma concentration at 24h.") && ok;
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");

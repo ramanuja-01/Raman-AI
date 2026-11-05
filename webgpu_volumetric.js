@@ -80,7 +80,21 @@ class RamanVolumetricRenderer {
       [pHeart[0] + 0.15, pHeart[1], pHeart[2]],
       [0.30 * systoleScale, 0.40 * systoleScale, 0.30 * systoleScale]
     );
-    const heartSDF = RamanVolumetricRenderer.smin(leftVentricle, rightVentricle, 0.15);
+    const ventriclesSDF = RamanVolumetricRenderer.smin(leftVentricle, rightVentricle, 0.15);
+
+    // Left & Right Atria (phase-shifted pre-ventricular contraction)
+    const atrialPhase = heartPhase + Math.PI * 0.75;
+    const atrialScale = 1.0 - 0.14 * Math.pow(Math.sin(atrialPhase), 2);
+    const leftAtrium = RamanVolumetricRenderer.sdEllipsoid(
+      [pHeart[0] - 0.12, pHeart[1] - 0.35, pHeart[2] - 0.05],
+      [0.22 * atrialScale, 0.22 * atrialScale, 0.20 * atrialScale]
+    );
+    const rightAtrium = RamanVolumetricRenderer.sdEllipsoid(
+      [pHeart[0] + 0.14, pHeart[1] - 0.33, pHeart[2] - 0.05],
+      [0.24 * atrialScale, 0.24 * atrialScale, 0.22 * atrialScale]
+    );
+    const atriaSDF = RamanVolumetricRenderer.smin(leftAtrium, rightAtrium, 0.12);
+    const heartSDF = RamanVolumetricRenderer.smin(ventriclesSDF, atriaSDF, 0.10);
 
     // Bilateral Lung Lobes
     const respBps = resp / 60.0;
@@ -99,11 +113,22 @@ class RamanVolumetricRenderer {
     );
     const lungsSDF = Math.min(leftLung, rightLung);
 
+    // Hepatic (Liver) Lobe in Right Hypochondrium
+    const liverSDF = RamanVolumetricRenderer.sdEllipsoid(
+      [p[0] + 0.50, p[1] + 0.65, p[2] + 0.05],
+      [0.55, 0.35, 0.40]
+    );
+
+    const minOrganDist = Math.min(heartSDF, lungsSDF, liverSDF);
+
     return {
-      distance: Math.min(heartSDF, lungsSDF),
-      isHeart: heartSDF < lungsSDF,
+      distance: minOrganDist,
+      isHeart: minOrganDist === heartSDF,
+      isLungs: minOrganDist === lungsSDF,
+      isLiver: minOrganDist === liverSDF,
       heartDist: heartSDF,
-      lungsDist: lungsSDF
+      lungsDist: lungsSDF,
+      liverDist: liverSDF
     };
   }
 

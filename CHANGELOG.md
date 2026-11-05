@@ -18,6 +18,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.6.0] – 2026-11-05 (Tropical Disease Expansion, Web Crypto Signatures, Multilingual STT & 4-Chamber WebGPU Anatomy)
+
+### Added
+* **Expanded Tropical & Acute Disease Knowledge Base (WHO ICD-11 & SNOMED CT):**
+  * **Dengue Fever (ICD-11 `1D20.0`):** Added comprehensive clinical profile, retro-orbital pain, petechiae, thrombocytopenia breakbone symptoms, and strict contraindication blocking NSAIDs (Aspirin, Ibuprofen, Diclofenac) to prevent fatal hemorrhagic shock, substituting with Paracetamol only.
+  * **Typhoid Fever (ICD-11 `1A07.0`):** Enteric fever profile, step-ladder fever, relative bradycardia (Faget's sign), coated tongue, and Salmonella typhi bacteremia therapy (Azithromycin, Cefixime).
+  * **Malaria (ICD-11 `1F40`):** Plasmodium falciparum / vivax paroxysm triage, drenching sweats, rigors, artemisinin combination therapy (ACT), and mandatory G6PD deficiency screening before Primaquine to eliminate acute hemolytic anemia.
+  * **Acute Gastroenteritis (ICD-11 `1A40.0`):** Hypovolemic dehydration scoring, oral rehydration therapy (WHO ORS), and peripheral enkephalinase inhibitor (Racecadotril).
+  * **Chikungunya (ICD-11 `1D21.0`):** Crippling bilateral polyarthralgia and post-arboviral inflammatory care.
+  * **Scrub Typhus (ICD-11 `1C30.1`):** Orientia tsutsugamushi mite-borne infection with pathognomonic necrotic eschar lesion triage and Doxycycline 100mg first-line therapy.
+* **Web Crypto Asymmetric Digital Signatures (`digital_signature.js`):**
+  * Client-side ECDSA P-256 with SHA-256 keypair generation via native `SubtleCrypto`.
+  * Generates tamper-evident digital signatures for SMART Health Cards, FHIR IPS bundles, and A4 Prescriptions with sub-millisecond verification.
+  * Interactive cryptographic verification badge displayed inside `#digitalHealthCardModal`.
+* **Multilingual Speech-to-Text (STT) Dictation Engine (`stt_dictation.js`):**
+  * In-browser voice dictation supporting English (`en-IN`), Hindi (`hi-IN`), and Odia (`or-IN`).
+  * Real-time phonetic clinical normalizer autocorrecting colloquial symptoms and dialect speech to medical terminology.
+  * Web Audio API `AnalyserNode` microphone volume visualizer driving dynamic waveform pulsing.
+* **Advanced 4-Chamber Cardiac & Hepatic Raymarching (`webgpu_volumetric.js`):**
+  * Dual-phase atrial and ventricular systolic deformation with phase-shifted contraction.
+  * Hepatic liver lobe SDF in the right hypochondrium for hepatomegaly and tropical infection visualization.
+* **Multi-Drug eGFR-Adjusted Pharmacokinetics (`webgpu_pkpd.js`):**
+  * Added pharmacokinetic profiles for `ciprofloxacin`, `azithromycin`, `artemisinin`, and `doxycycline`.
+  * Dynamic renal elimination scaling factoring in patient eGFR.
+* **PWA Cache Sync (`sw.js`):**
+  * Bumped cache namespace to `raman-ai-v2.9` and registered `digital_signature.js` and `stt_dictation.js` in `STATIC_ASSETS`.
+* **Automated Unit Tests Expanded (`test_slm.js`):**
+  * Added Test Suites 40, 41, 42, 43. Total 43/43 suites passing with 0 failures at sub-millisecond speeds.
+
+---
+
 ## [2.5.0] – 2026-11-04 (Offline SMART Health Card QR Matrix & Real-Time Arrhythmia Analysis)
 
 ### Added

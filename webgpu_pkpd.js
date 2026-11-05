@@ -97,6 +97,54 @@ const DRUG_PK_PROFILES = {
     k21: 0.45,
     mec: 0.05,   // Therapeutic antihypertensive range (mg/L)
     mtc: 0.5
+  },
+  ciprofloxacin: {
+    name: "Ciprofloxacin",
+    doseMg: 500,
+    ka: 1.5,     // Absorption rate constant (1/hr)
+    cl: 28.0,    // Total clearance (L/hr), heavily dependent on renal eGFR
+    vc: 150.0,   // Distribution volume (L)
+    vp: 70.0,
+    k12: 0.60,
+    k21: 0.35,
+    mec: 0.5,    // Minimum inhibitory concentration for gram-negative rods
+    mtc: 5.0
+  },
+  azithromycin: {
+    name: "Azithromycin",
+    doseMg: 500,
+    ka: 0.65,    // Gradual gastrointestinal absorption (1/hr)
+    cl: 38.0,    // Hepatic / biliary clearance (L/hr)
+    vc: 1800.0,  // Extensive intracellular tissue uptake (L)
+    vp: 900.0,
+    k12: 0.80,
+    k21: 0.40,
+    mec: 0.2,    // Tissue MIC threshold (mg/L)
+    mtc: 3.0
+  },
+  artemisinin: {
+    name: "Artemisinin",
+    doseMg: 100,
+    ka: 2.1,     // Rapid oral absorption (1/hr)
+    cl: 52.0,    // Rapid hepatic metabolism via CYP2B6/CYP3A4 (L/hr)
+    vc: 85.0,    // Central distribution volume (L)
+    vp: 40.0,
+    k12: 0.90,
+    k21: 0.50,
+    mec: 0.1,    // Parasitic clearance concentration threshold (mg/L)
+    mtc: 2.0
+  },
+  doxycycline: {
+    name: "Doxycycline",
+    doseMg: 100,
+    ka: 1.1,     // Rapid and complete oral absorption (1/hr)
+    cl: 4.8,     // Low clearance, long elimination half-life ~18h (L/hr)
+    vc: 55.0,    // Central distribution volume (L)
+    vp: 28.0,
+    k12: 0.50,
+    k21: 0.30,
+    mec: 1.0,    // Minimum effective concentration for intracellular rickettsiae (mg/L)
+    mtc: 8.0
   }
 };
 

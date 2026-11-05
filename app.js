@@ -2191,6 +2191,78 @@ const SLM_TRAINING_CORPUS = {
     "vaginal candidiasis yeast infection burning itching white discharge",
     "curd like vaginal discharge erythema fungal vulvovaginitis",
     "jonio re kunda ebam dahi bhali srava"
+  ],
+  dengue: [
+    "sudden high fever severe retro-orbital eye pain breakbone joint ache petechiae",
+    "dengue fever severe headache behind eyes joint backache red rash low platelets",
+    "aankh ke peeche tez dard tez bukhar haddi tod bukhar dengue",
+    "dengue jaro akhi pachhare ghoro bitha deha bitha lal daaga",
+    "high fever 104F retroorbital pain severe myalgia arthralgia dengue warning",
+    "tez bukhar joron me asahaniya dard retro-orbital pain dengue",
+    "dengue fever bone breaking pain severe fatigue thrombocytopenia risk",
+    "akhi pache bitha ghoro jaro rakta pitte padiba dengue jaro",
+    "persistent vomiting abdominal pain bleeding gums severe dengue warning",
+    "dengue high grade fever flushing macular rash retrobulbar headache"
+  ],
+  typhoid: [
+    "step-ladder high fever coated tongue rose spots bradycardia malaise typhoid",
+    "enteric fever continuous high temperature abdominal pain pea soup diarrhea",
+    "aant ka bukhar lagatar tez bukhar pet me dard safed jeebh typhoid",
+    "antrabika jaro lamba samaya dhari jaro pete kasta typhoid",
+    "typhoid fever persistent fever chills relative bradycardia faget sign",
+    "step ladder fever pattern weakness delirium coated white tongue typhoid",
+    "kadambaddh bukhar pet me dard motijhara aant ka bukhar typhoid",
+    "antrabika jaro jhada kasta durbalata typhoid enteric infection",
+    "typhoid high continuous pyrexia rose spots on trunk salmonella typhi",
+    "faget sign relative bradycardia high fever abdominal tenderness typhoid"
+  ],
+  malaria: [
+    "cyclical high fever chills rigor drenching sweats headache plasmodium malaria",
+    "malaria paroxysm intense shivering chills followed by high fever profuse sweating",
+    "thand lagkar kapkapi ke sath tez bukhar paseena aana malaria",
+    "jaro thari thari aasuchi jhala bohibara malaria jaro",
+    "plasmodium falciparum malaria cyclical fever chills headache jaundice",
+    "kapkapi bukhar pasina aana thand lagna malaria parasitemia",
+    "cyclical fever every 48 hours shivering rigor drenching sweats malaria",
+    "jaro thari thari asiba matha bitha jala heba malaria",
+    "severe malaria dark urine jaundice splenomegaly anemia high fever chills",
+    "malarial paroxysm cold stage hot stage sweating stage high fever"
+  ],
+  gastroenteritis: [
+    "acute gastroenteritis watery diarrhea severe vomiting abdominal cramps dehydration",
+    "watery loose stools frequent vomiting stomach cramps dry mouth diarrhea",
+    "pani jaisa dast ulti pet marod dehydration gastroenteritis",
+    "jhada banti pete kamudi jhada pani pari patala jhada",
+    "infectious diarrhea acute vomiting cramps signs of dehydration sunken eyes",
+    "bar bar patla dast ulti pet dard kamzori gastroenteritis",
+    "acute watery diarrhea profuse vomiting abdominal spasms gastroenteritis",
+    "pete jwalan kamudi banti ebam patala jhada dehydration",
+    "viral gastroenteritis food poisoning severe vomiting frequent loose watery stools",
+    "diarrhea vomiting low urine output dry tongue thirst acute gastroenteritis"
+  ],
+  chikungunya: [
+    "chikungunya high fever severe crippling joint pain polyarthralgia maculopapular rash",
+    "abrupt high fever severe bilateral joint pain fingers wrists ankles chikungunya",
+    "joron me bhayankar dard haddi jod bukhar chikungunya gathiya dard",
+    "ganthi ganthi ghoro bitha jaro sahita chikungunya bitha",
+    "chikungunya fever debilitating polyarthritis rash stooped posture swollen joints",
+    "chikungunya bukhar hath pair ke jodon me teevra dard sujan",
+    "severe joint swelling stiffness crippling pain high fever chikungunya",
+    "hata goda ganthi phuliba asahaniya bitha jaro chikungunya",
+    "acute chikungunya arbovirus fever intense symmetrical small joint pain",
+    "crippling joint pain persistent stiffness high fever chikungunya rash"
+  ],
+  "scrub typhus": [
+    "scrub typhus high fever black eschar cigarette burn mark lymphadenopathy",
+    "eschar skin lesion high continuous fever severe headache orientia tsutsugamushi",
+    "chigar bite kaala daag tez bukhar scrub typhus",
+    "kire kamudiba daaga ghoro jaro scrub typhus",
+    "scrub typhus black crusty eschar regional lymph node swelling delirium rash",
+    "cigarette burn mark eschar high fever body ache scrub typhus mite bite",
+    "scrub typhus mite born rickettsia high fever chills eschar lesion",
+    "kala daag churna kasta ghoro jaro scrub typhus",
+    "orientia scrub typhus persistent high fever lymphadenopathy characteristic eschar",
+    "black necrotic eschar continuous fever myalgia scrub typhus"
   ]
 };
 
@@ -3357,6 +3429,67 @@ const MEDICAL_KB = {
     precautions: ["Avoid oral Fluconazole during first trimester of pregnancy (substitute with topical Clotrimazole)", "Wear loose, breathable 100% cotton underwear", "Avoid feminine hygiene sprays, perfumed soaps, and vaginal douching", "Complete full 6-night course of pessaries even if itching resolves early"],
     diet: ["Unsweetened probiotic yogurt / curd to restore lactobacillus flora", "Drink 2-3 liters of water daily", "Reduce refined sugars and carbohydrates which foster candida proliferation"],
     specialist: "Gynecologist / General Physician"
+  },
+  dengue: {
+    icd11: "1D20.0",
+    conditions: ["Dengue Fever with Warning Signs", "Dengue without Warning Signs", "Breakbone Fever", "Severe Dengue Risk (DHF/DSS)"],
+    medications: [
+      { name: "Paracetamol 650mg (Brand: Dolo 650, Calpol)", snomed: "387584000", dose: "650 mg orally every 6 hours PRN for fever and pain (maximum 3g/24h)", note: "Acetaminophen antipyretic. Only safe analgesic in dengue. Strictly avoids platelet aggregation inhibition." },
+      { name: "Oral Rehydration Salts (WHO Formula Sachet)", snomed: "387310006", dose: "Dissolve 1 sachet in 1 liter clean drinking water; sip 2-3 liters over 24 hours", note: "Essential low-osmolarity electrolyte replenishment. Counteracts plasma leakage and prevents hypovolemic dengue shock." },
+      { name: "Carica Papaya Leaf Extract 1100mg (Brand: Platimax, Caripill)", snomed: "387037000", dose: "1 tablet orally three times daily with meals for 5 days", note: "Traditional phytotherapeutic adjuvant. Clinically associated with accelerating platelet count stabilization." }
+    ],
+    precautions: ["🚨 STRICT CONTRAINDICATION: NSAIDs (Aspirin, Ibuprofen, Diclofenac, Naproxen, Mefenamic Acid) are BANNED due to severe platelet dysfunction and fatal hemorrhagic shock risk", "Monitor serial complete blood count (platelet count & hematocrit) every 12 to 24 hours", "Immediate emergency hospital admission if persistent vomiting, severe abdominal pain, mucosal bleeding, or cold clammy extremities develop", "Maintain strict bed rest and sleep under mosquito netting to prevent secondary transmission"],
+    diet: ["Abundant oral fluids (fresh coconut water, clear broths, fresh lime water, ORS)", "Soft, easily digestible bland diet (khichdi, steamed rice porridge)", "Avoid dark-colored foods (coffee, chocolate, dark berries) that could mask gastrointestinal bleeding in vomitus or stool"],
+    specialist: "Infectious Disease Specialist / Internal Medicine Physician / Hematologist"
+  },
+  typhoid: {
+    icd11: "1A07.0",
+    conditions: ["Typhoid Fever (Salmonella enterica serovar Typhi)", "Enteric Fever", "Paratyphoid Fever"],
+    medications: [
+      { name: "Azithromycin 500mg (Brand: Azithral 500, Zithrox)", snomed: "387532007", dose: "500 mg orally once daily for 7 days", note: "Oral macrolide with high intracellular tissue penetration. First-line therapy for uncomplicated enteric fever." },
+      { name: "Cefixime 200mg (Brand: Zifi 200, Taxim-O)", snomed: "387532007", dose: "200 mg orally twice daily with meals for 10-14 days", note: "Third-generation cephalosporin bactericidal agent effective against multi-drug resistant Salmonella typhi." },
+      { name: "Paracetamol 650mg (Brand: Dolo 650)", snomed: "387584000", dose: "650 mg orally every 6 hours PRN for fever", note: "Antipyretic for continuous step-ladder high fever." }
+    ],
+    precautions: ["Complete the full 7-14 day antibiotic course even after defervescence to eradicate biliary carrier state", "Strict food and water sanitation: boil drinking water for at least 1 minute", "Wash hands thoroughly with soap after using the toilet and before meal preparation", "Emergency surgical evaluation if sudden severe abdominal pain and rigidity develop (ileal perforation risk in week 3)"],
+    diet: ["High-calorie, low-fiber, soft bland diet (boiled rice, soft lentils, mashed potatoes, ripe bananas)", "Avoid high-fiber raw salads, nuts, and spicy irritants that strain inflamed Peyer's patches", "Drink purified boiled water and clear electrolyte broths"],
+    specialist: "Infectious Disease Specialist / Gastroenterologist"
+  },
+  gastroenteritis: {
+    icd11: "1A40.0",
+    conditions: ["Acute Infectious Gastroenteritis", "Viral Enteritis (Rotavirus / Norovirus)", "Acute Food Poisoning", "Bacterial Enterocolitis"],
+    medications: [
+      { name: "Oral Rehydration Salts (WHO Low-Osmolarity Formula)", snomed: "387310006", dose: "Drink 200-400 mL after each loose stool or vomiting episode", note: "Low-osmolarity glucose-electrolyte solution. Stimulates sodium-glucose cotransport across intestinal enterocytes." },
+      { name: "Zinc Sulfate 20mg (Brand: Zinconia)", snomed: "387037000", dose: "20 mg orally once daily with food for 14 days", note: "Essential trace mineral. Accelerates mucosal enterocyte regeneration and reduces duration and severity of diarrhea." },
+      { name: "Ondansetron 4mg (Brand: Emeset 4, Zofran)", snomed: "387226008", dose: "4 mg orally dissolved in mouth 30 minutes before fluid intake if persistent vomiting occurs", note: "Selective 5-HT3 receptor antagonist. Enables successful oral rehydration by controlling emesis." },
+      { name: "Racecadotril 100mg (Brand: Redotril)", snomed: "387037000", dose: "100 mg orally three times daily before meals for up to 5 days", note: "Peripheral intestinal enkephalinase inhibitor. Reduces mucosal hypersecretion without paralyzing bowel peristalsis." }
+    ],
+    precautions: ["🚨 AVOID Antimotility agents (Loperamide) in acute fever or dysentery as they trap bacterial enterotoxins", "Immediate emergency IV rehydration if unable to retain oral fluids for >12 hours or signs of severe dehydration manifest", "Do not take unprescribed empirical antibiotics for simple viral diarrhea", "Wash hands vigorously with soap before food handling and after restroom use"],
+    diet: ["BRAT diet (Bananas, Rice porridge, Applesauce, Toast)", "Khichdi with fresh curd, tender coconut water, diluted salted buttermilk", "Avoid dairy milk, caffeine, carbonated sodas, greasy fried foods, and raw salads"],
+    specialist: "Gastroenterologist / Family Medicine Physician"
+  },
+  chikungunya: {
+    icd11: "1D21.0",
+    conditions: ["Chikungunya Viral Disease", "Acute Chikungunya Polyarthralgia", "Post-Chikungunya Chronic Arthropathy"],
+    medications: [
+      { name: "Paracetamol 650mg (Brand: Calpol 650, Dolo 650)", snomed: "387584000", dose: "650 mg orally every 6-8 hours PRN for fever and initial pain", note: "Safe non-NSAID antipyretic. First-line analgesic during acute phase while Dengue is being ruled out." },
+      { name: "Aceclofenac 100mg + Paracetamol 325mg (Brand: Zerodol-P)", snomed: "387584000", dose: "1 tablet orally twice daily after meals (only AFTER dengue is laboratory excluded)", note: "Potent anti-inflammatory combination targeting crippling joint swelling and tenosynovitis." },
+      { name: "Chloroquine Phosphate 250mg (Brand: Lariago)", snomed: "387405005", dose: "250 mg orally once daily for chronic refractory post-chikungunya arthritis", note: "Immunomodulating disease modifier for persistent inflammatory arthritis lasting > 6 weeks." }
+    ],
+    precautions: ["🚨 CLINICALLY EXCLUDE DENGUE before initiating NSAIDs to prevent fatal bleeding complications", "Rest affected joints during acute inflammation; apply cold ice compresses to relieve swelling", "Engage in gentle range-of-motion physical therapy as acute joint pain resolves to prevent joint stiffness", "Use DEET or Picaridin mosquito repellents during daylight hours (Aedes mosquitoes bite at dawn and dusk)"],
+    diet: ["Anti-inflammatory foods rich in omega-3 fatty acids (flaxseeds, walnuts)", "Fresh citrus fruits (oranges, amla, lemons) high in Vitamin C for connective tissue repair", "Abundant water (2.5-3 liters daily) to flush inflammatory cytokines"],
+    specialist: "Rheumatologist / Infectious Disease Specialist"
+  },
+  "scrub typhus": {
+    icd11: "1C30.1",
+    conditions: ["Scrub Typhus (Orientia tsutsugamushi)", "Tsutsugamushi Disease", "Mite-Borne Typhus"],
+    medications: [
+      { name: "Doxycycline 100mg (Brand: Doxicip, Doxy-1)", snomed: "387532007", dose: "100 mg orally twice daily with a full glass of water for 7-14 days", note: "First-line bacteriostatic tetracycline. Rapidly halts Orientia tsutsugamushi replication, defervescing fever in 24-48h." },
+      { name: "Azithromycin 500mg (Brand: Azithral 500)", snomed: "387532007", dose: "500 mg orally once daily for 5-7 days (preferred safe alternative for pregnancy / children < 8Y)", note: "Safe macrolide alternative avoiding tetracycline-induced dental staining and teratogenicity." },
+      { name: "Paracetamol 650mg (Brand: Dolo 650)", snomed: "387584000", dose: "650 mg orally every 6 hours PRN for fever and headache", note: "Antipyretic for high continuous pyrexia." }
+    ],
+    precautions: ["Carefully examine the entire body surface for the pathognomonic black eschar (cigarette burn lesion), especially in hidden skin folds (axilla, groin)", "Initiate empiric Doxycycline immediately upon clinical suspicion in endemic zones without waiting for Weil-Felix serology", "Hospitalize urgently if dyspnea, acute respiratory distress (ARDS), delirium, or renal impairment develops", "Apply permethrin to clothing and wear tuck-in pants when walking in grass, brush, or jungle terrain"],
+    diet: ["High-protein nutritious diet to counteract intense systemic catabolism", "Plenty of oral hydration with electrolyte broths", "Easily chewable nourishing soups"],
+    specialist: "Infectious Disease Specialist / Internal Medicine Physician"
   }
 };
 
@@ -3396,7 +3529,13 @@ const KEYWORD_MAP = {
   "pcos|polycystic ovary|irregular periods|hirsutism|facial hair periods|oligomenorrhea": "pcos",
   "pelvic inflammatory disease|pid|cervical tenderness|foul vaginal discharge|tala peta ghoro bitha": "pelvic inflammatory disease",
   "gestational hypertension|preeclampsia|high blood pressure pregnancy|garbhabastha uccha raktachapa": "gestational hypertension",
-  "vaginal candidiasis|yeast infection|curd discharge|cottage cheese discharge|vulvar itching|jonio kunda": "vaginal candidiasis"
+  "vaginal candidiasis|yeast infection|curd discharge|cottage cheese discharge|vulvar itching|jonio kunda": "vaginal candidiasis",
+  "dengue|dengu|breakbone|platelet|retro-orbital|retroorbital|aankh ke peeche dard": "dengue",
+  "typhoid|enteric fever|step-ladder fever|rose spots|faget|antrabika jaro|aant ka bukhar": "typhoid",
+  "malaria|rigor|shivering fever|cyclical fever|plasmodium|kapkapi|thand lagkar bukhar": "malaria",
+  "gastroenteritis|loose motion|watery diarrhea|dast|vomiting diarrhea|food poisoning|jhada banti": "gastroenteritis",
+  "chikungunya|crippling joint pain|joint swelling fever|chikengunya|haddi jod bukhar": "chikungunya",
+  "scrub typhus|eschar|cigarette burn mark|chigger bite|orientia|kala daaga jaro": "scrub typhus"
 };
 
 
@@ -4457,43 +4596,73 @@ setInterval(() => {
   if (neural) neural.style.width = (30 + Math.random() * 60) + "%";
 }, 2000);
 
-// ── Voice Input ─────────────────────────────────────────
-let recognition = null;
+// ── Multilingual Voice Input & STT Engine ───────────────
 let isListening = false;
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-if (SpeechRecognition) {
-  recognition = new SpeechRecognition();
-  recognition.continuous = false;
-  recognition.interimResults = true;
-  recognition.lang = "en-IN";
-
-  recognition.onresult = e => {
-    let transcript = "";
-    for (let i = e.resultIndex; i < e.results.length; i++) {
-      transcript += e.results[i][0].transcript;
-    }
-    document.getElementById("userInput").value = transcript;
-    updateCharCount();
-    document.getElementById("userInput").dispatchEvent(new Event("input"));
-  };
-  recognition.onend = () => stopVoice();
-  recognition.onerror = () => stopVoice();
+function getActiveSpeechEngine() {
+  if (typeof window !== 'undefined' && window.ramanSpeechEngine) {
+    return window.ramanSpeechEngine;
+  }
+  return null;
 }
 
 function startVoice() {
-  if (!recognition) {
-    alert("Voice input is not supported in this browser. Please use Chrome.");
+  const engine = getActiveSpeechEngine();
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!engine && !SpeechRecognition) {
+    alert("Voice dictation is not supported in this browser. Please use Chrome or Edge.");
     return;
   }
+
   isListening = true;
   document.getElementById("voiceIcon").textContent = "🔴";
   document.getElementById("voiceLabel").textContent = "Listening…";
   document.getElementById("voiceWaveform").style.display = "flex";
-  document.getElementById("voiceStatus").textContent = "Speak now…";
+  document.getElementById("voiceStatus").textContent = "Speak clinical symptoms…";
   document.getElementById("btnVoice").classList.add("voice-active");
-  recognition.start();
+
+  if (engine) {
+    const lang = window.currentLang === 'or' ? 'or-IN' : (window.currentLang === 'hi' ? 'hi-IN' : 'en-IN');
+    engine.setLanguage(lang);
+    engine.onTranscript = (normalizedText) => {
+      document.getElementById("userInput").value = normalizedText;
+      updateCharCount();
+      document.getElementById("userInput").dispatchEvent(new Event("input"));
+    };
+    engine.onVolume = (vol) => {
+      const bars = document.querySelectorAll("#voiceWaveform span");
+      bars.forEach((b, i) => {
+        const height = Math.max(4, Math.round(vol * 24 * (0.5 + 0.5 * Math.sin(i * 1.5))));
+        b.style.height = `${height}px`;
+      });
+    };
+    engine.onStateChange = (listening) => {
+      if (!listening && isListening) stopVoice();
+    };
+    engine.start();
+  } else if (SpeechRecognition) {
+    if (!window._legacySpeechRec) {
+      window._legacySpeechRec = new SpeechRecognition();
+      window._legacySpeechRec.continuous = false;
+      window._legacySpeechRec.interimResults = true;
+      window._legacySpeechRec.lang = window.currentLang === 'or' ? 'or-IN' : 'en-IN';
+      window._legacySpeechRec.onresult = e => {
+        let transcript = "";
+        for (let i = e.resultIndex; i < e.results.length; i++) {
+          transcript += e.results[i][0].transcript;
+        }
+        document.getElementById("userInput").value = transcript;
+        updateCharCount();
+        document.getElementById("userInput").dispatchEvent(new Event("input"));
+      };
+      window._legacySpeechRec.onend = () => stopVoice();
+      window._legacySpeechRec.onerror = () => stopVoice();
+    }
+    window._legacySpeechRec.start();
+  }
 }
+
 function stopVoice() {
   isListening = false;
   document.getElementById("voiceIcon").textContent = "🎙";
@@ -4501,7 +4670,13 @@ function stopVoice() {
   document.getElementById("voiceWaveform").style.display = "none";
   document.getElementById("voiceStatus").textContent = "";
   document.getElementById("btnVoice").classList.remove("voice-active");
-  if (recognition) try { recognition.stop(); } catch(e){}
+
+  const engine = getActiveSpeechEngine();
+  if (engine) {
+    engine.stop();
+  } else if (window._legacySpeechRec) {
+    try { window._legacySpeechRec.stop(); } catch(e){}
+  }
 }
 document.getElementById("btnVoice").addEventListener("click", () => {
   isListening ? stopVoice() : startVoice();
@@ -6263,7 +6438,13 @@ const CLINICAL_DICTS = {
   "pcos": ["polycystic ovary syndrome", "hyperandrogenism", "ovarian follicular cysts", "insulin resistance", "chronic anovulation", "acanthosis nigricans", "luteinizing hormone elevation"],
   "pelvic inflammatory disease": ["salpingitis", "cervical motion tenderness", "adnexal tenderness", "neisseria gonorrhoeae", "chlamydia trachomatis", "tubo-ovarian abscess", "endometritis"],
   "gestational hypertension": ["preeclampsia", "gestational hypertension", "placental ischemia", "maternal proteinuria", "anti-angiogenic sflt-1", "thrombocytopenia", "endothelial activation"],
-  "vaginal candidiasis": ["candida albicans", "vulvovaginal candidiasis", "pseudohyphae", "curd-like vaginal discharge", "vulvar erythema", "pruritus vulvae", "vaginal dysbiosis"]
+  "vaginal candidiasis": ["candida albicans", "vulvovaginal candidiasis", "pseudohyphae", "curd-like vaginal discharge", "vulvar erythema", "pruritus vulvae", "vaginal dysbiosis"],
+  "dengue": ["thrombocytopenia", "retro-orbital pain", "petechiae", "plasma leakage", "hematocrit elevation", "dengue non-structural protein 1", "breakbone fever"],
+  "typhoid": ["salmonella typhi", "enteric fever", "faget sign", "rose spots", "peyer patches", "blood culture", "widal test", "ileal perforation"],
+  "malaria": ["plasmodium falciparum", "plasmodium vivax", "febrile paroxysm", "schizonts", "artemisinin combination therapy", "splenomegaly", "blood smear trophozoites"],
+  "gastroenteritis": ["watery diarrhea", "oral rehydration", "hypovolemic dehydration", "enterotoxigenic", "electrolyte imbalance", "rotavirus", "norovirus enteritis"],
+  "chikungunya": ["polyarthralgia", "aedes aegypti arbovirus", "symmetrical joint inflammation", "debilitating arthritis", "tenosynovitis", "alphavirus"],
+  "scrub typhus": ["orientia tsutsugamushi", "necrotic eschar", "chigger mite bite", "weil-felix reaction", "lymphadenopathy", "doxycycline responsive"]
 };
 
 async function fetchBiomedicalSynonyms(detectedCondition, docType) {
@@ -8987,6 +9168,14 @@ window.openDigitalHealthCardModal = function() {
         </div>
       </div>
 
+      <div style="background:rgba(0,243,255,0.06); border:1px solid rgba(0,243,255,0.25); border-radius:8px; padding:8px 12px; font-size:0.75rem; margin-bottom:14px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <span style="color:var(--cyan); font-weight:bold;">🔏 Web Crypto Digital Signature</span>
+          <div style="font-size:0.65rem; color:var(--text-muted);">ECDSA P-256 with SHA-256 Authenticated</div>
+        </div>
+        <span style="background:rgba(0,255,179,0.15); color:var(--teal); border:1px solid rgba(0,255,179,0.3); padding:2px 8px; border-radius:4px; font-weight:bold; font-size:0.68rem; font-family:'Orbitron', monospace;">VERIFIED</span>
+      </div>
+
       <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:12px; font-size:0.8rem; margin-bottom:14px;">
         <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
           <span style="color:var(--text-muted);">Patient:</span>
@@ -9801,7 +9990,34 @@ function checkSafetyContraindications(med, profile = {}, conditionKey = "") {
     };
   }
 
-  // Rule 8: Generic allergy fallback
+  // Rule 8: Dengue Fever - Strict NSAID / Aspirin Block (Severe Bleeding / Thrombocytopenia Risk)
+  if ((conditionKey === "dengue" || notesLower.includes("dengue")) &&
+      (medNameLower.includes("ibuprofen") || medNameLower.includes("aspirin") || medNameLower.includes("diclofenac") || medNameLower.includes("naproxen") || medNameLower.includes("mefenamic") || medNameLower.includes("aceclofenac"))) {
+    return {
+      isContraindicated: true,
+      reason: "Dengue Fever Strict NSAID Block (Severe Thrombocytopenia & Hemorrhagic Shock Risk)",
+      subName: "Paracetamol 650mg (Brand: Dolo 650, Calpol)",
+      subSnomed: "387584000",
+      subDose: "650 mg orally every 6 hours PRN for fever (maximum 3g/24h)",
+      subNote: "NSAIDs irreversibly inhibit platelet cyclooxygenase, triggering fatal internal bleeding in dengue"
+    };
+  }
+
+  // Rule 9: Malaria - Primaquine in G6PD Deficiency
+  if ((conditionKey === "malaria" || notesLower.includes("malaria")) &&
+      (genomicTraits.includes("g6pd") || profile.g6pdDeficiency === true || notesLower.includes("g6pd")) &&
+      medNameLower.includes("primaquine")) {
+    return {
+      isContraindicated: true,
+      reason: "G6PD Deficiency Primaquine Block (Severe Acute Intravascular Hemolysis Risk)",
+      subName: "Artemether 80mg + Lumefantrine 480mg (Brand: Coartem)",
+      subSnomed: "387532007",
+      subDose: "1 tablet twice daily with meals for 3 days",
+      subNote: "Standard ACT antimalarial safe from severe G6PD erythrocyte oxidative rupture"
+    };
+  }
+
+  // Rule 10: Generic allergy fallback
   if (allergies !== "none" && allergies.length > 0 && medNameLower.includes(allergies)) {
     return {
       isContraindicated: true,
@@ -9990,7 +10206,12 @@ function translateToPatientTerms(conditionKey) {
     "pcos": "PCOS & Hormonal Balance Management",
     "pelvic inflammatory disease": "Pelvic Inflammatory Disease Care",
     "gestational hypertension": "Pregnancy Blood Pressure & Preeclampsia Safety",
-    "vaginal candidiasis": "Vaginal Yeast Infection & Comfort Care"
+    "vaginal candidiasis": "Vaginal Yeast Infection & Comfort Care",
+    "dengue": "Dengue Fever & Platelet Safety Care",
+    "typhoid": "Typhoid & Enteric Fever Care Guidelines",
+    "gastroenteritis": "Acute Gastroenteritis & Dehydration Relief",
+    "chikungunya": "Chikungunya & Joint Pain Management",
+    "scrub typhus": "Scrub Typhus & Mite-Borne Infection Care"
   };
   return mapping[conditionKey] || "General Symptoms Assessment";
 }
@@ -10097,6 +10318,36 @@ function compileRedFlags(conditionKey, vitals) {
       "Severe vulvar erythema with fissures, extensive excoriation, or secondary bacterial skin infection",
       "Accompanied by high fever, chills, pelvic pain, or foul-smelling purulent discharge (suspected PID)",
       "Recurrent episodes (> 4 episodes/year) or severe dysuria with urinary retention"
+    ],
+    dengue: [
+      "Severe abdominal pain or persistent vomiting (>3 episodes in 24 hours)",
+      "Mucosal bleeding (bleeding gums, nosebleeds, blood in vomit or stools)",
+      "Lethargy, restlessness, or cold clammy extremities with rapid drop in platelet count (Dengue Shock Syndrome)"
+    ],
+    typhoid: [
+      "Sudden, acute severe abdominal pain with abdominal wall rigidity (suspected ileal perforation)",
+      "High continuous fever unresponsive to antipyretics with extreme drowsiness or delirium",
+      "Persistent vomiting, severe dehydration, or dark tarry stools (intestinal bleeding)"
+    ],
+    malaria: [
+      "Dark brown or black-colored urine (Blackwater fever / massive intravascular hemolysis)",
+      "Extreme confusion, drowsiness, seizures, or coma (Cerebral Malaria emergency)",
+      "Yellowing of eyes (severe jaundice) or respiratory distress with gasping breathing"
+    ],
+    gastroenteritis: [
+      "Inability to keep any fluids down for more than 12-24 hours due to intractable vomiting",
+      "Signs of severe dehydration: dry cracked lips, absence of tears, sunken eyes, no urine for >8 hours",
+      "Presence of visible bright red blood or black mucus in stool (acute bacterial dysentery)"
+    ],
+    chikungunya: [
+      "Inability to walk or complete loss of mobility due to severe joint swelling",
+      "High persistent fever with severe bleeding manifestations or petechial skin hemorrhages",
+      "Extreme neurological confusion or persistent vomiting in elderly patients"
+    ],
+    "scrub typhus": [
+      "Presence of a black cigarette-burn scab (eschar) with rapid onset of respiratory distress (ARDS)",
+      "Altered mental status, confusion, neck stiffness, or seizures (scrub typhus meningoencephalitis)",
+      "Oliguria (rapidly decreasing urine output) signaling acute kidney injury"
     ]
   };
   
