@@ -115,6 +115,13 @@
     /**
      * Applies phonetic medical normalization rules to speech input.
      */
+    normalizeClinicalSpeech(text) {
+      return RamanSpeechEngine.normalizeClinicalSpeech(text);
+    }
+
+    /**
+     * Applies phonetic medical normalization rules to speech input.
+     */
     static normalizeClinicalSpeech(text) {
       if (!text || typeof text !== 'string') return '';
       let normalized = text;

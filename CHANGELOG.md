@@ -31,7 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Web Crypto Asymmetric Digital Signatures (`digital_signature.js`):**
   * Client-side ECDSA P-256 with SHA-256 keypair generation via native `SubtleCrypto`.
   * Generates tamper-evident digital signatures for SMART Health Cards, FHIR IPS bundles, and A4 Prescriptions with sub-millisecond verification.
-  * Interactive cryptographic verification badge displayed inside `#digitalHealthCardModal`.
+  * Interactive cryptographic verification badge displayed inside `#digitalHealthCardModal` with one-click in-browser validation, live SHA-256 digest calculation, and latency auditing.
+* **Tropical Disease Organ Chips & Quick Symptoms Carousel (`index.html`):**
+  * Added touch-optimized organ chips for Dengue (`🦟 Dengue / ଡେଙ୍ଗୁ`), Malaria (`🩸 Malaria / ମ୍ୟାଲେରିଆ`), Typhoid (`🌡️ Typhoid / ଟାଇଫଏଡ୍`), and Diarrhea (`💧 Diarrhea / ଝାଡ଼ାବାନ୍ତି`) in `#anatomicalChipsCarousel`.
+  * Added quick symptom shortcuts across sidebar and mobile scroller (`#quickSymptomsScroller`).
 * **Multilingual Speech-to-Text (STT) Dictation Engine (`stt_dictation.js`):**
   * In-browser voice dictation supporting English (`en-IN`), Hindi (`hi-IN`), and Odia (`or-IN`).
   * Real-time phonetic clinical normalizer autocorrecting colloquial symptoms and dialect speech to medical terminology.
@@ -44,8 +47,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Dynamic renal elimination scaling factoring in patient eGFR.
 * **PWA Cache Sync (`sw.js`):**
   * Bumped cache namespace to `raman-ai-v2.9` and registered `digital_signature.js` and `stt_dictation.js` in `STATIC_ASSETS`.
-* **Automated Unit Tests Expanded (`test_slm.js`):**
-  * Added Test Suites 40, 41, 42, 43. Total 43/43 suites passing with 0 failures at sub-millisecond speeds.
+* **Automated Unit & E2E Tests Expanded (`test_slm.js`, `tests/tropical_signature_stt.spec.js`):**
+  * Added Test Suites 40, 41, 42, 43 to `test_slm.js`. Total 43/43 suites passing with 0 failures at sub-millisecond speeds.
+  * Added Playwright E2E suite `tests/tropical_signature_stt.spec.js` covering Web Crypto P-256 verification, STT normalization, Dengue triage, and organ chip interactions.
 
 ---
 
