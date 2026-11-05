@@ -2641,6 +2641,73 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  // =========================================================================
+  // ── TEST SUITE 45: Clinical Drug-Drug & Food-Drug Interaction (DDI) Engine
+  // =========================================================================
+  await runTest("Evidence-Based Drug-Drug & Food-Drug Interaction (DDI) Engine", async () => {
+    let ok = true;
+
+    ok = assert(typeof checkDrugInteractions === "function", "checkDrugInteractions is globally exposed.") && ok;
+
+    // 1. Warfarin + Ibuprofen (NSAID): Bleeding hazard
+    const warfarinInteractions = checkDrugInteractions(
+      [{ name: "Ibuprofen 400mg (Brand: Brufen)" }],
+      "Warfarin 5mg daily",
+      {}
+    );
+    ok = assert(warfarinInteractions.length >= 1, "Warfarin + NSAID interaction flagged.") && ok;
+    ok = assert(warfarinInteractions[0].severity === "CRITICAL_AVOID", "Warfarin + NSAID is CRITICAL_AVOID.") && ok;
+    ok = assert(warfarinInteractions[0].mechanism.includes("INR spike"), "Mechanism notes INR spike risk.") && ok;
+
+    // 2. Ciprofloxacin + Amiodarone: QTc Prolongation
+    const qtcInteractions = checkDrugInteractions(
+      [{ name: "Ciprofloxacin 500mg" }],
+      "Amiodarone 200mg",
+      {}
+    );
+    ok = assert(qtcInteractions.length >= 1, "Ciprofloxacin + Amiodarone QTc interaction flagged.") && ok;
+    ok = assert(qtcInteractions[0].severity === "CRITICAL_AVOID", "QTc additive cardiotoxicity is CRITICAL_AVOID.") && ok;
+    ok = assert(qtcInteractions[0].mechanism.includes("Torsades de Pointes"), "Flags Torsades de Pointes risk.") && ok;
+
+    // 3. Atorvastatin + Azithromycin: Statin Rhabdomyolysis
+    const statinInteractions = checkDrugInteractions(
+      [{ name: "Azithromycin 500mg" }],
+      "Atorvastatin 40mg",
+      {}
+    );
+    ok = assert(statinInteractions.length >= 1, "Atorvastatin + Azithromycin interaction flagged.") && ok;
+    ok = assert(statinInteractions[0].severity === "MAJOR_MONITORING", "Statin interaction is MAJOR_MONITORING.") && ok;
+    ok = assert(statinInteractions[0].mechanism.includes("rhabdomyolysis"), "Flags rhabdomyolysis risk.") && ok;
+
+    // 4. Doxycycline + Antacids / Calcium: Chelation
+    const chelationInteractions = checkDrugInteractions(
+      [{ name: "Doxycycline 100mg" }],
+      "Calcium carbonate antacid",
+      {}
+    );
+    ok = assert(chelationInteractions.length >= 1, "Doxycycline + Antacid interaction flagged.") && ok;
+    ok = assert(chelationInteractions[0].action.includes("2 hours BEFORE"), "Recommends 2h before / 4h after separation.") && ok;
+
+    // 5. Tramadol + Sertraline: Serotonin Syndrome
+    const serotoninInteractions = checkDrugInteractions(
+      [{ name: "Tramadol 50mg" }],
+      "Sertraline 50mg",
+      {}
+    );
+    ok = assert(serotoninInteractions.length >= 1, "Tramadol + SSRI interaction flagged.") && ok;
+    ok = assert(serotoninInteractions[0].severity === "CRITICAL_AVOID", "Serotonin syndrome risk is CRITICAL_AVOID.") && ok;
+
+    // 6. Benign Combination: Paracetamol + Azithromycin with no current meds
+    const safeInteractions = checkDrugInteractions(
+      [{ name: "Paracetamol 650mg" }, { name: "Azithromycin 500mg" }],
+      "None",
+      {}
+    );
+    ok = assert(safeInteractions.length === 0, "Benign Paracetamol + Azithromycin generates 0 interactions.") && ok;
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");

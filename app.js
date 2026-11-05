@@ -2784,6 +2784,27 @@ async function generateSlmResponse(text, profile, skipMcp = false) {
       </div>`;
     }
 
+    // Evaluate multi-drug & food-drug interactions (DDI) with current profile medications
+    const slmDrugInteractions = (typeof checkDrugInteractions === 'function')
+      ? checkDrugInteractions(kb.medications || [], profile.currentMeds || "", profile)
+      : [];
+    if (slmDrugInteractions.length > 0) {
+      html += `
+        <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 42, 95, 0.08); border:1px solid rgba(255, 42, 95, 0.25); padding:10px; border-radius:6px; margin-bottom:12px; font-size:0.8rem;">
+          <div style="color:var(--red-warn); font-family:var(--font-head); font-weight:bold; font-size:0.82rem; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            <span>⚡</span> CLINICAL DRUG-DRUG & METABOLIC INTERACTION ALERT (${slmDrugInteractions.length})
+          </div>
+          ${slmDrugInteractions.map(it => `
+            <div style="margin-bottom:6px; font-size:0.75rem; line-height:1.4;">
+              <span style="font-weight:bold; color:${it.severity === 'CRITICAL_AVOID' ? 'var(--red-warn)' : '#ffb400'};">[${it.severity}]:</span>
+              <strong>${it.drugs.join(' + ')}</strong> — ${it.mechanism}
+              <div style="color:var(--text-muted); font-size:0.72rem; margin-top:2px;">💡 Recommended Clinical Action: ${it.action}</div>
+            </div>
+          `).join('')}
+        </div>
+      `;
+    }
+
     html += `<div class="med-section ${isEmergency ? 'warning' : ''}">
       <div class="med-section-title">${dict ? dict.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
     kb.medications.forEach(m => {
@@ -4067,6 +4088,27 @@ function buildResponse(text, profile) {
     </div>`;
   }
 
+  // Evaluate multi-drug & food-drug interactions (DDI) with current profile medications
+  const multiTurnDrugInteractions = (typeof checkDrugInteractions === 'function')
+    ? checkDrugInteractions(kb.medications || [], profile.currentMeds || "", profile)
+    : [];
+  if (multiTurnDrugInteractions.length > 0) {
+    html += `
+      <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 42, 95, 0.08); border:1px solid rgba(255, 42, 95, 0.25); padding:10px; border-radius:6px; margin-bottom:12px; font-size:0.8rem;">
+        <div style="color:var(--red-warn); font-family:var(--font-head); font-weight:bold; font-size:0.82rem; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+          <span>⚡</span> CLINICAL DRUG-DRUG & METABOLIC INTERACTION ALERT (${multiTurnDrugInteractions.length})
+        </div>
+        ${multiTurnDrugInteractions.map(it => `
+          <div style="margin-bottom:6px; font-size:0.75rem; line-height:1.4;">
+            <span style="font-weight:bold; color:${it.severity === 'CRITICAL_AVOID' ? 'var(--red-warn)' : '#ffb400'};">[${it.severity}]:</span>
+            <strong>${it.drugs.join(' + ')}</strong> — ${it.mechanism}
+            <div style="color:var(--text-muted); font-size:0.72rem; margin-top:2px;">💡 Recommended Clinical Action: ${it.action}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   html += `<div class="med-section ${isEmergency ? 'warning' : ''}">
     <div class="med-section-title">${dict ? dict.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
   kb.medications.forEach(m => {
@@ -4334,6 +4376,7 @@ function getProfile() {
     gender: document.getElementById("patientGender").value,
     blood: document.getElementById("patientBlood").value,
     allergies: document.getElementById("patientAllergies").value.trim(),
+    currentMeds: document.getElementById("patientCurrentMeds") ? document.getElementById("patientCurrentMeds").value.trim() : "",
     bp: bpEl ? bpEl.value.trim() : "",
     heartRate: hrEl ? hrEl.value.trim() : "",
     temp: tempEl ? tempEl.value.trim() : "",
@@ -4881,6 +4924,7 @@ function loadProfile() {
     if (p.gender)   document.getElementById('patientGender').value = p.gender;
     if (p.blood)    document.getElementById('patientBlood').value  = p.blood;
     if (p.allergies) document.getElementById('patientAllergies').value = p.allergies;
+    if (p.currentMeds && document.getElementById('patientCurrentMeds')) document.getElementById('patientCurrentMeds').value = p.currentMeds;
     if (p.bp && document.getElementById('patientBP')) document.getElementById('patientBP').value = p.bp;
     if (p.heartRate && document.getElementById('patientHR')) document.getElementById('patientHR').value = p.heartRate;
     if (p.temp && document.getElementById('patientTemp')) document.getElementById('patientTemp').value = p.temp;
@@ -8067,6 +8111,15 @@ window.downloadPrescriptionPDF = function(data) {
           </div>
         ` : ''}
         
+        ${data.interactions && data.interactions.length > 0 ? `
+          <div style="border: 1px solid #ff4d6d; background: #fff5f5; padding: 10px; border-radius: 6px; margin-bottom: 20px;">
+            <strong style="color: #d90429; font-size: 0.85rem;">⚠️ CLINICAL DRUG-DRUG & METABOLIC INTERACTION WARNING (${data.interactions.length}):</strong>
+            <ul style="margin: 6px 0 0 0; padding-left: 20px; font-size: 0.78rem; color: #475569; line-height: 1.5;">
+              ${data.interactions.map(it => `<li><strong>[${it.severity}] ${it.drugs.join(' + ')}:</strong> ${it.mechanism} — <em>Action: ${it.action}</em></li>`).join('')}
+            </ul>
+          </div>
+        ` : ''}
+        
         <!-- Signatures & Stamps -->
         <div class="footer-sig-area">
           <div style="font-size:0.75rem; color:#64748b;">
@@ -8745,6 +8798,26 @@ function completeClinicalConsultation() {
     }
   }
 
+  // Evaluate multi-drug & food-drug interactions (DDI)
+  const drugInteractions = (typeof checkDrugInteractions === 'function') ? checkDrugInteractions(medicines, p.currentMeds || "", p) : [];
+  let ddiWarningHtml = "";
+  if (drugInteractions.length > 0) {
+    ddiWarningHtml = `
+      <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 42, 95, 0.08); border:1px solid rgba(255, 42, 95, 0.25); padding:10px; border-radius:6px; margin-bottom:12px; font-size:0.8rem;">
+        <div style="color:var(--red-warn); font-family:var(--font-head); font-weight:bold; font-size:0.82rem; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+          <span>⚡</span> CLINICAL DRUG-DRUG & METABOLIC INTERACTION ALERT (${drugInteractions.length})
+        </div>
+        ${drugInteractions.map(it => `
+          <div style="margin-bottom:6px; font-size:0.75rem; line-height:1.4;">
+            <span style="font-weight:bold; color:${it.severity === 'CRITICAL_AVOID' ? 'var(--red-warn)' : '#ffb400'};">[${it.severity}]:</span>
+            <strong>${it.drugs.join(' + ')}</strong> — ${it.mechanism}
+            <div style="color:var(--text-muted); font-size:0.72rem; margin-top:2px;">💡 Recommended Clinical Action: ${it.action}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
   // Adjust dietary guidelines and clinical precautions dynamically
   const diet = [...(kb.diet || [])];
   const precautions = [...(kb.precautions || [])];
@@ -8852,6 +8925,7 @@ function completeClinicalConsultation() {
     urgencyWarning: urgencyWarning,
     redFlags: redFlags,
     clinicalScores: clinicalScores,
+    interactions: drugInteractions,
     latency: (performance.now() - wizardStartTime).toFixed(3)
   };
 
@@ -8945,6 +9019,7 @@ function completeClinicalConsultation() {
         </div>
 
         ${allergyWarningHtml}
+        ${ddiWarningHtml}
 
         ${redFlagsHtml}
 
@@ -10123,6 +10198,126 @@ if (typeof window !== 'undefined') {
 if (typeof global !== 'undefined') {
   global.checkSafetyContraindications = checkSafetyContraindications;
 }
+
+/**
+ * RAMAN AI Clinical Drug-Drug & Food-Drug Interaction Engine
+ * Evaluates prescribed acute medications against patient's current daily medications and dietary factors.
+ */
+function checkDrugInteractions(prescribedMeds = [], currentMeds = "", profile = {}) {
+  const interactions = [];
+  const currLower = (typeof currentMeds === 'string' ? currentMeds : (profile.currentMeds || "")).toLowerCase();
+  const notesLower = ((profile.notes || "") + " " + (profile.conditions || "")).toLowerCase();
+
+  const rxList = prescribedMeds.map(m => (typeof m === 'string' ? m : (m.name || "")).toLowerCase());
+
+  // Pairwise check between prescribed medications
+  for (let i = 0; i < rxList.length; i++) {
+    for (let j = i + 1; j < rxList.length; j++) {
+      checkPair(rxList[i], rxList[j], true);
+    }
+  }
+
+  // Check prescribed medications against active daily medications
+  for (const rx of rxList) {
+    if (currLower.length > 0) {
+      checkPair(rx, currLower, false);
+    }
+  }
+
+  function checkPair(medA, medB, isInternal) {
+    // 1. QTc Prolongation Additive Cardiotoxicity (Torsades de Pointes)
+    const hasQTA = medA.includes("ciprofloxacin") || medA.includes("azithromycin") || medA.includes("levofloxacin");
+    const hasQTB = medB.includes("amiodarone") || medB.includes("ondansetron") || medB.includes("sotalol") || medB.includes("haloperidol") || medB.includes("azithromycin") || medB.includes("ciprofloxacin");
+    if (hasQTA && hasQTB && (!isInternal || medA !== medB)) {
+      interactions.push({
+        severity: "CRITICAL_AVOID",
+        drugs: isInternal ? [medA.split(' ')[0], medB.split(' ')[0]] : [medA.split(' ')[0], "Daily QTc Drug"],
+        mechanism: "Additive cardiac repolarization delay (QTc Prolongation & Torsades de Pointes arrhythmia risk)",
+        action: "Avoid concomitant administration if possible. Baseline ECG and serum potassium/magnesium monitoring strictly recommended."
+      });
+    }
+
+    // 2. Warfarin / Oral Anticoagulant Hemorrhagic Potentiation
+    const hasWarfarin = medB.includes("warfarin") || medB.includes("coumadin") || medB.includes("apixaban") || medB.includes("rivaroxaban");
+    const hasBleedEnhancer = medA.includes("ciprofloxacin") || medA.includes("azithromycin") || medA.includes("ibuprofen") || medA.includes("aspirin") || medA.includes("diclofenac") || medA.includes("fluconazole");
+    if (hasBleedEnhancer && hasWarfarin) {
+      interactions.push({
+        severity: "CRITICAL_AVOID",
+        drugs: [medA.split(' ')[0], "Warfarin/Anticoagulant"],
+        mechanism: "CYP inhibition & platelet suppression elevating free anticoagulant concentrations and bleeding risk (INR spike)",
+        action: "Strictly avoid NSAIDs with anticoagulants. If antimicrobial is essential, check PT/INR within 48-72 hours."
+      });
+    }
+
+    // 3. Statin + Macrolide / Azole (Rhabdomyolysis Risk)
+    const hasStatin = medB.includes("atorvastatin") || medB.includes("simvastatin") || medB.includes("lovastatin");
+    const hasCypInhibitor = medA.includes("azithromycin") || medA.includes("clarithromycin") || medA.includes("erythromycin") || medA.includes("fluconazole") || medA.includes("itraconazole");
+    if (hasStatin && hasCypInhibitor) {
+      interactions.push({
+        severity: "MAJOR_MONITORING",
+        drugs: [medA.split(' ')[0], "Statin"],
+        mechanism: "Potent CYP3A4 inhibition impairing hepatic statin clearance and raising serum levels, predisposing to acute rhabdomyolysis",
+        action: "Temporarily withhold statin during antibiotic course or switch to hydrophilic statin (Rosuvastatin/Pravastatin)."
+      });
+    }
+
+    // 4. ACEi / ARB + Spironolactone / Potassium Retention
+    const hasAce = medA.includes("enalapril") || medA.includes("ramipril") || medA.includes("telmisartan") || medA.includes("losartan") || medB.includes("enalapril") || medB.includes("ramipril") || medB.includes("telmisartan") || medB.includes("losartan");
+    const hasKRetention = medA.includes("spironolactone") || medB.includes("spironolactone") || medA.includes("trimethoprim") || medB.includes("trimethoprim") || medB.includes("potassium");
+    if (hasAce && hasKRetention && isInternal) {
+      interactions.push({
+        severity: "MAJOR_MONITORING",
+        drugs: [medA.split(' ')[0], medB.split(' ')[0]],
+        mechanism: "Dual suppression of aldosterone cascade precipitating severe hyperkalemia (> 5.5 mEq/L) and cardiac conduction arrest",
+        action: "Monitor serum potassium and creatinine within 1 week of co-prescription."
+      });
+    }
+
+    // 5. Serotonin Syndrome (Tramadol + SSRIs / SNRIs)
+    const hasSerotonergicA = medA.includes("tramadol") || medA.includes("linezolid");
+    const hasSerotonergicB = medB.includes("sertraline") || medB.includes("fluoxetine") || medB.includes("escitalopram") || medB.includes("paroxetine") || medB.includes("duloxetine") || medB.includes("venlafaxine");
+    if (hasSerotonergicA && hasSerotonergicB) {
+      interactions.push({
+        severity: "CRITICAL_AVOID",
+        drugs: [medA.split(' ')[0], "SSRI/SNRI Antidepressant"],
+        mechanism: "Excess synaptic serotonin accumulation triggering Serotonin Syndrome (hyperthermia, clonus, tremor, mental confusion)",
+        action: "Avoid concomitant use. Substitute opioid with non-serotonergic analgesics (e.g. Paracetamol) and observe for neuro-vegetative signs."
+      });
+    }
+
+    // 6. Food/Mineral Chelation (Cation binding to Tetracyclines / Fluoroquinolones)
+    const hasChelatable = medA.includes("doxycycline") || medA.includes("ciprofloxacin");
+    const hasCation = medB.includes("antacid") || medB.includes("calcium") || medB.includes("iron") || medB.includes("ferrous") || medB.includes("sucralfate") || medB.includes("magnesium");
+    if (hasChelatable && hasCation) {
+      interactions.push({
+        severity: "MAJOR_MONITORING",
+        drugs: [medA.split(' ')[0], "Polyvalent Cation / Antacid"],
+        mechanism: "Formation of insoluble chelates in the GI tract reducing antibiotic bioavailability by 80–90%",
+        action: "Strict timing separation: Ingest antibiotic at least 2 hours BEFORE or 4 hours AFTER antacids, calcium, iron, or dairy products."
+      });
+    }
+  }
+
+  const unique = [];
+  const seen = new Set();
+  for (const item of interactions) {
+    const key = item.severity + "|" + item.mechanism;
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(item);
+    }
+  }
+
+  return unique;
+}
+
+if (typeof window !== 'undefined') {
+  window.checkDrugInteractions = checkDrugInteractions;
+}
+if (typeof global !== 'undefined') {
+  global.checkDrugInteractions = checkDrugInteractions;
+}
+
 
 // ── STANDARDIZED CLINICAL SCORING ENGINE (NEWS2, qSOFA, SHOCK INDEX & eGFR) ──
 /**

@@ -145,4 +145,33 @@ test.describe('Tropical Diseases, Web Crypto Asymmetric Signatures & Multilingua
     await expect(userMsg).toBeVisible({ timeout: 10000 });
   });
 
+  test('should detect and render Drug-Drug Interaction (DDI) alert when patient is on Warfarin daily therapy', async ({ page }) => {
+    await loadRamanApp(page);
+
+    // Set daily medication to Warfarin in patient profile
+    await page.evaluate(() => {
+      const medsInput = document.getElementById('patientCurrentMeds');
+      if (medsInput) {
+        medsInput.value = 'Warfarin 5mg daily';
+        medsInput.dispatchEvent(new Event('input'));
+      }
+      if (typeof saveProfile === 'function') saveProfile();
+    });
+
+    // Send symptom that prescribes an interacting medication (e.g. Headache / Migraine prescribes Ibuprofen)
+    const userInput = page.locator('#userInput');
+    await userInput.fill('I have severe headache and migraine with throbbing pain');
+    await page.locator('#btnSend').click();
+
+    // Verify consultation card appeared
+    const consultBubble = page.locator('.message.ai-message').filter({ hasText: /SUGGESTED MEDICATIONS|POSSIBLE CONDITIONS|CLINICAL ASSESSMENT/i }).last();
+    await expect(consultBubble).toBeVisible({ timeout: 20000 });
+
+    // Verify DDI warning is rendered in the triage card
+    const ddiWarning = page.locator('.med-section.warning').filter({ hasText: /DRUG-DRUG & METABOLIC INTERACTION ALERT/i }).last();
+    await expect(ddiWarning).toBeVisible({ timeout: 10000 });
+    const ddiText = await ddiWarning.textContent();
+    expect(ddiText).toMatch(/CRITICAL_AVOID|Warfarin/i);
+  });
+
 });

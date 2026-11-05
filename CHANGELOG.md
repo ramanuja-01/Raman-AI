@@ -18,6 +18,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.8.0] – 2026-11-05 (Clinical Drug-Drug & Food-Drug Interaction Engine with Daily Rx Profiling)
+
+### Added
+* **Evidence-Based Drug-Drug & Food-Drug Interaction (DDI/FDI) Engine (`app.js`):**
+  * Multi-drug cross-referencing between prescribed acute medications and chronic/daily outpatient medications (`checkDrugInteractions`).
+  * **Critical Bleeding Risk:** Flags Warfarin + NSAIDs (Ibuprofen, Diclofenac, Aspirin) as `CRITICAL_AVOID` due to albumin binding displacement, antiplatelet synergy, and massive gastrointestinal hemorrhage.
+  * **Cardiotoxicity & Arrhythmia:** Flags Ciprofloxacin + Amiodarone as `CRITICAL_AVOID` due to additive myocardial potassium channel blockade, QTc prolongation, and fatal Torsades de Pointes.
+  * **Rhabdomyolysis & Myopathy:** Flags Azithromycin/Clarithromycin + Atorvastatin/Simvastatin as `MAJOR_MONITORING` due to CYP3A4 metabolic inhibition and statin accumulation.
+  * **Cation Chelation & Bioavailability Loss:** Flags Doxycycline/Ciprofloxacin + Polyvalent Cation Antacids (Calcium, Magnesium, Aluminum, Iron) as `MODERATE_TIMING`, enforcing 2-hour before / 4-hour after ingestion spacing.
+  * **Serotonin Syndrome:** Flags Tramadol + SSRIs (Sertraline, Fluoxetine, Escitalopram) as `CRITICAL_AVOID` to prevent lethal central serotonergic toxicity.
+  * **Hyperkalemic Cardiac Arrest:** Flags ACEi/ARBs (Enalapril, Losartan) + Spironolactone/Potassium as `MAJOR_MONITORING`.
+* **Daily Medication Profile Intake & Offline Storage (`index.html`, `app.js`):**
+  * Added `#patientCurrentMeds` input in the Patient Profile form with placeholder and real-time validation.
+  * Integrated daily medications into `getProfile()`, `loadProfile()`, and `saveProfile()` with local storage persistence.
+  * Real-time DDI alert injection across single-turn SLM diagnosis, multi-turn clinical chat, and the Human-Like Clinical Consultation wizard.
+  * PDF prescription generator (`downloadPrescriptionPDF`) augmented to print active interaction alerts and metabolic warnings.
+* **Automated Offline Unit & E2E Playwright Test Suites (`test_slm.js`, `tests/tropical_signature_stt.spec.js`):**
+  * Added Test Suite 45 validating 100% of interaction categories, severity tiers, and benign non-interacting baselines (45/45 suites passing).
+  * Added Playwright E2E spec verifying in-browser Warfarin daily therapy intake and triage DDI warning rendering (6/6 tests passing).
+
+---
+
 ## [2.7.0] – 2026-11-05 (Tropical Edge Computer Vision: Scleral Icterus & Point-of-Care Multiplex RDT Analyzer)
 
 ### Added
