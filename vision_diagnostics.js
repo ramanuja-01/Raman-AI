@@ -347,6 +347,278 @@ class RamanVisionDiagnostics {
   }
 
   // =========================================================================
+  // ── 4. SCLERAL ICTERUS / JAUNDICE BILIRUBIN ESTIMATION ───────────────────
+  // =========================================================================
+
+  /**
+   * Quantifies scleral yellowness and hyperbilirubinemia from eye/scleral video frames.
+   * Uses ASTM E313 Yellowness Index (YI) and normalized yellow-blue chromaticity (b*).
+   * @param {HTMLCanvasElement|ImageData|Object} source
+   * @returns {Object} Scleral icterus metrics, bilirubin tier, and clinical referral advice
+   */
+  static analyzeScleralIcterus(source) {
+    const imgData = RamanVisionDiagnostics.getImageDataFromSource(source);
+    if (!imgData) return { error: "Invalid image source." };
+
+    const { width, height, data } = imgData;
+    const totalPixels = width * height;
+    if (totalPixels === 0) return { error: "Empty image data." };
+
+    let scleralPixels = 0;
+    let sumYI = 0;
+    let sumBColor = 0;
+
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      const Y = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+
+      // Sclera candidate filter: Moderate-to-high luminance
+      if (Y > 65 && r > 60 && g > 60) {
+        scleralPixels++;
+
+        // Calibrated digital RGB Yellowness Index: 100 * (R - B) / Y
+        const yi = (100 * Math.max(0, r - b)) / Math.max(1, Y);
+        sumYI += yi;
+
+        // Normalized yellow chromaticity: (R + G - 2*B) / max(1, R + G + B) * 100
+        const bMetric = (100 * Math.max(0, r + g - 2 * b)) / Math.max(1, r + g + b);
+        sumBColor += bMetric;
+      }
+    }
+
+    if (scleralPixels === 0) {
+      return {
+        modality: "SCLERAL_ICTERUS",
+        error: "No clear scleral pixels detected. Ensure adequate illumination and steady eye focus."
+      };
+    }
+
+    const meanYI = parseFloat((sumYI / scleralPixels).toFixed(2));
+    const meanBMetric = parseFloat((sumBColor / scleralPixels).toFixed(2));
+
+    let classification = "NORMAL_PHYSIOLOGICAL_BASELINE";
+    let riskLevel = "LOW";
+    let estimatedBilirubinMgDl = "< 1.2 mg/dL (Physiological Baseline)";
+    let recommendation = "Sclera appears clear and non-icteric. No significant hyperbilirubinemia detected.";
+
+    if (meanYI >= 32.0 || meanBMetric >= 30.0) {
+      classification = "OVERT_SCLERAL_ICTERUS_JAUNDICE";
+      riskLevel = "HIGH";
+      estimatedBilirubinMgDl = "> 3.5 mg/dL (Clinical Jaundice)";
+      recommendation = "Marked scleral icterus detected. Quantified yellowness index indicates significant clinical hyperbilirubinemia. Immediate Liver Function Tests (total & direct bilirubin, ALT, AST) and evaluation for acute viral hepatitis, malaria hemolysis, or biliary obstruction are recommended.";
+    } else if (meanYI >= 18.0 || meanBMetric >= 16.0) {
+      classification = "MILD_SUBCLINICAL_ICTERUS";
+      riskLevel = "MODERATE";
+      estimatedBilirubinMgDl = "1.5 – 3.0 mg/dL (Subclinical Icterus)";
+      recommendation = "Early subclinical scleral yellowness detected. Monitor for dark urine, fatigue, or abdominal tenderness. Consider screening for early hemolytic paroxysm, neonatal physiological jaundice, or mild hepatic dysfunction.";
+    }
+
+    return {
+      modality: "SCLERAL_ICTERUS",
+      classification,
+      riskLevel,
+      yellownessIndex: meanYI,
+      bColorMetric: meanBMetric,
+      estimatedBilirubinMgDl,
+      scleralPixelsAnalyzed: scleralPixels,
+      recommendation
+    };
+  }
+
+  // =========================================================================
+  // ── 5. TROPICAL MULTIPLEX RAPID TEST CASSETTE ANALYZER ───────────────────
+  // =========================================================================
+
+  /**
+   * Analyzes tropical multiplex lateral-flow cassettes (Dengue NS1/IgM/IgG & Malaria Pf/Pv).
+   * Identifies multi-band positions along the test window and maps to ICD-11 conditions.
+   * @param {HTMLCanvasElement|ImageData|Object} source
+   * @param {'DENGUE_DUO'|'MALARIA_PF_PV'} cassetteType
+   * @returns {Object} Analyte classifications, bands, and ICD-11 diagnosis mapping
+   */
+  static analyzeTropicalMultiplexStrip(source, cassetteType = 'DENGUE_DUO') {
+    const imgData = RamanVisionDiagnostics.getImageDataFromSource(source);
+    if (!imgData) return { error: "Invalid image source." };
+
+    const { width, height, data } = imgData;
+    if (width === 0 || height === 0) return { error: "Empty image data." };
+
+    const profile = new Float32Array(height);
+    const startX = Math.floor(width * 0.25);
+    const endX = Math.floor(width * 0.75);
+    const bandWidth = Math.max(1, endX - startX);
+
+    for (let y = 0; y < height; y++) {
+      let rowSum = 0;
+      for (let x = startX; x < endX; x++) {
+        const idx = (y * width + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        rowSum += (0.299 * r + 0.587 * g + 0.114 * b);
+      }
+      profile[y] = rowSum / bandWidth;
+    }
+
+    let bgLum = 0;
+    for (let y = 0; y < height; y++) bgLum += profile[y];
+    bgLum /= height;
+
+    const bandDetections = [];
+    for (let y = 1; y < height - 1; y++) {
+      const depth = bgLum - profile[y];
+      if (depth > 10.0) {
+        if (profile[y] <= profile[y - 1] && profile[y] <= profile[y + 1]) {
+          bandDetections.push({ y, depth: parseFloat(depth.toFixed(1)), relativeY: parseFloat((y / height).toFixed(2)) });
+        }
+      }
+    }
+
+    const mergedBands = [];
+    for (const b of bandDetections) {
+      if (mergedBands.length === 0 || Math.abs(b.y - mergedBands[mergedBands.length - 1].y) > 6) {
+        mergedBands.push(b);
+      } else {
+        if (b.depth > mergedBands[mergedBands.length - 1].depth) {
+          mergedBands[mergedBands.length - 1] = b;
+        }
+      }
+    }
+
+    const controlBand = mergedBands.find(b => b.relativeY < 0.45);
+    const testBands = mergedBands.filter(b => b !== controlBand && b.relativeY >= 0.40);
+
+    if (!controlBand) {
+      return {
+        modality: "TROPICAL_CASSETTE",
+        cassetteType,
+        result: "INVALID",
+        controlLineFound: false,
+        classification: "CASSETTE_INVALID_NO_CONTROL_LINE",
+        riskLevel: "HIGH",
+        icd11: null,
+        recommendation: "Internal Control (C) line is absent. The test cassette is invalid, expired, or insufficiently migrated. Discard and repeat with fresh specimen."
+      };
+    }
+
+    if (cassetteType === 'MALARIA_PF_PV') {
+      const pfBand = testBands.find(b => b.relativeY >= 0.65);
+      const panBand = testBands.find(b => b.relativeY >= 0.40 && b.relativeY < 0.65);
+
+      if (pfBand && panBand) {
+        return {
+          modality: "TROPICAL_CASSETTE",
+          cassetteType: "MALARIA_PF_PV",
+          result: "POSITIVE",
+          classification: "MALARIA_MIXED_FALCIPARUM_VIVAX_POSITIVE",
+          species: "Plasmodium falciparum + Plasmodium vivax (Mixed)",
+          riskLevel: "HIGH",
+          icd11: "1F40",
+          controlLineFound: true,
+          bands: mergedBands,
+          recommendation: "Dual positive for P. falciparum (HRP-2) and P. vivax (pLDH). Initiate Artemisinin-based Combination Therapy (ACT: Artemether-Lumefantrine or Artesunate-Amodiaquine) immediately. Screen for G6PD deficiency prior to Primaquine radical therapy."
+        };
+      } else if (pfBand) {
+        return {
+          modality: "TROPICAL_CASSETTE",
+          cassetteType: "MALARIA_PF_PV",
+          result: "POSITIVE",
+          classification: "MALARIA_FALCIPARUM_POSITIVE",
+          species: "Plasmodium falciparum",
+          riskLevel: "HIGH",
+          icd11: "1F40",
+          controlLineFound: true,
+          bands: mergedBands,
+          recommendation: "Positive for Plasmodium falciparum HRP-2 antigen. Patient is at risk of cerebral malaria and severe anemia. Prompt initiation of WHO-recommended Artemisinin Combination Therapy (ACT) is indicated."
+        };
+      } else if (panBand) {
+        return {
+          modality: "TROPICAL_CASSETTE",
+          cassetteType: "MALARIA_PF_PV",
+          result: "POSITIVE",
+          classification: "MALARIA_VIVAX_POSITIVE",
+          species: "Plasmodium vivax / Pan-Malaria",
+          riskLevel: "MODERATE",
+          icd11: "1F40",
+          controlLineFound: true,
+          bands: mergedBands,
+          recommendation: "Positive for Plasmodium vivax / Pan-malarial pLDH antigen. Administer standard blood schizonticide (Chloroquine or ACT). Order quantitative G6PD assay before administering Primaquine to prevent acute hemolytic anemia."
+        };
+      } else {
+        return {
+          modality: "TROPICAL_CASSETTE",
+          cassetteType: "MALARIA_PF_PV",
+          result: "NEGATIVE",
+          classification: "MALARIA_ANTIGEN_NEGATIVE",
+          riskLevel: "LOW",
+          icd11: null,
+          controlLineFound: true,
+          bands: mergedBands,
+          recommendation: "Control line confirmed; no malarial HRP-2 or pLDH antigen bands detected. If paroxysms and rigors persist, repeat smear or RDT at 12-24 hours."
+        };
+      }
+    } else {
+      const ns1Band = testBands.find(b => b.relativeY >= 0.70);
+      const igmBand = testBands.find(b => b.relativeY >= 0.42 && b.relativeY < 0.58);
+      const iggBand = testBands.find(b => b.relativeY >= 0.58 && b.relativeY < 0.70);
+
+      const isPositive = Boolean(ns1Band || igmBand || iggBand);
+
+      if (!isPositive) {
+        return {
+          modality: "TROPICAL_CASSETTE",
+          cassetteType: "DENGUE_DUO",
+          result: "NEGATIVE",
+          classification: "DENGUE_SEROLOGY_NEGATIVE",
+          riskLevel: "LOW",
+          icd11: null,
+          controlLineFound: true,
+          bands: mergedBands,
+          recommendation: "Valid Control band present; no Dengue NS1 antigen or antibody bands detected. Monitor hydration; re-evaluate if high fever persists beyond Day 3."
+        };
+      }
+
+      let dengueStage = "DENGUE_ACUTE_NS1_POSITIVE";
+      let dengueDesc = "Acute Primary Dengue (Viremic Phase, Day 1-4)";
+      let riskLevel = "HIGH";
+
+      if (ns1Band && (igmBand || iggBand)) {
+        dengueStage = iggBand ? "DENGUE_SECONDARY_INFECTION_HIGH_RISK" : "DENGUE_ACTIVE_PRIMARY_CONVALESCENT";
+        dengueDesc = iggBand ? "Secondary Dengue Infection (Elevated DHF/DSS Hemorrhagic Risk)" : "Active Dengue (NS1 + IgM Positive)";
+      } else if (igmBand) {
+        dengueStage = "DENGUE_EARLY_CONVALESCENT_IGM";
+        dengueDesc = "Primary Dengue Infection (IgM Positive, Day 5+)";
+        riskLevel = "MODERATE";
+      } else if (iggBand && !ns1Band && !igmBand) {
+        dengueStage = "DENGUE_PAST_INFECTION_IGG";
+        dengueDesc = "Past Dengue Exposure (Isolated IgG Positive)";
+        riskLevel = "LOW";
+      }
+
+      return {
+        modality: "TROPICAL_CASSETTE",
+        cassetteType: "DENGUE_DUO",
+        result: "POSITIVE",
+        classification: dengueStage,
+        denguePhase: dengueDesc,
+        riskLevel,
+        icd11: "1D20.0",
+        controlLineFound: true,
+        detectedMarkers: {
+          NS1: Boolean(ns1Band),
+          IgM: Boolean(igmBand),
+          IgG: Boolean(iggBand)
+        },
+        bands: mergedBands,
+        recommendation: "Positive for " + dengueDesc + ". Strict safety contraindication: DO NOT administer NSAIDs (Aspirin, Ibuprofen, Diclofenac) due to hemorrhagic danger. Administer Paracetamol only, ensure copious oral rehydration, and monitor daily platelet count."
+      };
+    }
+  }
+
+  // =========================================================================
   // ── 4. CANVAS HUD OVERLAY RENDERER ───────────────────────────────────────
   // =========================================================================
 

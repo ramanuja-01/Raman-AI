@@ -85,4 +85,64 @@ test.describe('Tropical Diseases, Web Crypto Asymmetric Signatures & Multilingua
     await expect(userInput).toHaveValue(/dengue fever/i);
   });
 
+  test('should analyze tropical rapid test cassette in vision diagnostic modal and transfer findings to consultation', async ({ page }) => {
+    await loadRamanApp(page);
+
+    // 1. Open Camera / Vision Diagnostics modal
+    await page.evaluate(() => {
+      const modal = document.getElementById('cameraModal');
+      if (modal) modal.style.display = 'block';
+    });
+
+    const modal = page.locator('#cameraModal');
+    await expect(modal).toBeVisible();
+
+    // 2. Select Tropical Dengue mode
+    const modeSelect = page.locator('#visionDiagnosticMode');
+    await modeSelect.selectOption('TROPICAL_DENGUE');
+
+    // 3. Draw a synthetic Dengue NS1 positive cassette onto captureCanvas
+    await page.evaluate(() => {
+      const canvas = document.getElementById('captureCanvas');
+      canvas.width = 100;
+      canvas.height = 100;
+      const ctx = canvas.getContext('2d');
+      // Background white
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, 100, 100);
+      // Control line (y=20)
+      ctx.fillStyle = '#4a0404';
+      ctx.fillRect(25, 18, 50, 4);
+      // NS1 line (y=80)
+      ctx.fillRect(25, 78, 50, 4);
+
+      // Execute analysis using canvas directly
+      const result = window.RamanVisionDiagnostics.analyzeTropicalMultiplexStrip(canvas, 'DENGUE_DUO');
+      window._activeVisionResult = result;
+      const resultCard = document.getElementById("visionResultCard");
+      const resultTitle = document.getElementById("visionResultTitle");
+      const resultBody = document.getElementById("visionResultBody");
+      if (resultCard && result) {
+        resultCard.style.display = "block";
+        if (resultTitle) resultTitle.textContent = `VISION ANALYSIS [${result.modality}]: ${result.classification}`;
+        if (resultBody) resultBody.innerHTML = `<strong>Triage:</strong> ${result.recommendation}`;
+      }
+    });
+
+    // 4. Verify result card is populated with Dengue findings
+    const resultCard = page.locator('#visionResultCard');
+    await expect(resultCard).toBeVisible();
+    await expect(resultCard).toContainText('DENGUE_ACUTE_NS1_POSITIVE');
+
+    // 5. Click transfer to consultation button
+    const transferBtn = page.locator('#btnTransferVisionToConsult');
+    await expect(transferBtn).toBeVisible();
+    await transferBtn.click();
+
+    // 6. Verify modal closed and consultation message dispatched
+    await expect(modal).not.toBeVisible();
+    const userMsg = page.locator('.message.user-message').filter({ hasText: /DENGUE_ACUTE_NS1_POSITIVE/i }).last();
+    await expect(userMsg).toBeVisible({ timeout: 10000 });
+  });
+
 });

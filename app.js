@@ -13732,9 +13732,16 @@ window.executeVisionDiagnostics = function() {
     result = RamanVisionDiagnostics.analyzeDermatologicalLesion(canvas);
   } else if (mode === "TEST_STRIP") {
     result = RamanVisionDiagnostics.analyzeLateralFlowStrip(canvas);
+  } else if (mode === "SCLERAL_ICTERUS") {
+    result = RamanVisionDiagnostics.analyzeScleralIcterus(canvas);
+  } else if (mode === "TROPICAL_DENGUE") {
+    result = RamanVisionDiagnostics.analyzeTropicalMultiplexStrip(canvas, 'DENGUE_DUO');
+  } else if (mode === "TROPICAL_MALARIA") {
+    result = RamanVisionDiagnostics.analyzeTropicalMultiplexStrip(canvas, 'MALARIA_PF_PV');
   } else {
     result = RamanVisionDiagnostics.analyzeOcularRedness(canvas);
   }
+  window._activeVisionResult = result;
 
   const resultCard = document.getElementById("visionResultCard");
   const resultTitle = document.getElementById("visionResultTitle");
@@ -13752,5 +13759,49 @@ window.executeVisionDiagnostics = function() {
     }
     RamanVisionDiagnostics.renderVisionDiagnosticsOverlay(canvas, result);
     if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+  }
+};
+
+
+window.transferVisionToConsultation = function() {
+  const result = window._activeVisionResult;
+  if (!result) return;
+
+  let intakeQuery = "";
+  if (result.modality === "TROPICAL_CASSETTE") {
+    if (result.cassetteType === "MALARIA_PF_PV") {
+      intakeQuery = "Point-of-care rapid diagnostic test result: " + (result.species || 'Malaria') + " antigen positive (" + result.classification + "). Patient presents with high cyclical fever, rigors, and chills.";
+    } else {
+      intakeQuery = "Point-of-care rapid test result: " + (result.denguePhase || 'Dengue NS1 Antigen positive') + " (" + result.classification + "). Patient presents with acute high fever, retro-orbital eye pain, and joint aches.";
+    }
+  } else if (result.modality === "SCLERAL_ICTERUS") {
+    intakeQuery = "Ocular biometric scan reveals " + result.classification + " with yellowness index " + result.yellownessIndex + " (estimated bilirubin " + result.estimatedBilirubinMgDl + "). Patient presents with yellowish eyes and jaundice.";
+  } else if (result.modality === "DERMATOLOGY_ABCD") {
+    intakeQuery = "Dermatological scan indicates " + result.classification + " (ABCD score: " + result.abcdScore + ", estimated diameter: " + (result.metrics ? result.metrics.estimatedDiameterMm : 5) + "mm). Severe skin lesion.";
+  } else if (result.modality === "LATERAL_FLOW_STRIP") {
+    intakeQuery = "Rapid lateral-flow test strip result: " + result.result + ". " + result.interpretation;
+  } else {
+    intakeQuery = "Ocular scan indicates " + result.classification + " (redness ratio: " + (result.rednessRatio || '0.75') + "). Severe conjunctival injection and eye pain.";
+  }
+
+  // Close camera modal
+  const cameraModal = document.getElementById("cameraModal");
+  if (cameraModal) cameraModal.style.display = "none";
+  if (typeof stopCameraStream === 'function') stopCameraStream();
+
+  // Switch to consult tab if on mobile
+  if (typeof window.switchMobileTab === 'function') {
+    window.switchMobileTab('consult');
+  }
+
+  // Populate userInput and send
+  const input = document.getElementById("userInput");
+  if (input) {
+    input.value = intakeQuery;
+    input.dispatchEvent(new Event("input"));
+    input.focus();
+    if (typeof sendMessage === 'function') {
+      setTimeout(() => sendMessage(), 200);
+    }
   }
 };

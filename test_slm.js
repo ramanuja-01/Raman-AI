@@ -2557,6 +2557,90 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  // =========================================================================
+  // ── TEST SUITE 44: Tropical Vision Diagnostics (Scleral Icterus & RDTs) ──
+  // =========================================================================
+  await runTest("Tropical Vision Diagnostics (Scleral Icterus & Dengue/Malaria Multiplex RDT)", async () => {
+    let ok = true;
+    const visionModule = require('./vision_diagnostics.js');
+    const Vision = visionModule.RamanVisionDiagnostics;
+
+    // Helper: mock image creator
+    function createMockImage(width, height, fillFn) {
+      const data = new Uint8ClampedArray(width * height * 4);
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const idx = (y * width + x) * 4;
+          const [r, g, b, a] = fillFn(x, y);
+          data[idx] = r;
+          data[idx + 1] = g;
+          data[idx + 2] = b;
+          data[idx + 3] = a || 255;
+        }
+      }
+      return { width, height, data };
+    }
+
+    // 1. Scleral Icterus: Normal non-jaundiced eye
+    const normalSclera = createMockImage(40, 40, () => [225, 225, 220, 255]);
+    const normalIcterus = Vision.analyzeScleralIcterus(normalSclera);
+    ok = assert(normalIcterus.classification === "NORMAL_PHYSIOLOGICAL_BASELINE", "Normal sclera identified as baseline.") && ok;
+    ok = assert(normalIcterus.yellownessIndex < 18, "Normal Yellowness Index is < 18.") && ok;
+
+    // 2. Scleral Icterus: Overt Jaundice (high red & green, low blue -> yellow)
+    const jaundicedSclera = createMockImage(40, 40, () => [235, 215, 60, 255]);
+    const jaundicedResult = Vision.analyzeScleralIcterus(jaundicedSclera);
+    ok = assert(jaundicedResult.classification === "OVERT_SCLERAL_ICTERUS_JAUNDICE", "Correctly classifies overt clinical jaundice.") && ok;
+    ok = assert(jaundicedResult.riskLevel === "HIGH", "Jaundice flagged as HIGH risk.") && ok;
+    ok = assert(jaundicedResult.yellownessIndex >= 32, "Jaundice Yellowness Index >= 32.") && ok;
+
+    // 3. Dengue Rapid Duo Cassette: Control line (y=12) + NS1 line (y=48) on height 60
+    const dengueDuoNs1 = createMockImage(24, 60, (x, y) => {
+      if (Math.abs(y - 12) <= 1 || Math.abs(y - 48) <= 1) {
+        return [70, 30, 40, 255]; // Dark pink/red gold nanoparticle band
+      }
+      return [245, 245, 245, 255]; // White nitrocellulose membrane
+    });
+    const dengueResult = Vision.analyzeTropicalMultiplexStrip(dengueDuoNs1, 'DENGUE_DUO');
+    ok = assert(dengueResult.result === "POSITIVE", "Dengue Duo test detects POSITIVE.") && ok;
+    ok = assert(dengueResult.classification === "DENGUE_ACUTE_NS1_POSITIVE", "Identified acute Dengue NS1 viremic phase.") && ok;
+    ok = assert(dengueResult.icd11 === "1D20.0", "Dengue mapped to ICD-11 1D20.0.") && ok;
+    ok = assert(dengueResult.detectedMarkers.NS1 === true, "NS1 antigen marker confirmed.") && ok;
+
+    // 4. Malaria Antigen Combo Cassette: Control line (y=12) + Pf line (y=50) on height 60
+    const malariaPfOnly = createMockImage(24, 60, (x, y) => {
+      if (Math.abs(y - 12) <= 1 || Math.abs(y - 50) <= 1) {
+        return [60, 25, 35, 255];
+      }
+      return [240, 240, 240, 255];
+    });
+    const malariaPfResult = Vision.analyzeTropicalMultiplexStrip(malariaPfOnly, 'MALARIA_PF_PV');
+    ok = assert(malariaPfResult.result === "POSITIVE", "Malaria combo detects POSITIVE.") && ok;
+    ok = assert(malariaPfResult.classification === "MALARIA_FALCIPARUM_POSITIVE", "Identified Plasmodium falciparum species.") && ok;
+    ok = assert(malariaPfResult.icd11 === "1F40", "Malaria mapped to ICD-11 1F40.") && ok;
+
+    // 5. Malaria Antigen Combo Cassette: Control line (y=12) + Pan/Pv line (y=32)
+    const malariaPvOnly = createMockImage(24, 60, (x, y) => {
+      if (Math.abs(y - 12) <= 1 || Math.abs(y - 32) <= 1) {
+        return [60, 25, 35, 255];
+      }
+      return [240, 240, 240, 255];
+    });
+    const malariaPvResult = Vision.analyzeTropicalMultiplexStrip(malariaPvOnly, 'MALARIA_PF_PV');
+    ok = assert(malariaPvResult.classification === "MALARIA_VIVAX_POSITIVE", "Identified Plasmodium vivax / Pan species.") && ok;
+
+    // 6. Invalid Cassette (Missing Control Line)
+    const invalidCassette = createMockImage(24, 60, (x, y) => {
+      if (Math.abs(y - 48) <= 1) return [70, 30, 40, 255];
+      return [240, 240, 240, 255];
+    });
+    const invalidResult = Vision.analyzeTropicalMultiplexStrip(invalidCassette, 'DENGUE_DUO');
+    ok = assert(invalidResult.result === "INVALID", "Cassette without C line classified as INVALID.") && ok;
+    ok = assert(invalidResult.controlLineFound === false, "controlLineFound is false.") && ok;
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");

@@ -136,14 +136,22 @@
       <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
         <select id="visionDiagnosticMode" style="flex: 1; background: #070a14; border: 1px solid var(--cyan); color: var(--cyan); padding: 6px; border-radius: 4px; font-size: 0.72rem; outline: none;">
           <option value="OCULAR">👁️ Ocular Hyperemia / Redness</option>
+          <option value="SCLERAL_ICTERUS">🟡 Scleral Icterus / Jaundice (Bilirubin)</option>
           <option value="DERMATOLOGY">🔬 Dermatological Lesion (ABCD)</option>
-          <option value="TEST_STRIP">🧪 Lateral-Flow Strip Reader</option>
+          <option value="TEST_STRIP">🧪 Standard Test Strip (C/T)</option>
+          <option value="TROPICAL_DENGUE">🦟 Dengue Rapid Duo (NS1/IgM/IgG)</option>
+          <option value="TROPICAL_MALARIA">🩸 Malaria Antigen Combo (Pf/Pan)</option>
         </select>
         <button type="button" id="btnRunVisionAnalysis" onclick="executeVisionDiagnostics()" style="background: rgba(0,229,255,0.2); border: 1px solid var(--cyan); color: var(--cyan); padding: 6px 12px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; cursor: pointer;">🔍 Analyze</button>
       </div>
       <div id="visionResultCard" style="display: none; margin-top: 10px; background: rgba(5,13,26,0.9); border: 1px solid var(--primary); border-radius: 6px; padding: 10px; font-size: 0.75rem; text-align: left;">
         <div id="visionResultTitle" style="font-weight: bold; color: var(--primary); font-family: var(--font-head); margin-bottom: 4px;"></div>
         <div id="visionResultBody" style="color: var(--text-main); font-size: 0.72rem; line-height: 1.4;"></div>
+        <div style="margin-top: 8px; display: flex; gap: 6px;">
+          <button type="button" id="btnTransferVisionToConsult" onclick="window.transferVisionToConsultation()" style="flex: 1; background: var(--teal); border: none; color: #0f172a; padding: 6px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; cursor: pointer; font-family: var(--font-head); display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 0 10px rgba(0,255,179,0.3);">
+            📥 Insert Findings into Consultation Triage
+          </button>
+        </div>
       </div>
       <canvas id="captureCanvas" style="display:none;"></canvas>
     </div>

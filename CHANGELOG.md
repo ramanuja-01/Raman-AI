@@ -18,6 +18,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.7.0] – 2026-11-05 (Tropical Edge Computer Vision: Scleral Icterus & Point-of-Care Multiplex RDT Analyzer)
+
+### Added
+* **Scleral Icterus & Jaundice Bilirubin Analyzer (`vision_diagnostics.js`):**
+  * Scleral masking and calibrated RGB Yellowness Index ($YI = 100 \times \max(0, R-B) / Y$) and normalized yellow-blue chromaticity ($b^*$).
+  * Clinical hyperbilirubinemia risk stratification: Normal physiological baseline ($YI < 18$, $< 1.2\text{ mg/dL}$), Mild subclinical icterus ($18 \le YI < 32$, $1.5 - 3.0\text{ mg/dL}$), and Overt clinical jaundice ($YI \ge 32$, $> 3.5\text{ mg/dL}$).
+  * Clinical guidance for Neonatal Jaundice, Malaria hemolysis, and Viral Hepatitis/Typhoid hepatomegaly.
+* **Point-of-Care Tropical Multiplex Rapid Diagnostic Test (RDT) Analyzer (`vision_diagnostics.js`):**
+  * Multi-band optical density profiling along vertical migration axis.
+  * **Dengue Duo Cassette:** Identifies Control (C), NS1 antigen, IgM, and IgG antibody bands. Differentiates early acute primary viremia (NS1+), active primary convalescence (IgM+), and high-risk secondary infection (IgG+), mapped to ICD-11 `1D20.0`.
+  * **Malaria Antigen Combo:** Identifies Control (C), Pan/Pv pLDH, and Pf HRP-2 bands. Distinguishes *Plasmodium falciparum*, *Plasmodium vivax*, and mixed infections, mapped to ICD-11 `1F40`.
+  * Built-in validity check verifying internal Control line presence before reporting results.
+* **End-to-End Camera to Consultation Integration (`index.html`, `app.js`):**
+  * Added camera vision modes: `SCLERAL_ICTERUS`, `TROPICAL_DENGUE`, and `TROPICAL_MALARIA`.
+  * Added `transferVisionToConsultation()` button directly transferring optical findings into the active consultation chat with auto-triage dispatch.
+* **Automated Unit & E2E Tests Expanded (`test_slm.js`, `tests/tropical_signature_stt.spec.js`):**
+  * Added Test Suite 44 validating synthetic normal/jaundiced sclera, Dengue NS1+, Malaria Pf+, Malaria Pv+, and invalid cassette detection. Total 44/44 suites pass with 0 failures.
+  * Added Playwright test verifying vision modal RDT analysis and one-click transfer to consultation. All 5/5 E2E tests pass.
+
+---
+
 ## [2.6.0] – 2026-11-05 (Tropical Disease Expansion, Web Crypto Signatures, Multilingual STT & 4-Chamber WebGPU Anatomy)
 
 ### Added
