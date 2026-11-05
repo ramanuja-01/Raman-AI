@@ -13732,15 +13732,17 @@ window.switchHudSimulationMode = function(mode) {
   const canvasHeatmap = document.getElementById("progressionCanvas");
   const canvasOrgan = document.getElementById("organ3dCanvas") || canvasHeatmap;
   const canvasPkpd = document.getElementById("pkpdCanvas") || canvasHeatmap;
+  const canvasVcg = document.getElementById("vcgCanvas") || canvasHeatmap;
   if (!canvasHeatmap) return;
 
   const btnHeatmap = document.getElementById("btnModeHeatmap");
   const btnOrgan3d = document.getElementById("btnModeOrgan3D");
   const btnPkpd = document.getElementById("btnModePkpd");
+  const btnVcg = document.getElementById("btnModeVcg");
   const titleEl = document.getElementById("hudCanvasModeTitle");
   const badgeEl = document.getElementById("hudCanvasModeBadge");
 
-  [btnHeatmap, btnOrgan3d, btnPkpd].forEach(btn => {
+  [btnHeatmap, btnOrgan3d, btnPkpd, btnVcg].forEach(btn => {
     if (btn) {
       btn.style.background = "rgba(255,255,255,0.05)";
       btn.style.borderColor = "rgba(255,255,255,0.1)";
@@ -13751,9 +13753,12 @@ window.switchHudSimulationMode = function(mode) {
 
   const profile = typeof getProfile === 'function' ? getProfile() : {};
 
-  // Stop 3D animation loop if switching away from ORGAN_3D
+  // Stop 3D animation loop if switching away from ORGAN_3D or VCG
   if (mode !== "ORGAN_3D" && volumetricRendererInstance) {
     volumetricRendererInstance.stop();
+  }
+  if (mode !== "VCG" && typeof window.ramanVcgEngine !== 'undefined') {
+    window.ramanVcgEngine.stopAnimation();
   }
 
   if (mode === "ORGAN_3D") {
@@ -13769,6 +13774,7 @@ window.switchHudSimulationMode = function(mode) {
     // Viewport visibility toggle (Zero context collision)
     canvasHeatmap.style.display = "none";
     if (canvasPkpd && canvasPkpd !== canvasHeatmap) canvasPkpd.style.display = "none";
+    if (canvasVcg && canvasVcg !== canvasHeatmap) canvasVcg.style.display = "none";
     canvasOrgan.style.display = "block";
 
     if (!volumetricRendererInstance && typeof RamanVolumetricRenderer !== 'undefined') {
@@ -13797,6 +13803,7 @@ window.switchHudSimulationMode = function(mode) {
     // Viewport visibility toggle
     canvasHeatmap.style.display = "none";
     if (canvasOrgan && canvasOrgan !== canvasHeatmap) canvasOrgan.style.display = "none";
+    if (canvasVcg && canvasVcg !== canvasHeatmap) canvasVcg.style.display = "none";
     canvasPkpd.style.display = "block";
 
     if (!pkpdSimulatorInstance && typeof RamanPkPdSimulator !== 'undefined') {
@@ -13805,6 +13812,25 @@ window.switchHudSimulationMode = function(mode) {
     }
     if (pkpdSimulatorInstance) {
       pkpdSimulatorInstance.renderPkCurves("paracetamol", profile);
+    }
+  } else if (mode === "VCG") {
+    if (btnVcg) {
+      btnVcg.style.background = "rgba(0, 255, 179, 0.18)";
+      btnVcg.style.borderColor = "#00ffb3";
+      btnVcg.style.color = "#00ffb3";
+      btnVcg.classList.add("active");
+    }
+    if (titleEl) titleEl.textContent = "🫀 3D Vectorcardiography (VCG)";
+    if (badgeEl) badgeEl.textContent = "Spatial QRS-T Dipole";
+
+    // Viewport visibility toggle
+    canvasHeatmap.style.display = "none";
+    if (canvasOrgan && canvasOrgan !== canvasHeatmap) canvasOrgan.style.display = "none";
+    if (canvasPkpd && canvasPkpd !== canvasHeatmap) canvasPkpd.style.display = "none";
+    canvasVcg.style.display = "block";
+
+    if (typeof window.ramanVcgEngine !== 'undefined') {
+      window.ramanVcgEngine.startAnimation(canvasVcg, profile.condition || "normal", profile.heartRate || 72);
     }
   } else {
     if (btnHeatmap) {
@@ -13819,6 +13845,7 @@ window.switchHudSimulationMode = function(mode) {
     // Viewport visibility toggle
     if (canvasOrgan && canvasOrgan !== canvasHeatmap) canvasOrgan.style.display = "none";
     if (canvasPkpd && canvasPkpd !== canvasHeatmap) canvasPkpd.style.display = "none";
+    if (canvasVcg && canvasVcg !== canvasHeatmap) canvasVcg.style.display = "none";
     canvasHeatmap.style.display = "block";
 
     if (volumetricRendererInstance) volumetricRendererInstance.viewMode = "HEATMAP";

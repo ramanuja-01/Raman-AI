@@ -174,4 +174,37 @@ test.describe('Tropical Diseases, Web Crypto Asymmetric Signatures & Multilingua
     expect(ddiText).toMatch(/CRITICAL_AVOID|Warfarin/i);
   });
 
+  test('should switch HUD to 3D Vectorcardiography (VCG) mode and render rotating cardiac dipole canvas', async ({ page }) => {
+    await loadRamanApp(page);
+
+    // Verify VCG button is rendered in the HUD
+    const vcgBtn = page.locator('#btnModeVcg');
+    await expect(vcgBtn).toBeVisible();
+
+    // Click 3D VCG button to activate vectorcardiography mode
+    await vcgBtn.click();
+
+    // Verify VCG canvas is visible and other canvases are hidden
+    const vcgCanvas = page.locator('#vcgCanvas');
+    await expect(vcgCanvas).toBeVisible();
+    await expect(page.locator('#progressionCanvas')).toBeHidden();
+
+    // Check HUD title and badge updated
+    const title = page.locator('#hudCanvasModeTitle');
+    await expect(title).toHaveText(/3D Vectorcardiography/i);
+    const badge = page.locator('#hudCanvasModeBadge');
+    await expect(badge).toHaveText(/Spatial QRS-T Dipole/i);
+
+    // Verify window.ramanVcgEngine is executing and computing spatial metrics
+    const metrics = await page.evaluate(() => {
+      if (!window.ramanVcgEngine) return null;
+      const leads = window.ramanVcgEngine.generateFrankLeads(72, 'normal', 100);
+      return window.ramanVcgEngine.calculateSpatialMetrics(leads);
+    });
+
+    expect(metrics).not.toBeNull();
+    expect(metrics.spatialRiskTier).toBe('NORMAL');
+    expect(metrics.spatialQrsTAngleDeg).toBeLessThan(45.0);
+  });
+
 });

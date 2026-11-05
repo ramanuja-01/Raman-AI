@@ -18,6 +18,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.9.0] – 2026-11-05 (3D Vectorcardiography [VCG], Frank Orthogonal Lead Synthesis & Spatial QRS-T Angle Engine)
+
+### Added
+* **3D Vectorcardiography (VCG) & Frank Orthogonal Lead Engine (`vcg_vectorcardiography.js`):**
+  * Synthesizes orthogonal Frank leads ($X, Y, Z$) from cardiac dipole telemetry across transverse (lateral), vertical (inferior), and sagittal (anterior-posterior) axes.
+  * Mathematical **Spatial QRS-T Angle** calculation:
+    $$\Delta \theta = \arccos\left(\frac{\vec{V}_{QRS\_max} \cdot \vec{V}_{T\_max}}{\|\vec{V}_{QRS\_max}\| \|\vec{V}_{T\_max}\|}\right)$$
+  * Stratifies spatial repolarization heterogeneity into evidence-based risk tiers:
+    * `NORMAL`: $\Delta \theta < 45^\circ$, physiological concordance between ventricular depolarization and repolarization.
+    * `BORDERLINE`: $45^\circ \le \Delta \theta \le 75^\circ$, mild repolarization heterogeneity.
+    * `ABNORMAL_ISCHEMIA_RISK`: $\Delta \theta > 75^\circ$, acute discordant repolarization, flagging myocardial ischemia, non-ST elevation ACS, or fatal ventricular arrhythmia risk.
+  * Computes **Mean Frontal Electrical Axis** with classification: Normal Axis ($-30^\circ$ to $+90^\circ$), Left Axis Deviation (LAD: $-30^\circ$ to $-90^\circ$), Right Axis Deviation (RAD: $+90^\circ$ to $+180^\circ$), and Extreme Axis.
+* **Cyber Bio-Telemetry 3D HUD Canvas Integration (`index.html`, `app.js`):**
+  * Added `⚡ 3D VCG` mode toggle button (`#btnModeVcg`) in the Live Bio-Telemetry HUD accordion.
+  * Added dedicated `<canvas id="vcgCanvas">` rendering 3D rotating isometric wireframe bounding box, coordinate reference axes ($X$ coral, $Y$ cyan, $Z$ yellow), back-plane shadow loop projections, and glowing neon phosphor trajectory trail.
+  * Displays spatial QRS vector arrow (cyan), T-wave vector arrow (gold), real-time QRS-T angle badge, and peak dipole voltage.
+  * Full integration with `switchHudSimulationMode('VCG')` and automatic animation loop management.
+* **Automated Unit & E2E Playwright Test Suites (`test_slm.js`, `tests/tropical_signature_stt.spec.js`):**
+  * Added Test Suite 46 validating Frank lead synthesis, normal spatial concordance ($14.1^\circ < 45^\circ$), ischemic discordance ($131.9^\circ > 75^\circ$), LAD/RAD axis detection, 3D projection matrix, and canvas rendering. Total 46/46 suites pass with 0 failures.
+  * Added Playwright E2E test verifying VCG HUD button click, canvas visibility switching, and live spatial metrics computation. Total 7/7 tests pass.
+
+---
+
 ## [2.8.0] – 2026-11-05 (Clinical Drug-Drug & Food-Drug Interaction Engine with Daily Rx Profiling)
 
 ### Added

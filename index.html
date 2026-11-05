@@ -1273,10 +1273,12 @@
                     <button type="button" id="btnModeHeatmap" class="btn-hud-mode active" onclick="switchHudSimulationMode('HEATMAP')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(0,229,255,0.15); border: 1px solid var(--cyan); color: var(--cyan); border-radius: 4px; cursor: pointer; font-family: var(--font-head); font-weight: bold;">📊 2D Scatter</button>
                     <button type="button" id="btnModeOrgan3D" class="btn-hud-mode" onclick="switchHudSimulationMode('ORGAN_3D')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 4px; cursor: pointer; font-family: var(--font-head);">🫀 3D Organ</button>
                     <button type="button" id="btnModePkpd" class="btn-hud-mode" onclick="switchHudSimulationMode('PKPD')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 4px; cursor: pointer; font-family: var(--font-head);">💊 PK/PD</button>
+                    <button type="button" id="btnModeVcg" class="btn-hud-mode" onclick="switchHudSimulationMode('VCG')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 4px; cursor: pointer; font-family: var(--font-head);">⚡ 3D VCG</button>
                   </div>
                   <canvas id="progressionCanvas" width="300" height="200" data-auto-resync="true" class="hud-neon-canvas" style="width: 100%; display: block; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.1), inset 0 0 8px rgba(0, 229, 255, 0.15); cursor: crosshair;"></canvas>
                   <canvas id="organ3dCanvas" width="300" height="200" data-auto-resync="true" class="hud-neon-canvas" style="width: 100%; display: none; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.1), inset 0 0 8px rgba(0, 229, 255, 0.15); cursor: crosshair;"></canvas>
                   <canvas id="pkpdCanvas" width="300" height="200" data-auto-resync="true" class="hud-neon-canvas" style="width: 100%; display: none; background: rgba(5,13,26,0.65); border: 1px solid rgba(255, 180, 0, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(255, 180, 0, 0.1), inset 0 0 8px rgba(255, 180, 0, 0.15); cursor: crosshair;"></canvas>
+                  <canvas id="vcgCanvas" width="300" height="200" data-auto-resync="true" class="hud-neon-canvas" style="width: 100%; display: none; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 255, 179, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 255, 179, 0.1), inset 0 0 8px rgba(0, 255, 179, 0.15); cursor: crosshair;"></canvas>
                 </div>
                 <div class="hud-canvas-block">
                   <div class="hud-canvas-title" style="font-family: var(--font-ui); font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 4px; padding: 0 2px; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -1876,6 +1878,7 @@
 
   <script src="webgpu_volumetric.js?v=2.0"></script>
   <script src="webgpu_pkpd.js?v=2.0"></script>
+  <script src="vcg_vectorcardiography.js?v=2.0"></script>
   <script src="hybrid_search.js?v=2.0"></script>
   <script src="vision_diagnostics.js?v=2.0"></script>
   <script src="ble_telemetry.js?v=2.0"></script>

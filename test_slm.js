@@ -2708,6 +2708,78 @@ async function runTest(name, fn) {
     return ok;
   });
 
+  await runTest("3D Vectorcardiography (VCG), Frank XYZ Lead Synthesis & Spatial QRS-T Angle Engine", async () => {
+    let ok = true;
+    const vcgModule = require('./vcg_vectorcardiography.js');
+    const { RamanVcgEngine, ramanVcgEngine, VCG_CONFIG } = vcgModule;
+
+    // 1. Verify class and singleton instantiation
+    ok = assert(typeof RamanVcgEngine === "function", "RamanVcgEngine class is defined.") && ok;
+    ok = assert(typeof ramanVcgEngine === "object" && ramanVcgEngine !== null, "ramanVcgEngine singleton is instantiated.") && ok;
+    ok = assert(VCG_CONFIG.NORMAL_QRS_T_THRESHOLD === 45.0, "Normal QRS-T angle threshold is 45.0°.") && ok;
+    ok = assert(VCG_CONFIG.BORDERLINE_QRS_T_THRESHOLD === 75.0, "Borderline QRS-T angle threshold is 75.0°.") && ok;
+
+    // 2. Test Frank XYZ lead synthesis for normal physiological rhythm
+    const normalLeads = ramanVcgEngine.generateFrankLeads(75, "normal", 240);
+    ok = assert(normalLeads.x.length === 240, "Frank Lead X generated 240 samples.") && ok;
+    ok = assert(normalLeads.y.length === 240, "Frank Lead Y generated 240 samples.") && ok;
+    ok = assert(normalLeads.z.length === 240, "Frank Lead Z generated 240 samples.") && ok;
+
+    // 3. Test spatial metrics on normal baseline
+    const normalMetrics = ramanVcgEngine.calculateSpatialMetrics(normalLeads);
+    ok = assert(normalMetrics.spatialRiskTier === "NORMAL", "Normal rhythm classified as NORMAL spatial risk.") && ok;
+    ok = assert(normalMetrics.spatialQrsTAngleDeg < 45.0, `Normal spatial QRS-T angle is < 45° (Got: ${normalMetrics.spatialQrsTAngleDeg}°).`) && ok;
+    ok = assert(normalMetrics.axisClassification === "Normal Axis", `Frontal axis classified as Normal Axis (Got: ${normalMetrics.frontalAxisDeg}°).`) && ok;
+
+    // 4. Test myocardial ischemia simulation (discordant T-wave)
+    const ischemiaLeads = ramanVcgEngine.generateFrankLeads(80, "ischemia", 240);
+    const ischemiaMetrics = ramanVcgEngine.calculateSpatialMetrics(ischemiaLeads);
+    ok = assert(ischemiaMetrics.spatialRiskTier === "ABNORMAL_ISCHEMIA_RISK", "Ischemia rhythm correctly classified as ABNORMAL_ISCHEMIA_RISK.") && ok;
+    ok = assert(ischemiaMetrics.spatialQrsTAngleDeg > 75.0, `Ischemic spatial QRS-T angle exceeds 75° (Got: ${ischemiaMetrics.spatialQrsTAngleDeg}°).`) && ok;
+    ok = assert(ischemiaMetrics.riskDescription.includes("ischemia"), "Risk description details acute ischemia / arrhythmia hazard.") && ok;
+
+    // 5. Test Left Axis Deviation (LAD) simulation
+    const ladLeads = ramanVcgEngine.generateFrankLeads(70, "lad", 240);
+    const ladMetrics = ramanVcgEngine.calculateSpatialMetrics(ladLeads);
+    ok = assert(ladMetrics.axisClassification === "Left Axis Deviation (LAD)", `LAD rhythm correctly classified (Got: ${ladMetrics.frontalAxisDeg}°).`) && ok;
+    ok = assert(ladMetrics.frontalAxisDeg < -30 && ladMetrics.frontalAxisDeg >= -90, "LAD axis falls between -30° and -90°.") && ok;
+
+    // 6. Test Right Axis Deviation (RAD) simulation
+    const radLeads = ramanVcgEngine.generateFrankLeads(72, "rad", 240);
+    const radMetrics = ramanVcgEngine.calculateSpatialMetrics(radLeads);
+    ok = assert(radMetrics.axisClassification === "Right Axis Deviation (RAD)", `RAD rhythm correctly classified (Got: ${radMetrics.frontalAxisDeg}°).`) && ok;
+    ok = assert(radMetrics.frontalAxisDeg > 90 && radMetrics.frontalAxisDeg <= 180, "RAD axis falls between +90° and +180°.") && ok;
+
+    // 7. Test 3D Camera Projection calculations
+    const proj = ramanVcgEngine.project3D(1.0, 0.5, -0.5, 0.4, 0.8, 150, 100, 80);
+    ok = assert(typeof proj.x === "number" && !isNaN(proj.x), "project3D returns valid X coordinate.") && ok;
+    ok = assert(typeof proj.y === "number" && !isNaN(proj.y), "project3D returns valid Y coordinate.") && ok;
+    ok = assert(typeof proj.z === "number" && !isNaN(proj.z), "project3D returns valid Z depth.") && ok;
+
+    // 8. Test canvas rendering fallback (headless mocked element)
+    const mockCanvas = {
+      width: 300,
+      height: 200,
+      getContext: () => ({
+        fillRect() {},
+        beginPath() {},
+        moveTo() {},
+        lineTo() {},
+        stroke() {},
+        fill() {},
+        arc() {},
+        closePath() {},
+        fillText() {},
+        measureText: () => ({ width: 50 })
+      })
+    };
+    const renderedResult = ramanVcgEngine.renderVcg(mockCanvas, "normal", 72, 45);
+    ok = assert(renderedResult !== null && typeof renderedResult === "object", "renderVcg executes cleanly on canvas.") && ok;
+    ok = assert(renderedResult.peakVoltageMv > 0, "renderVcg returns non-zero peak voltage.") && ok;
+
+    return ok;
+  });
+
   // --- Diagnostic Summary ---
   console.log("\n==================================================================");
   console.log("📊 OFFLINE SLM DIAGNOSTIC SYSTEM TEST SUMMARY");
