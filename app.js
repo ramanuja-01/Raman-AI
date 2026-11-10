@@ -10,6 +10,7 @@ let detectedConditions  = new Set(JSON.parse(localStorage.getItem('ramanai_condi
 let lastCondition       = null;
 let lastConditionTime   = 0;
 let activeConsultation   = null;
+let activeDiagnostic     = null;
 
 // ==========================================
 // ── RAMAN SLM (Simple Language Model) & DB ──
@@ -2911,23 +2912,7 @@ const pctInterval = setInterval(() => {
   }
 }, 38);
 
-window._splashTimer = setTimeout(() => {
-  clearInterval(pctInterval);
-  if (splashPercentEl) splashPercentEl.textContent = "100%";
-}, 4800);
-
-// ── Mobile Sidebar / Controls Toggle ───────────────────────────
-function toggleSidebar() {
-  if (window.innerWidth <= 900) {
-    openMobileControlSheet();
-    return;
-  }
-  const sidebar = document.getElementById('sidebar');
-  const backdrop = document.getElementById('sidebarBackdrop');
-  if (!sidebar || !backdrop) return;
-  sidebar.classList.toggle('open');
-  backdrop.style.display = sidebar.classList.contains('open') ? 'block' : 'none';
-}
+// ── Mobile Controls / Sidebar Cleanup ─────────────────────────
 
 function closeSidebar() {
   const sidebar = document.getElementById('sidebar');
@@ -3514,62 +3499,7 @@ const MEDICAL_KB = {
   }
 };
 
-// ── Keyword Mapping ─────────────────────────────────────
-const KEYWORD_MAP = {
-  "fever|temperature|pyrexia|hot body|chills|jaro|jwar|jwara|deha garam": "fever",
-  "headache|migraine|head pain|head ache|munda": "headache",
-  "cough|cold|mucus|phlegm|bronchitis|kasha|thanda|kahsa": "cough",
-  "chest pain|chest pressure|chest tightness|heart|chhati|chati": "chest pain",
-  "stomach|abdomen|abdomin|tummy|belly|nausea|vomit|gastric|diarrhea|diarrhoea|indigestion|peta|jhada|banti": "stomach pain",
-  "joint|arthritis|knee|bone|swelling in joints|gout|ganthi|gotha|goda": "joint pain",
-  "rash|skin|itch|allergy|hive|eczema|dermatitis|kundei|charma|khasu": "skin rash",
-  "blood pressure|hypertension|bp|dizziness|rakta chapa|munda bula": "high blood pressure",
-  "diabetes|sugar|glucose|madhumeha|bahumutra": "diabetes",
-  "eye|vision|blur|conjunctivitis|red eye|akhi|aakhi": "eye pain",
-  "back pain|spine|lumbar|backache|anta|nadi": "back pain",
-  "uti|urination|pee|urine|micturition|dysuria|barambar parisra|podajala": "uti",
-  "asthma|wheezing|bronchial|breathless|short of breath|dyspnea|kasta heuchi nisasane": "asthma",
-  "vertigo|dizziness|dizzy|spinning|unsteady|tinnitus|ringing ear|munda ghureiba": "vertigo",
-  "anemia|fatigue|weakness|palpitations|lightheadedness|pale skin|pale lips|durbalata": "anemia",
-  "tonsillitis|throat|pharyngitis|swallow|swollen glands|tonsil|gala bitha|gila": "tonsillitis",
-  "wound|cut|nail|rusty|pus|infected|discharge|septic|ksata": "wound",
-  "pneumonia|consolidation|lung opacity|alveolar infiltration|chest congestion|lobar consolidation|pleural effusion": "pneumonia",
-  "tuberculosis|tb|cavitary lesion|lung cavity|hemoptysis|night sweats|coughing blood": "tuberculosis",
-  "cardiomegaly|enlarged heart|heart enlargement|ventricular hypertrophy|cardiac dilation|cardiomyopathy": "cardiomegaly",
-  "multiple sclerosis|demyelinating|uhthoff|optic neuritis|myelin erosion|paraesthesia|ms flare": "multiple sclerosis",
-  "stroke|infarct|cerebral ischemia|hemiplegia|transient ischemic attack|tia|aphasia|face droop": "stroke",
-  "hyperlipidemia|cholesterol|ldl|triglycerides|hypercholesterolemia|lipid panel": "hyperlipidemia",
-  "hypothyroidism|tsh|thyroid|myxedema|goiter|thyroiditis|levothyroxine": "hypothyroidism",
-  "renal failure|kidney failure|creatinine|egfr|kidney function|uremia|ckd": "renal failure",
-  "insomnia|sleep|sleepless|sleepy|restless sleep|nida heuni|nida hauni": "insomnia",
-  "otitis media|ear infection|ear tugging|ear pain|earache|kana bitha|kana kuheuchi|kana pani": "otitis media",
-  "neonatal jaundice|infant jaundice|yellow eyes infant|yellow skin baby|pila deha haladia|icterus": "neonatal jaundice",
-  "febrile seizure|convulsion child|fever shivering child|pila jaro|seizure fever|kampana": "febrile seizure",
-  "hfmd|hand foot mouth|mouth sores child|palm soles rash|goda hata phuta": "hfmd",
-  "dysmenorrhea|period cramps|menstrual cramps|menstrual pain|petare tana bitha|menses bitha": "dysmenorrhea",
-  "pcos|polycystic ovary|irregular periods|hirsutism|facial hair periods|oligomenorrhea": "pcos",
-  "pelvic inflammatory disease|pid|cervical tenderness|foul vaginal discharge|tala peta ghoro bitha": "pelvic inflammatory disease",
-  "gestational hypertension|preeclampsia|high blood pressure pregnancy|garbhabastha uccha raktachapa": "gestational hypertension",
-  "vaginal candidiasis|yeast infection|curd discharge|cottage cheese discharge|vulvar itching|jonio kunda": "vaginal candidiasis",
-  "dengue|dengu|breakbone|platelet|retro-orbital|retroorbital|aankh ke peeche dard": "dengue",
-  "typhoid|enteric fever|step-ladder fever|rose spots|faget|antrabika jaro|aant ka bukhar": "typhoid",
-  "malaria|rigor|shivering fever|cyclical fever|plasmodium|kapkapi|thand lagkar bukhar": "malaria",
-  "gastroenteritis|loose motion|watery diarrhea|dast|vomiting diarrhea|food poisoning|jhada banti": "gastroenteritis",
-  "chikungunya|crippling joint pain|joint swelling fever|chikengunya|haddi jod bukhar": "chikungunya",
-  "scrub typhus|eschar|cigarette burn mark|chigger bite|orientia|kala daaga jaro": "scrub typhus"
-};
 
-
-function detectCondition(text) {
-  const lower = text.toLowerCase();
-  for (const [pattern, condition] of Object.entries(KEYWORD_MAP)) {
-    const keywords = pattern.split("|");
-    if (keywords.some(k => lower.includes(k))) {
-      return condition;
-    }
-  }
-  return null;
-}
 
 function getMedicineSearchQuery(fullName) {
   if (!fullName) return "";
@@ -3673,487 +3603,8 @@ const HINDI_DICT = {
   footerHint: "आप सामान्य लक्षणों के लिए बाईं ओर दिए गए क्विक सिम्पटम्स बटन का उपयोग कर सकते हैं। मैं यहाँ सहायता के लिए हूँ! 🩺"
 };
 
-const FOLLOW_UP_HINDI = {
-  "stomach pain": [
-    "क्या दर्द तेज, हल्का या जलन जैसा महसूस हो रहा है?",
-    "क्या खाने के बाद दर्द बढ़ जाता है या यह लगातार बना रहता है?"
-  ],
-  "chest pain": [
-    "⚠️ क्या दर्द हाथ, गर्दन या जबड़े की तरफ फैल रहा है?",
-    "क्या आपको सांस लेने में तकलीफ या चक्कर आ रहे हैं?"
-  ],
-  "fever": [
-    "आपका अधिकतम तापमान कितना है?",
-    "क्या आपको ठंड लग रही है, पसीना आ रहा है या शरीर में दर्द है?"
-  ],
-  "headache": [
-    "क्या दर्द सिर के एक हिस्से में है या पूरे सिर में?",
-    "क्या आपको तेज रोशनी से परेशानी हो रही है या उल्टी जैसा महसूस हो रहा है?"
-  ],
-  "joint pain": [
-    "क्या जोड़ों में सूजन, लाली या अकड़न है?",
-    "क्या दर्द किसी चोट के बाद शुरू हुआ या धीरे-धीरे बढ़ा?"
-  ],
-  "skin rash": [
-    "क्या त्वचा पर खुजली, जलन या दाने हैं?",
-    "क्या आपने हाल ही में कोई नया साबुन, कॉस्मेटिक या दवा शुरू की है?"
-  ],
-  "cough": [
-    "क्या खांसी सूखी है या बलगम वाली?",
-    "क्या सांस लेते समय कोई घरघराहट या सीटी की आवाज आ रही है?"
-  ],
-  "high blood pressure": [
-    "क्या आपको सिरदर्द, चक्कर आना या धुंधला दिखाई दे रहा है?",
-    "क्या आपके परिवार में उच्च रक्तचाप का इतिहास है?"
-  ],
-  "diabetes": [
-    "क्या आपको अत्यधिक प्यास, बार-बार पेशाब आना या थकान महसूस हो रही है?",
-    "क्या आपका वजन अचानक कम या ज्यादा हुआ है?"
-  ],
-  "eye pain": [
-    "क्या आंख में लाली, पानी आना या धुंधला दिखाई दे रहा है?",
-    "क्या कोई चोट लगी है या आंख में कुछ चला गया है?"
-  ],
-  "back pain": [
-    "क्या दर्द भारी सामान उठाने या झुकने से बढ़ा?",
-    "क्या दर्द पैर के नीचे की ओर जा रहा है या सुन्नता महसूस हो रही है?"
-  ],
-  "renal failure": [
-    "क्या पैरों में सूजन आ रही है या यूरिन की मात्रा कम हो गई है?",
-    "क्या आपको कमजोरी या उल्टी जैसा महसूस हो रहा है?"
-  ],
-  "malaria": [
-    "क्या बुखार ठंड लगकर और कंपकंपी के साथ आ रहा है?",
-    "क्या बुखार एक निश्चित समय अंतराल पर चढ़ता-उतरता है?"
-  ],
-  "wound": [
-    "क्या घाव गहरा है या उससे लगातार खून बह रहा है?",
-    "क्या चोट वाली जगह पर लालिमा, मवाद या बहुत सूजन है?"
-  ],
-  "anemia": [
-    "क्या आपको सांस फूलना, चक्कर आना या अत्यधिक कमजोरी महसूस होती है?",
-    "क्या आपका चेहरा या नाखून पीले दिखाई दे रहे हैं?"
-  ],
-  "multiple sclerosis": [
-    "क्या आपको शरीर में कमजोरी, संतुलन खोना या चलने में दिक्कत है?",
-    "क्या आपको आंखों से धुंधला या दोहरा दिखाई दे रहा है?"
-  ],
-  "otitis media": [
-    "क्या कान में तेज दर्द, खुजली या कोई तरल पदार्थ निकल रहा है?",
-    "क्या आपको सुनने में कोई कठिनाई या कान बजने की आवाज आ रही है?"
-  ],
-  "ear infection": [
-    "क्या कान में तेज दर्द, खुजली या कोई तरल पदार्थ निकल रहा है?",
-    "क्या आपको सुनने में कोई कठिनाई या कान बजने की आवाज आ रही है?"
-  ],
-  "arrhythmia": [
-    "क्या आपको छाती में फड़कन या अनियमित धड़कन महसूस हो रही है?",
-    "क्या अनियमित धड़कन के साथ चक्कर आना या सांस फूलना होता है?"
-  ],
-  "bronchial asthma": [
-    "क्या आपको सांस लेने में बहुत कठिनाई, सीने में जकड़न या घरघराहट होती है?",
-    "क्या धूल, धुएं या ठंडी हवा से आपकी तकलीफ बढ़ जाती है?"
-  ],
-  "neuropathic pain": [
-    "क्या आपको हाथ-पैर में जलन, सुन्नता या सुई जैसी चुभन महसूस होती है?",
-    "क्या स्पर्श करने पर भी अत्यधिक दर्द महसूस होता है?"
-  ],
-  "gerd": [
-    "क्या आपको भोजन के बाद छाती में जलन या खट्टी डकारें आती हैं?",
-    "क्या लेटने पर या रात के समय तकलीफ अधिक बढ़ जाती है?"
-  ]
-};
-
-const FOLLOW_UP_ODIA = {
-  "stomach pain": [
-    "କଷ୍ଟ ତୀକ୍ଷ୍ଣ, ଧୀମା କିମ୍ବା ଜଳାପୋଡା ପରି ଲାଗୁଛି କି?",
-    "ଖାଇବା ପରେ କଷ୍ଟ ବଢୁଛି କିମ୍ବା ଏହା ଲଗାତାର ରହୁଛି?"
-  ],
-  "chest pain": [
-    "⚠️ କଷ୍ଟ ହାତ, ବେକ କିମ୍ବା ପାଟି ଆଡକୁ ବ୍ୟାପୁଛି କି?",
-    "ଆପଣଙ୍କୁ ନିଶ୍ୱାସ ନେବାରେ କଷ୍ଟ କିମ୍ବା ମୁଣ୍ଡ ବୁଲାଉଛି କି?"
-  ],
-  "fever": [
-    "ଆପଣଙ୍କର ସର୍ବାଧିକ ତାପମାତ୍ରା କେତେ ଅଛି?",
-    "ଆପଣଙ୍କୁ ଶୀତ ଲାଗୁଛି, ଝାଳ ବୋହୁଛି କିମ୍ବା ଦେହ ହାତ ବିନ୍ଧା ହେଉଛି କି?"
-  ],
-  "headache": [
-    "କଷ୍ଟ ମୁଣ୍ଡର ଗୋଟିଏ ପାର୍ଶ୍ୱରେ ଅଛି ନା ପୁରା ମୁଣ୍ଡରେ?",
-    "ଆପଣଙ୍କୁ ଆଲୋକରେ କଷ୍ଟ ହେଉଛି କିମ୍ବା ବାନ୍ତି ଲାଗୁଛି କି?"
-  ],
-  "cough": [
-    "ଏହା ଶୁଖିଲା କାଶ ନା ଖଙ୍କାର ବାହାରୁଛି?",
-    "ଏହି କାଶ କେତେ ଦିନ ହେଲାଣି ଅଛି?"
-  ],
-  "joint pain": [
-    "କେଉଁ ନିର୍ଦ୍ଦିଷ୍ଟ ଗଣ୍ଠିରେ କଷ୍ଟ ହେଉଛି?",
-    "ସେଠାରେ ଫୁଲା, ନାଲି ପଡିବା କିମ୍ବା ଗରମ ଲାଗିବା ପରି କିଛି ଅଛି କି?"
-  ],
-  "skin rash": [
-    "ରାସ୍ ରେ କୁଣ୍ଡେଇ ହେଉଛି ନା କଷ୍ଟ ହେଉଛି?",
-    "ଏହା ଶରୀରର ଅନ୍ୟ ଭାଗକୁ ବ୍ୟପିଛି କି?"
-  ],
-  "high blood pressure": [
-    "ଆପଣ ନିକଟରେ ରକ୍ତଚାପ ମାପିଛନ୍ତି କି? ତାହା କେତେ ଥିଲା?",
-    "ଆପଣଙ୍କୁ ମୁଣ୍ଡ ବୁଲାଉଛି, ମୁଣ୍ଡ ବିନ୍ଧା ହେଉଛି ନା ଝାପସା ଦେଖାଯାଉଛି କି?"
-  ],
-  "diabetes": [
-    "ଆପଣଙ୍କର ଶେଷ ସୁଗାର ରିଡିଂ କେତେ ଥିଲା?",
-    "ଆପଣଙ୍କୁ ଅତ୍ୟଧିକ ଶୋଷ କିମ୍ବା ବାରମ୍ବାର ପରିସ୍ରା ଲାଗୁଛି କି?"
-  ],
-  "eye pain": [
-    "ଆଖି ଲାଲ୍ ପଡିବା, ପାଣି ବାହାରିବା କିମ୍ବା ଦୃଷ୍ଟିଶକ୍ତିରେ ପରିବର୍ତ୍ତନ ଅଛି କି?",
-    "ଆଖି ବୁଲାଇବା ବେଳେ କିମ୍ବା ଉଜ୍ଜ୍ୱଳ ଆଲୋକକୁ ଚାହିଁଲେ କଷ୍ଟ ବଢୁଛି କି?"
-  ],
-  "back pain": [
-    "କଷ୍ଟ ଗୋଡ଼ ଆଡକୁ ଖସୁଛି କି?",
-    "ଏହା ହଠାତ୍ ଗତିବିଧି କିମ୍ବା ଭାରୀ ଜିନିଷ ଉଠାଇବା ପରେ ଆରମ୍ଭ ହେଲା କି?"
-  ],
-  "uti": [
-    "ପରିସ୍ରା କରିବା ସମୟରେ ପୋଡାଜଳା କିମ୍ବା କଷ୍ଟ ଅଧିକ ହେଉଛି କି?",
-    "ପରିସ୍ରା ର ରଙ୍ଗ ଲାଲ୍ କିମ୍ବା ଅଧିକ ହଳଦିଆ ଦେଖାଯାଉଛି କି?"
-  ],
-  "asthma": [
-    "ନିଶ୍ୱାସ ନେବା ସମୟରେ ଘୁଁ ଘୁଁ ଶବ୍ଦ ହେଉଛି କି?",
-    "କାଶ ରାତିରେ ଅଧିକ ବଢିଯାଉଛି କି?"
-  ],
-  "vertigo": [
-    "ଆପଣଙ୍କୁ ଚାରିପାଖ ଘୂରିବା ପରି ଲାଗୁଛି କି ଏବଂ ଚାଲିବାରେ କଷ୍ଟ ହେଉଛି କି?",
-    "କାନରେ କିଛି ରୁଁ ରୁଁ ଶବ୍ଦ ଶୁଭୁଛି କି?"
-  ],
-  "anemia": [
-    "ଠିଆ ହେଲେ ଆଖି ଆଗରେ ଅନ୍ଧାର ମାଡିଯାଉଛି କି?",
-    "ସାଧାରଣ କାମ କଲେ ମଧ୍ୟ ହୃଦସ୍ପନ୍ଦନ ବଢିଯାଉଛି ଏବଂ ନିଶ୍ୱาସ ଫୁଲିଯାଉଛି କି?"
-  ],
-  "tonsillitis": [
-    "ଖାଦ୍ୟ କିମ୍ବା ଲାଳ ଗିଳିବା ବେଳେ ବହୁତ କଷ୍ଟ ହେଉଛି କି?",
-    "ଜ୍ୱର ସହିତ ଗଳା କର୍କଶ ଲାଗୁଛି କି?"
-  ],
-  "wound": [
-    "କ୍ଷତ ସ୍ଥାନରୁ କିଛି ପୂଜ ବାହାରୁଛି କିମ୍ବା ଦୁର୍ଗନ୍ଧ ହେଉଛି କି?",
-    "କ୍ଷତ ସ୍ଥାନଟି ନାଲି ପଡି ଫୁଲିଯାଇଛି ଏବଂ ଜ୍ୱର ଆସିଛି କି?"
-  ],
-  "default": [
-    "କେତେ ଦିନ ହେଲାଣି ଆପଣ ଏହା ଅନୁଭବ କରୁଛନ୍ତି?",
-    "ଅନ୍ୟ କୌଣସି ଲକ୍ଷଣ ଅଛି କି?"
-  ]
-};
-
-let activeDiagnostic = null;
-
-const FOLLOW_UP_QUESTIONS = {
-  "stomach pain": [
-    "Is the pain sharp, dull, or burning?",
-    "Does the pain get worse after eating or is it constant?"
-  ],
-  "chest pain": [
-    "⚠️ Is the pain spreading to your arm, neck, or jaw?",
-    "Do you feel any shortness of breath or dizziness?"
-  ],
-  "fever": [
-    "What is your highest recorded temperature?",
-    "Are you experiencing any chills, sweating, or body aches?"
-  ],
-  "headache": [
-    "Is the pain on one side of your head, or all over?",
-    "Are you experiencing any sensitivity to light or nausea?"
-  ],
-  "cough": [
-    "Is it a dry cough, or are you coughing up mucus?",
-    "How long have you had this cough?"
-  ],
-  "joint pain": [
-    "Which specific joints are affected?",
-    "Is there any visible swelling, redness, or warmth in the area?"
-  ],
-  "skin rash": [
-    "Is the rash itchy or painful?",
-    "Has it spread to other parts of your body?"
-  ],
-  "high blood pressure": [
-    "Have you checked your blood pressure recently? What were the readings?",
-    "Are you feeling dizzy, having headaches, or experiencing blurred vision?"
-  ],
-  "diabetes": [
-    "What was your last blood sugar reading?",
-    "Are you feeling unusually thirsty or urinating more frequently?"
-  ],
-  "eye pain": [
-    "Is there any redness, discharge, or changes in your vision?",
-    "Does it hurt more when you move your eyes or look at bright lights?"
-  ],
-  "back pain": [
-    "Is the pain radiating down your legs?",
-    "Did it start after a sudden movement or lifting something heavy?"
-  ],
-  "uti": [
-    "Do you experience severe burning or pain during urination?",
-    "Is your urine cloudy, dark, or has a strong odor?"
-  ],
-  "asthma": [
-    "Are you experiencing any audible wheezing or chest tightness when breathing?",
-    "Does your cough get significantly worse at night or in cold air?"
-  ],
-  "vertigo": [
-    "Does the room feel like it is spinning, and do you feel off-balance when walking?",
-    "Are you experiencing any ringing (tinnitus) or fullness in your ears?"
-  ],
-  "anemia": [
-    "Do you feel dizzy or lightheaded when standing up quickly?",
-    "Do you experience rapid heartbeat or shortness of breath with mild exertion?"
-  ],
-  "tonsillitis": [
-    "Is it extremely painful to swallow food or liquids?",
-    "Do you have a fever accompanied by swollen throat glands?"
-  ],
-  "wound": [
-    "Is there any pus or foul-smelling discharge coming from the wound?",
-    "Is the area around the wound red, swollen, warm, or do you have a fever?"
-  ],
-  "default": [
-    "How long have you been experiencing this?",
-    "Are there any other symptoms you've noticed?"
-  ]
-};
-
-// ── Format AI Response ──────────────────────────────────
-function buildResponse(text, profile) {
-  let condition = detectCondition(text);
-
-  // Maintain state if we are currently diagnosing and user didn't switch topic
-  if (activeDiagnostic) {
-    if (!condition || condition === activeDiagnostic.condition) {
-      condition = activeDiagnostic.condition;
-    } else {
-      activeDiagnostic = { condition: condition, step: 0 };
-    }
-  } else if (condition) {
-    activeDiagnostic = { condition: condition, step: 0 };
-  }
-  updateContextIndicator();
-
-  const profileInfo = buildProfileContext(profile);
-
-  if (!condition) {
-    const isOr = window.currentLang === 'or';
-    const txt = text.toLowerCase();
-    
-    // Check for conversational / emotional keywords
-    const isLonely = /lonely|sad|depress|alone|cry|hopeless|anxious|stress|unhappy|down|cheer|chear|bore|scare|fear|panic|worry/i.test(txt);
-    const isHello = /^hi$|^hello$|^hey$|^greetings$|namaskar/i.test(txt);
-    const isThanks = /thank|appreciate|grateful/i.test(txt);
-    const isWho = /who are you|what are you|your name/i.test(txt);
-    const isChat = /how are you|talk to me|say something|can we talk|friend|help me/i.test(txt);
-    
-    if (isLonely) {
-      activeDiagnostic = null; // reset diagnostic state
-      const response = isOr 
-        ? "ମୁଁ ବୁଝିପାରୁଛି ଯେ ଆପଣ ଏକୁଟିଆ କିମ୍ବା ଦୁଃଖିତ ଅନୁଭବ କରୁଛନ୍ତି। ଦୟାକରି ମନେରଖନ୍ତୁ ଯେ ଆପଣ ଏକୁଟିଆ ନୁହଁନ୍ତି। ମୁଁ ଏକ ମେଡିକାଲ୍ ସହକାରୀ ଏବଂ ଆପଣଙ୍କର ମାନସିକ ସ୍ୱାସ୍ଥ୍ୟ ମଧ୍ୟ ଅତ୍ୟନ୍ତ ଗୁରୁତ୍ୱପୂର୍ଣ୍ଣ। ଯଦି ଆପଣ କୌଣସି ଶାରୀରିକ ଅସୁବିଧା ଅନୁଭବ କରୁଛନ୍ତି, ତେବେ ମୋତେ ଜଣାନ୍ତୁ। କୌଣସି ଆବଶ୍ୟକତା ଥିଲେ ଆପଣଙ୍କ ପ୍ରିୟଜନ କିମ୍ବା ବିଶେଷଜ୍ଞଙ୍କ ସହ କଥା ହୁଅନ୍ତୁ।"
-        : "I hear you, and I'm really sorry you're feeling this way. Please remember that you are not alone, and it is completely okay to feel overwhelmed or down sometimes. To cheer yourself up, you might try listening to your favorite music, taking a short walk outside, or talking to someone you trust.<br><br>While I am an AI designed to analyze physical symptoms, your mental and emotional well-being is incredibly important. Please consider reaching out to a friend, family member, or a professional. If you are experiencing any physical symptoms as well, feel free to share them with me.";
-      return `<p>${profileInfo}${response}</p>`;
-    }
-
-    if (isChat) {
-      activeDiagnostic = null;
-      const response = isOr
-        ? "ମୁଁ ଏଠାରେ ଅଛି! ଯଦିଓ ମୁଁ ଏକ କମ୍ପ୍ୟୁଟର ପ୍ରୋଗ୍ରାମ ଏବଂ କେବଳ ସ୍ୱାସ୍ଥ୍ୟ ସମ୍ବନ୍ଧୀୟ ପ୍ରଶ୍ନର ଉତ୍ତର ଦେଇପାରେ, ମୁଁ ଆପଣଙ୍କ ସାହାଯ୍ୟ କରିବାକୁ ପ୍ରସ୍ତୁତ। ଆପଣଙ୍କୁ ଶାରୀରିକ ଭାବରେ କିପରି ଲାଗୁଛି?"
-        : "I'm here for you! Even though I'm an AI and my main job is to help with medical symptoms, I'm always happy to chat. How are you feeling physically today? Any aches or pains I can help you figure out?";
-      return `<p>${profileInfo}${response}</p>`;
-    }
-    
-    if (isHello) {
-      activeDiagnostic = null;
-      const response = isOr 
-        ? `ନମସ୍କାର${profile && profile.name ? ' ' + profile.name.split(' ')[0] : ''}! ମୁଁ ରାମନ୍ ଏଆଇ (ପରୀକ୍ଷାମୂଳକ ସଂସ୍କରଣ ୧୭୦)। ଆଜି ମୁଁ ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟରେ କିପରି ସାହାଯ୍ୟ କରିପାରିବି?`
-        : `Hello${profile && profile.name ? ' ' + profile.name.split(' ')[0] : ''}! I am RAMAN AI (Experiment No. 170). How can I help you with your health today?`;
-      return `<p>${profileInfo}${response}</p>`;
-    }
-
-    if (isThanks) {
-      activeDiagnostic = null;
-      const response = isOr
-        ? `ଆପଣଙ୍କୁ ସ୍ୱାଗତ! ଆପଣଙ୍କ ସାହାଯ୍ୟ କରିବା ମୋର କର୍ତ୍ତବ୍ୟ। ଅନ୍ୟ କୌଣସି ସ୍ୱାସ୍ଥ୍ୟଗତ ସମସ୍ୟା ଥିଲେ ଜଣାନ୍ତୁ।`
-        : `You're very welcome! I'm here to help. If you have any other symptoms or medical questions, just let me know.`;
-      return `<p>${profileInfo}${response}</p>`;
-    }
-
-    if (isWho) {
-      activeDiagnostic = null;
-      const response = isOr
-        ? `ମୁଁ ରାମନ୍ ଏଆଇ, ଏକ ଉନ୍ନତ କୃତ୍ରିମ ବୁଦ୍ଧିମତା (AI) ଯାହା ଆପଣଙ୍କ ସ୍ୱାସ୍ଥ୍ୟ ଏବଂ ଲକ୍ଷଣ ବିଷୟରେ ପରାମର୍ଶ ଦେବା ପାଇଁ ଡିଜାଇନ୍ କରାଯାଇଛି। ଆପଣଙ୍କର କୌଣସି ଲକ୍ଷଣ ଅଛି କି?`
-        : `I am RAMAN AI (Experiment No. 170), an advanced medical intelligence assistant designed to help analyze your symptoms and provide preliminary health guidance. How are you feeling today?`;
-      return `<p>${profileInfo}${response}</p>`;
-    }
-
-    const isQuestion = /\?|^(what|how|why|when|can you|could you|please tell|explain|describe|tell me)\b/i.test(txt);
-    
-    // Check 5-minute contextual memory
-    if (lastCondition && (Date.now() - lastConditionTime < 5 * 60 * 1000)) {
-      const isDietReq = /diet|food|eat|drink|nutrition/i.test(txt);
-      const isMedReq = /medicine|rx|pill|tablet|drug|dose|dosage/i.test(txt);
-      const isPrecautionReq = /precaution|warning|safe|danger|avoid|care/i.test(txt);
-      const isSpecialistReq = /doctor|specialist|hospital|who to see/i.test(txt);
-
-      const kb = MEDICAL_KB[lastCondition];
-      if (kb) {
-        if (isDietReq) return `<p>${profileInfo}</p><div class="med-section info"><div class="med-section-title">${isOr ? ODIA_DICT.diet : "🥗 DIETARY RECOMMENDATIONS FOR " + lastCondition.toUpperCase()}</div><ul>${kb.diet.map(d => `<li>${d}</li>`).join("")}</ul></div>`;
-        if (isMedReq) {
-          let medsHtml = kb.medications.map(m => `<p><strong>${m.name}</strong><br><small>📋 ${isOr ? ODIA_DICT.dose : "Dose:"} ${m.dose}</small><br><small>ℹ️ ${isOr ? ODIA_DICT.note : "Note:"} ${m.note}</small></p>`).join("");
-          return `<p>${profileInfo}</p><div class="med-section"><div class="med-section-title">${isOr ? ODIA_DICT.suggestedMed : "💊 SUGGESTED MEDICATIONS FOR " + lastCondition.toUpperCase()}</div>${medsHtml}</div>`;
-        }
-        if (isPrecautionReq) return `<p>${profileInfo}</p><div class="med-section warning"><div class="med-section-title">${isOr ? ODIA_DICT.precautions : "⚠️ PRECAUTIONS FOR " + lastCondition.toUpperCase()}</div><ul>${kb.precautions.map(p => `<li>${p}</li>`).join("")}</ul></div>`;
-        if (isSpecialistReq) return `<p>${profileInfo}</p><div class="med-section info"><p>🏥 <strong>${isOr ? ODIA_DICT.specialist : "Recommended Specialist:"}</strong> ${kb.specialist}</p></div>`;
-        
-        // If it's a general question but in context, give a friendly contextual prompt
-        if (isQuestion) {
-          const resp = isOr 
-            ? `ମୁଁ ବର୍ତ୍ତମାନ ଆପଣଙ୍କର '${lastCondition}' ବିଷୟରେ ମନେ ରଖିଛି। ଆପଣ ଖାଦ୍ୟ, ଔଷଧ କିମ୍ବା ସତର୍କତା ବିଷୟରେ ପଚାରି ପାରିବେ।`
-            : `I am still keeping your '${lastCondition}' in mind. You can ask me specific questions about diet, medications, or precautions related to it.`;
-          return `<p>${profileInfo}${resp}</p>`;
-        }
-      }
-    }
-
-    if (isQuestion) {
-      activeDiagnostic = null;
-      const response = isOr
-        ? "ମୁଁ ଏକ ବିଶେଷଜ୍ଞ ଏଆଇ ଯାହା କେବଳ ଲକ୍ଷଣ ଏବଂ ଶାରୀରିକ ଅସୁବିଧା ବିଷୟରେ ପରାମର୍ଶ ଦେବା ପାଇଁ ଡିଜାଇନ୍ କରାଯାଇଛି। ମୁଁ ସାଧାରଣ ପ୍ରଶ୍ନ କିମ୍ବା ଔଷଧ ବିଷୟରେ ସୂଚନା ଦେଇପାରିବି ନାହିଁ। <br><br>ଯଦି ଆପଣ କୌଣସି ରୋଗର ଲକ୍ଷଣ ଅନୁଭବ କରୁଛନ୍ତି (ଉଦାହରଣ ସ୍ୱରୂପ: 'ମୋର ମୁଣ୍ଡ ବିନ୍ଧୁଛି'), ଦୟାକରି ମୋତେ ଜଣାନ୍ତୁ।"
-        : "I am a specialized medical AI designed specifically to analyze physical symptoms and provide preliminary triage advice. Because I operate entirely offline for your privacy, I don't have the ability to answer general medical questions, look up specific medications, or explain health rules.<br><br>If you are experiencing any physical symptoms (e.g., 'I have a headache' or 'My stomach hurts'), please describe them to me so I can assist you!";
-      return `<p>${profileInfo}${response}</p>`;
-    }
-
-    return buildGenericResponse(text, profile, profileInfo);
-  }
-
-  // Track condition for proactive guidance
-  if (typeof saveDetectedCondition === 'function') saveDetectedCondition(condition);
-
-  const questions = (window.currentLang === 'or' ? FOLLOW_UP_ODIA[condition] : (window.currentLang === 'hi' ? FOLLOW_UP_HINDI[condition] : FOLLOW_UP_QUESTIONS[condition])) || 
-                    (window.currentLang === 'or' ? FOLLOW_UP_ODIA.default : (window.currentLang === 'hi' ? FOLLOW_UP_HINDI.default : FOLLOW_UP_QUESTIONS.default));
-
-  // Ask follow up questions if we haven't asked them all
-  if (activeDiagnostic && activeDiagnostic.step < questions.length) {
-    const q = questions[activeDiagnostic.step];
-    activeDiagnostic.step++;
-
-    let greetingHtml = "";
-    if (activeDiagnostic.step === 1) {
-      let base = "";
-      if (window.currentLang === 'or' || window.currentLang === 'hi') {
-        const dict = window.currentLang === 'or' ? ODIA_DICT : HINDI_DICT;
-        base = dict.greetings[Math.floor(Math.random() * dict.greetings.length)];
-        if (profile && profile.name) greetingHtml = `<p>${dict.hi} ${profile.name.split(' ')[0]}, ${base}</p>`;
-        else greetingHtml = `<p>${base}</p>`;
-      } else {
-        const greetings = [
-          "I understand you're feeling unwell.",
-          "Let's see what might be going on.",
-          "I'm here to help you get to the bottom of this."
-        ];
-        base = greetings[Math.floor(Math.random() * greetings.length)];
-        if (profile && profile.name) greetingHtml = `<p>Hi ${profile.name.split(' ')[0]}, ${base.toLowerCase()}</p>`;
-        else greetingHtml = `<p>${base}</p>`;
-      }
-    }
-    
-    const docQHeader = window.currentLang === 'or' ? ODIA_DICT.docQuestion : (window.currentLang === 'hi' ? HINDI_DICT.docQuestion : "Doctor's Question:");
-    return `${profileInfo}${greetingHtml}<div class="med-section info"><p><strong>${docQHeader}</strong></p><p>${q}</p></div>`;
-  }
-
-  // Finished asking questions, provide final assessment
-  activeDiagnostic = null; // Reset state
-  lastCondition = condition;
-  lastConditionTime = Date.now();
-  updateContextIndicator();
-  
-  const kb = MEDICAL_KB[condition];
-  const isEmergency = condition === "chest pain";
-
-  const isOr = window.currentLang === 'or';
-  const isHi = window.currentLang === 'hi';
-  const dict = isOr ? ODIA_DICT : (isHi ? HINDI_DICT : null);
-  const introTxt = dict ? dict.assessmentIntro : "Thank you for the details. Based on everything you've shared, here is my comprehensive assessment:";
-
-  let html = `<p>${profileInfo}${introTxt}</p>`;
-
-  const CLINICAL_SYMPTOMS = new Set([
-    "fever", "headache", "cough", "chest pain", "stomach pain", 
-    "joint pain", "skin rash", "eye pain", "back pain", 
-    "vertigo", "wound"
-  ]);
-  if (CLINICAL_SYMPTOMS.has(condition)) {
-    html += `<div class="med-section">
-      <div class="med-section-title">${dict ? dict.possibleCond : "🔬 POSSIBLE CONDITIONS"}</div>
-      <ul>${kb.conditions.map(c => `<li>${c}</li>`).join("")}</ul>
-    </div>`;
-  }
-
-  // Evaluate multi-drug & food-drug interactions (DDI) with current profile medications
-  const multiTurnDrugInteractions = (typeof checkDrugInteractions === 'function')
-    ? checkDrugInteractions(kb.medications || [], profile.currentMeds || "", profile)
-    : [];
-  if (multiTurnDrugInteractions.length > 0) {
-    html += `
-      <div class="med-section warning" style="border-left:4px solid var(--red-warn); background:rgba(255, 42, 95, 0.08); border:1px solid rgba(255, 42, 95, 0.25); padding:10px; border-radius:6px; margin-bottom:12px; font-size:0.8rem;">
-        <div style="color:var(--red-warn); font-family:var(--font-head); font-weight:bold; font-size:0.82rem; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-          <span>⚡</span> CLINICAL DRUG-DRUG & METABOLIC INTERACTION ALERT (${multiTurnDrugInteractions.length})
-        </div>
-        ${multiTurnDrugInteractions.map(it => `
-          <div style="margin-bottom:6px; font-size:0.75rem; line-height:1.4;">
-            <span style="font-weight:bold; color:${it.severity === 'CRITICAL_AVOID' ? 'var(--red-warn)' : '#ffb400'};">[${it.severity}]:</span>
-            <strong>${it.drugs.join(' + ')}</strong> — ${it.mechanism}
-            <div style="color:var(--text-muted); font-size:0.72rem; margin-top:2px;">💡 Recommended Clinical Action: ${it.action}</div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
-
-  html += `<div class="med-section ${isEmergency ? 'warning' : ''}">
-    <div class="med-section-title">${dict ? dict.suggestedMed : "💊 SUGGESTED MEDICATIONS"}</div>`;
-  kb.medications.forEach(m => {
-    html += `<p><strong>${m.name}</strong><br>
-      <small>📋 ${dict ? dict.dose : "Dose:"} ${m.dose}</small><br>
-      <small>ℹ️ ${dict ? dict.note : "Note:"} ${m.note}</small></p>`;
-  });
-  html += `</div>`;
-
-  html += `<div class="med-section ${isEmergency ? 'warning' : 'info'}">
-    <div class="med-section-title">${dict ? dict.precautions : "⚠️ PRECAUTIONS & WARNINGS"}</div>
-    <ul>${kb.precautions.map(p => `<li>${p}</li>`).join("")}</ul>
-  </div>`;
-
-  html += `<div class="med-section info">
-    <div class="med-section-title">${dict ? dict.diet : "🥗 DIETARY RECOMMENDATIONS"}</div>
-    <ul>${kb.diet.map(d => `<li>${d}</li>`).join("")}</ul>
-  </div>`;
-
-  html += `<p>🏥 <strong>${dict ? dict.specialist : "Recommended Specialist:"}</strong> ${kb.specialist}</p>`;
-
-  html += `<div class="med-section warning">
-    <div class="med-section-title">${dict ? dict.disclaimerTitle : "🔴 IMPORTANT DISCLAIMER"}</div>
-    <p>${dict ? dict.disclaimerBody : "This analysis is for informational purposes only. Please consult a qualified medical professional before starting any treatment. Self-medication can be dangerous."}</p>
-  </div>`;
-
-  // Auto-generate and append Health ID
-  if (!currentHealthId) saveHealthSession();
-  html += `
-    <div class="hid-card" style="margin-top: 20px;">
-      <div class="hid-card-header">🎉 YOUR HEALTH ID IS READY</div>
-      <div class="hid-card-body">
-        <div class="hid-code">${currentHealthId}</div>
-        <p class="hid-card-desc">Your consultation is complete. Save this ID. Next visit, enter it in the Session Manager to instantly restore your profile and full consultation history.</p>
-        <div class="hid-card-actions">
-          <button class="hid-action-btn" onclick="navigator.clipboard.writeText('${currentHealthId}').then(()=>{this.textContent='✅ Copied!';setTimeout(()=>{this.textContent='📋 Copy ID'},1500)}).catch(()=>prompt('Copy your Health ID:','${currentHealthId}'))">📋 Copy ID</button>
-        </div>
-      </div>
-    </div>`;
-
-  return html;
-}
-
 function buildProfileContext(profile) {
-  if (!profile.name && !profile.age) return "";
+  if (!profile || (!profile.name && !profile.age)) return "";
   let ctx = `<strong>Patient:</strong> `;
   if (profile.name) ctx += profile.name;
   if (profile.age) ctx += `, ${profile.age} years`;
@@ -4171,45 +3622,6 @@ function buildProfileContext(profile) {
   }
   
   return `<p>${ctx}</p>`;
-}
-
-function buildGenericResponse(text, profile, profileCtx) {
-  const isOr = window.currentLang === 'or';
-  const txtLower = text.toLowerCase();
-  
-  let base = "";
-  if (isOr) {
-    base = ODIA_DICT.genericBase[Math.floor(Math.random() * ODIA_DICT.genericBase.length)];
-    if (profile && profile.name) base = `${ODIA_DICT.thanks}, ${profile.name.split(' ')[0]}। ${base}`;
-  } else {
-    const greetings = [
-      "I'm sorry to hear you're not feeling well.",
-      "I want to make sure I understand correctly.",
-      "Let's figure this out together.",
-      "I'm here to help you get to the bottom of this."
-    ];
-    base = greetings[Math.floor(Math.random() * greetings.length)];
-    if (profile && profile.name && !base.includes("sorry")) {
-      base = `Thanks for reaching out, ${profile.name.split(' ')[0]}. ${base}`;
-    } else if (profile && profile.name) {
-      base = `I'm sorry to hear you're not feeling well, ${profile.name.split(' ')[0]}.`;
-    }
-  }
-
-  // Generate a conversational, immersive follow-up instead of a robotic list
-  let followUp = "";
-  if (txtLower.includes("sick") || txtLower.includes("unwell") || txtLower.includes("bad")) {
-      followUp = isOr ? "ଆପଣଙ୍କୁ ଠିକ୍ କ'ଣ ଅସୁବିଧା ହେଉଛି? ଦୟାକରି ଟିକେ ସବିଶେଷ ଜଣାନ୍ତୁ (ଯେପରିକି ଜ୍ୱର, କାଶ, ବା କୌଣସି ଯନ୍ତ୍ରଣା)।" : "Could you tell me a little more about what you're experiencing? For example, do you have any pain, a fever, or just feeling generally weak?";
-  } else if (txtLower.includes("pain") || txtLower.includes("hurt") || txtLower.includes("ache")) {
-      followUp = isOr ? "କେଉଁଠାରେ କଷ୍ଟ ହେଉଛି ଏବଂ ଏହା କିପରି ଲାଗୁଛି (ତୀକ୍ଷ୍ଣ ବା ଧୀମା) ମୋତେ କହିପାରିବେ କି?" : "Where exactly is the pain located, and could you describe what it feels like (e.g., sharp, dull, throbbing)?";
-  } else {
-      followUp = isOr ? ODIA_DICT.describeMore : "Could you please describe your symptoms in a bit more detail? It helps if you mention where it hurts, how long it's been happening, and if you have any other symptoms like a fever.";
-  }
-
-  const footerHint = isOr ? ODIA_DICT.footerHint : "You can also use the <strong>Quick Symptoms</strong> buttons on the left panel for common conditions. I'm here to assist you! 🩺";
-
-  return `<p>${profileCtx}${base} ${followUp}</p>
-  <p><small style="color: var(--text-muted);">${footerHint}</small></p>`;
 }
 
 function updateContextIndicator() {
@@ -6617,7 +6029,7 @@ function saveDetectedCondition(condition) {
   localStorage.setItem('ramanai_conditions', JSON.stringify([...detectedConditions]));
 }
 
-// (saveDetectedCondition is called directly inside buildResponse above)
+// (saveDetectedCondition is called directly inside generateSlmResponse)
 
 // ═══════════════════════════════════════════════════════
 // ── PROACTIVE HEALTH GUIDANCE ENGINE ───────────────────
@@ -7090,10 +6502,12 @@ function updateViewAndStorage(id, fileName, newHtml, container) {
   }
 }
 
-// ── Store the splash timer so it can be cancelled ─────
-// Overwrites the dummy timer at top of file; fires after 4.8s splash animation
+// ── Splash Transition to Main Application ─────────────
 window.transitionToApp = function(sessionRestored = false) {
   clearTimeout(window._splashTimer);
+  if (typeof pctInterval !== 'undefined') clearInterval(pctInterval);
+  const splashPercentEl = document.getElementById('splashPercent');
+  if (splashPercentEl) splashPercentEl.textContent = "100%";
   
   const splash = document.getElementById('splashScreen');
   if (splash) {
@@ -8405,6 +7819,13 @@ function transitionToConsultStep2() {
   const body = document.getElementById("wizardBubbleBody");
   if (!body) return;
   
+  const prof = (typeof getProfile === 'function') ? getProfile() : {};
+  const profVitals = prof.vitals || {};
+  const bpVal = profVitals.bp || (document.getElementById('patientBP') ? document.getElementById('patientBP').value : '');
+  const hrVal = profVitals.hr || (document.getElementById('patientHR') ? document.getElementById('patientHR').value : '');
+  const tempVal = profVitals.temp || (document.getElementById('patientTemp') ? document.getElementById('patientTemp').value : '');
+  const spo2Val = profVitals.spo2 || (document.getElementById('patientSpO2') ? document.getElementById('patientSpO2').value : '');
+
   body.innerHTML = `
     <div class="med-section info consultation-card" style="border:none; background:transparent; padding:0;">
       <div class="med-section-title" style="display:flex; justify-content:space-between; align-items:center;">
@@ -8419,19 +7840,19 @@ function transitionToConsultStep2() {
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:15px;">
         <div>
           <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:3px;">Blood Pressure (mmHg)</label>
-          <input type="text" id="consultVitalsBP" placeholder="e.g. 120/80" value="122/82" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
+          <input type="text" id="consultVitalsBP" placeholder="e.g. 120/80" value="${escapeHtml(bpVal)}" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
         </div>
         <div>
           <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:3px;">Heart Rate (bpm)</label>
-          <input type="number" id="consultVitalsHR" placeholder="e.g. 72" value="76" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
+          <input type="number" id="consultVitalsHR" placeholder="e.g. 72" value="${escapeHtml(hrVal)}" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
         </div>
         <div>
           <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:3px;">Temperature (°F)</label>
-          <input type="number" step="0.1" id="consultVitalsTemp" placeholder="e.g. 98.6" value="98.8" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
+          <input type="number" step="0.1" id="consultVitalsTemp" placeholder="e.g. 98.6" value="${escapeHtml(tempVal)}" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
         </div>
         <div>
           <label style="display:block; font-size:0.75rem; color:var(--text-muted); margin-bottom:3px;">SpO2 Oxygen (%)</label>
-          <input type="number" id="consultVitalsSpO2" placeholder="e.g. 98" value="98" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
+          <input type="number" id="consultVitalsSpO2" placeholder="e.g. 98" value="${escapeHtml(spo2Val)}" style="background:#050d1a; border:1px solid var(--border); color:var(--text-main); width:100%; padding:6px 8px; border-radius:4px; font-family:var(--font-ui); outline:none;">
         </div>
       </div>
       
@@ -12243,7 +11664,7 @@ window.runGpuTriageSimulation = async function(symptomWeights, age = 30, heatInd
     const adapter = await navigator.gpu.requestAdapter();
     if (!adapter) return window.runCpuFallbackSimulation(symptomWeights, age, heatIndex);
     const device = await adapter.requestDevice();
-    const deviceName = adapter.name || "Mocked Universal Graphics Accelerator (NVIDIA/AMD/Intel)";
+    const deviceName = adapter.name || "Universal Graphics Accelerator (GPU)";
     
     const inputData = new Float32Array(32);
     for (let i = 0; i < Math.min(symptomWeights.length, 3); i++) {

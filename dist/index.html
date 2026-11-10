@@ -1,0 +1,1890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#00e5ff" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RAMAN AI" />
+  <title>RAMAN AI – Experiment No. 170 | Medical Intelligence System</title>
+  <meta name="description" content="RAMAN AI Experiment No. 170 – Advanced AI medical assistant with symptom analysis, image recognition, and voice input." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Inter:wght@300;400;500;600&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css?v=2.1" />
+  <link rel="stylesheet" href="session_mgr.css?v=2.1" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="apple-touch-icon" href="favicon.svg" />
+</head>
+<body>
+
+  <!-- Animated Background Particles -->
+  <div class="bg-particles" id="bgParticles"></div>
+
+  <!-- DNA Helix Side Decoration -->
+  <div class="dna-left"></div>
+  <div class="dna-right"></div>
+
+  <!-- Scan Line Effect -->
+  <div class="scan-line"></div>
+
+  <!-- ===== SPLASH SCREEN ===== -->
+  <div class="splash-screen" id="splashScreen">
+    <div class="splash-cyber-grid"></div>
+    <div class="splash-radar-sweep"></div>
+    
+    <div class="splash-content">
+      <!-- High-tech circular diagnostic HUD ring -->
+      <div class="splash-hud-container">
+        <div class="splash-hud-ring pulse-slow"></div>
+        <div class="splash-hud-ring pulse-fast"></div>
+        <div class="splash-hud-scanner"></div>
+        <div class="splash-cross-glowing">✚</div>
+      </div>
+      
+      <div class="splash-brand">
+        <div class="splash-title-glowing">RAMAN AI</div>
+        <div class="splash-subtitle-cyber">SYSTEM DIAGNOSTICS & INFRASTRUCTURE</div>
+        <div class="splash-tagline-glow">EXPERIMENT № 170 · HYPER-LOCAL INFRASTRUCTURE</div>
+      </div>
+
+      <!-- High-tech heartbeat/ECG visualizer -->
+      <div class="splash-ecg-wrap">
+        <svg class="splash-ecg-svg" viewBox="0 0 300 40" width="300" height="40">
+          <path class="splash-ecg-path" d="M 0,20 L 50,20 L 60,10 L 70,30 L 80,20 L 120,20 L 130,5 L 140,35 L 150,20 L 200,20 L 210,15 L 220,25 L 230,20 L 300,20" fill="none" stroke="var(--cyan)" stroke-width="2" />
+        </svg>
+      </div>
+
+      <!-- Segmented glowing loading bar -->
+      <div class="splash-loading-container">
+        <div class="splash-loading-bar-outer">
+          <div class="splash-loading-bar-inner" id="splashBar"></div>
+          <div class="splash-loading-spark"></div>
+        </div>
+        <div class="splash-loading-stats">
+          <span class="splash-loading-percent" id="splashPercent">00%</span>
+          <span class="splash-status-text" id="splashStatus">Initializing neural pathways...</span>
+        </div>
+      </div>
+
+      <!-- Capabilities listing with visual cyber-badges -->
+      <div class="splash-badges-container">
+        <div class="splash-badge-item">
+          <span class="badge-icon">🎙</span>
+          <span class="badge-label">VOICE INFRASTRUCTURE</span>
+        </div>
+        <div class="splash-badge-item">
+          <span class="badge-icon">📷</span>
+          <span class="badge-label">VISION INTELLIGENCE</span>
+        </div>
+        <div class="splash-badge-item">
+          <span class="badge-icon">🎥</span>
+          <span class="badge-label">MOTION TELEMETRY</span>
+        </div>
+        <div class="splash-badge-item">
+          <span class="badge-icon">🧠</span>
+          <span class="badge-label">BAYES NLP CLASSIFIER</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MEDIA PREVIEW MODAL ===== -->
+  <div class="media-modal" id="mediaModal" style="display:none;">
+    <div class="media-modal-backdrop" id="mediaModalBackdrop"></div>
+    <div class="media-modal-content">
+      <button class="modal-close" id="modalClose">✕</button>
+      <div class="modal-media-wrap" id="modalMediaWrap"></div>
+      <div class="modal-analysis" id="modalAnalysis"></div>
+      <div class="doc-type-row">
+        <label for="docTypeSelect">Document Type</label>
+        <select id="docTypeSelect">
+          <option value="auto">🔍 Auto-detect</option>
+          <option value="lab">🧪 Lab Report / Blood Test</option>
+          <option value="prescription">💊 Prescription / Rx</option>
+          <option value="xray">🫁 X-Ray</option>
+          <option value="mri">🧠 MRI / CT Scan</option>
+          <option value="ecg">❤️ ECG / Cardiology</option>
+          <option value="discharge">📋 Discharge Summary</option>
+          <option value="photo">📷 Symptom Photo</option>
+        </select>
+      </div>
+      <button class="btn-analyze" id="btnAnalyze">
+        <span>🔬</span> ANALYZE WITH RAMAN AI
+      </button>
+    </div>
+  </div>
+
+  <!-- ===== CAMERA MODAL ===== -->
+  <div class="camera-modal" id="cameraModal" style="display:none;">
+    <div class="media-modal-backdrop" id="cameraBackdrop"></div>
+    <div class="camera-modal-content">
+      <button class="modal-close" id="cameraClose">✕</button>
+      <h3 class="camera-title">📷 MEDICAL VISION CAPTURE</h3>
+      <div class="camera-wrap">
+        <video id="cameraStream" autoplay playsinline muted></video>
+        <div class="camera-overlay-frame"></div>
+        <div class="camera-scan-line" id="cameraScanLine"></div>
+      </div>
+      <div class="camera-controls">
+        <button class="btn-capture" id="btnCapture">📸 Capture</button>
+        <button class="btn-record" id="btnRecord">🔴 Record Video</button>
+        <button class="btn-switch-cam" id="btnSwitchCam">🔄 Switch</button>
+      </div>
+      <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
+        <select id="visionDiagnosticMode" style="flex: 1; background: #070a14; border: 1px solid var(--cyan); color: var(--cyan); padding: 6px; border-radius: 4px; font-size: 0.72rem; outline: none;">
+          <option value="OCULAR">👁️ Ocular Hyperemia / Redness</option>
+          <option value="SCLERAL_ICTERUS">🟡 Scleral Icterus / Jaundice (Bilirubin)</option>
+          <option value="DERMATOLOGY">🔬 Dermatological Lesion (ABCD)</option>
+          <option value="TEST_STRIP">🧪 Standard Test Strip (C/T)</option>
+          <option value="TROPICAL_DENGUE">🦟 Dengue Rapid Duo (NS1/IgM/IgG)</option>
+          <option value="TROPICAL_MALARIA">🩸 Malaria Antigen Combo (Pf/Pan)</option>
+        </select>
+        <button type="button" id="btnRunVisionAnalysis" onclick="executeVisionDiagnostics()" style="background: rgba(0,229,255,0.2); border: 1px solid var(--cyan); color: var(--cyan); padding: 6px 12px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; cursor: pointer;">🔍 Analyze</button>
+      </div>
+      <div id="visionResultCard" style="display: none; margin-top: 10px; background: rgba(5,13,26,0.9); border: 1px solid var(--primary); border-radius: 6px; padding: 10px; font-size: 0.75rem; text-align: left;">
+        <div id="visionResultTitle" style="font-weight: bold; color: var(--primary); font-family: var(--font-head); margin-bottom: 4px;"></div>
+        <div id="visionResultBody" style="color: var(--text-main); font-size: 0.72rem; line-height: 1.4;"></div>
+        <div style="margin-top: 8px; display: flex; gap: 6px;">
+          <button type="button" id="btnTransferVisionToConsult" onclick="window.transferVisionToConsultation()" style="flex: 1; background: var(--teal); border: none; color: #0f172a; padding: 6px 10px; border-radius: 4px; font-size: 0.72rem; font-weight: bold; cursor: pointer; font-family: var(--font-head); display: flex; align-items: center; justify-content: center; gap: 4px; box-shadow: 0 0 10px rgba(0,255,179,0.3);">
+            📥 Insert Findings into Consultation Triage
+          </button>
+        </div>
+      </div>
+      <canvas id="captureCanvas" style="display:none;"></canvas>
+    </div>
+  </div>
+
+  <!-- ===== MAIN APP ===== -->
+  <div class="app-container" id="appContainer" style="display:none;">
+
+    <!-- ===== HEADER ===== -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="header-logo-wrap">
+          <div class="header-cross">✚</div>
+          <div class="header-pulse"></div>
+        </div>
+        <div class="header-title-group">
+          <h1 class="header-title">RAMAN AI</h1>
+          <span class="header-badge">EXPERIMENT № 170</span>
+        </div>
+      </div>
+      <div class="header-center">
+        <div class="status-indicator">
+          <div class="status-dot"></div>
+          <span>SYSTEM ONLINE</span>
+        </div>
+        <div class="header-vitals">
+          <div class="vital-mini" title="AI Processing Power">
+            <span class="vital-mini-label">CPU</span>
+            <div class="vital-mini-bar"><div class="vital-mini-fill" id="cpuFill"></div></div>
+          </div>
+          <div class="vital-mini" title="Neural Network Activity">
+            <span class="vital-mini-label">NEURAL</span>
+            <div class="vital-mini-bar"><div class="vital-mini-fill neural" id="neuralFill"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <div class="vital-chips">
+          <div class="vital-chip" id="chipTime">
+            <span class="chip-icon">🕐</span>
+            <span id="clockDisplay">--:--</span>
+          </div>
+          <div class="vital-chip session-chip">
+            <span class="chip-icon">💬</span>
+            <span id="sessionCount">0</span> msgs
+          </div>
+          <!-- Health ID chip - clickable opens session panel -->
+          <div class="vital-chip hid-chip" id="hidChip" style="display:none;"
+               title="Click to manage session" onclick="toggleSessionPanel()">
+            <span class="chip-icon">🩺</span>
+            <span id="hidDisplay">---</span>
+            <span class="hid-chip-arrow">▾</span>
+          </div>
+          <div class="vital-chip bio-mode-chip">
+            <span class="chip-icon">🧬</span>
+            <span>BIO-MODE</span>
+          </div>
+          <!-- Language Toggle -->
+          <select id="langSelect" class="lang-select" onchange="window.currentLang = this.value" style="margin-right: 5px;">
+            <option value="en">EN</option>
+            <option value="or">ଓଡ଼ିଆ</option>
+            <option value="hi">हिंदी</option>
+          </select>
+          <!-- Audio Synthesis Toggle -->
+          <button class="btn-session-mgr" id="btnAudioToggle" onclick="window.toggleBioTelemetryAudio()" style="margin-right: 5px; border-color: var(--cyan) !important; color: var(--cyan) !important;">
+            <span>🔊</span> SOUND: ON
+          </button>
+          <!-- Theme Toggle -->
+          <button class="btn-session-mgr" id="btnThemeToggle" onclick="window.toggleTheme()" style="margin-right: 5px;">
+            <span>🌙</span> DARK
+          </button>
+          <!-- API Settings Button -->
+          <button class="btn-session-mgr" id="btnApiSettings" onclick="openApiSettings()" style="margin-right: 5px;">
+            <span>⚙️</span> API SETTINGS
+          </button>
+          <!-- SLM Training Hub Button -->
+          <button class="btn-session-mgr" id="btnTrainingHub" onclick="openTrainingHub()" style="margin-right: 5px; border-color: var(--accent) !important; color: var(--accent) !important; box-shadow: 0 0 8px rgba(0, 255, 179, 0.2);">
+            <span>🧠</span> SLM TRAINING HUB
+          </button>
+          <!-- Help / Tutorial Button -->
+          <button class="btn-session-mgr" id="btnHelp" onclick="openTutorial()" style="margin-right: 5px;">
+            <span>❓</span> HELP
+          </button>
+          <!-- Session Manager Button -->
+          <button class="btn-session-mgr" id="btnSessionMgr" onclick="toggleSessionPanel()">
+            <span>🗂</span> SESSION
+          </button>
+          <!-- Mobile Quick Controls Button -->
+          <button class="btn-session-mgr btn-mobile-controls" id="btnMobileControls" onclick="openMobileControlSheet()" title="Quick Controls & Settings" aria-label="System Tools and Controls" style="display:none;"><span>⚙️</span> <span class="btn-ctrl-text">OPTIONS</span></button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== SESSION MANAGER PANEL ===== -->
+    <div class="session-panel-backdrop" id="sessionPanelBackdrop" onclick="closeSessionPanel()"></div>
+    <div class="session-panel" id="sessionPanel">
+      <div class="sp-header">
+        <span>🗂️ SESSION MANAGER</span>
+        <button class="sp-close" onclick="closeSessionPanel()">✕</button>
+      </div>
+
+      <!-- Current Session Info -->
+      <div class="sp-section" id="spCurrentSection">
+        <div class="sp-section-label">ACTIVE SESSION</div>
+        <div class="sp-hid-display" id="spHidDisplay">
+          <div class="sp-hid-code" id="spHidCode">No active session</div>
+          <div class="sp-hid-meta" id="spHidMeta">Start a consultation to get your Health ID</div>
+        </div>
+        <div class="sp-hid-actions" id="spHidActions" style="display:none">
+          <button class="sp-btn sp-btn-copy" id="spCopyBtn" onclick="copyHid()">📋 Copy ID</button>
+          <button class="sp-btn sp-btn-share" onclick="shareCurrentHid()">📤 Share</button>
+        </div>
+      </div>
+
+      <!-- Restore Session -->
+      <div class="sp-section">
+        <div class="sp-section-label">RESTORE PREVIOUS SESSION</div>
+        <div class="sp-restore-row">
+          <input type="text" id="spHidInput" placeholder="Enter Health ID (e.g. RMN-A3F9K2)"
+            maxlength="12" autocomplete="off" spellcheck="false"
+            onkeydown="if(event.key==='Enter') restoreFromPanel()" />
+          <button class="sp-btn sp-btn-restore" onclick="restoreFromPanel()">↩ RESTORE</button>
+        </div>
+        <div class="sp-restore-error" id="spRestoreError"></div>
+      </div>
+
+      <!-- Session Actions -->
+      <div class="sp-section sp-actions-section">
+        <button class="sp-action-btn sp-btn-end" id="spEndBtn" onclick="endCurrentSession()">
+          🔒 End &amp; Save Session
+        </button>
+        <button class="sp-action-btn sp-btn-new" onclick="startFreshSession()">
+          ➕ Start New Session
+        </button>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
+          <button class="sp-btn sp-btn-copy" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; border-radius: 8px; padding: 10px;" onclick="window.exportSessionBackupJSON()">
+            📤 Backup Vault
+          </button>
+          <button class="sp-btn sp-btn-restore" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; border-radius: 8px; padding: 10px;" onclick="document.getElementById('importBackupInput').click()">
+            📥 Restore Backup
+          </button>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+          <button class="sp-btn sp-btn-fhir" id="btnExportFhir" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; border-radius: 8px; padding: 10px; background: rgba(0, 255, 179, 0.08); border: 1px solid var(--primary); color: var(--primary);" onclick="if(window.downloadFhirR4Json) { const p = getProfile(); window.downloadFhirR4Json(p, { healthId: currentHealthId, condition: 'Clinical Consultation' }); }">
+            📋 Export FHIR (R4)
+          </button>
+          <button class="sp-btn sp-btn-zkp" id="btnOpenZkp" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; border-radius: 8px; padding: 10px; background: rgba(0, 229, 255, 0.08); border: 1px solid var(--cyan); color: var(--cyan);" onclick="openZkpModal()">
+            🛡️ Zero-Knowledge (ZKP)
+          </button>
+        </div>
+        <div style="margin-top: 10px;">
+          <button class="sp-btn sp-btn-search" id="btnOpenSearchModal" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; border-radius: 8px; padding: 10px; background: rgba(255, 180, 0, 0.08); border: 1px solid #ffb400; color: #ffb400;" onclick="openSearchModal()">
+            🔍 Hybrid Medical Search (BM25 + Dense)
+          </button>
+        </div>
+        <input type="file" id="importBackupInput" style="display: none;" accept=".json" onchange="window.importSessionBackupJSON(this.files[0])" />
+      </div>
+
+      <!-- Session History Removed for Privacy -->
+      <div class="sp-section">
+        <div class="sp-section-label">RECENT SESSIONS</div>
+        <div id="spSessionHistory" class="sp-history-list">
+          <div class="sp-history-empty">
+            🔒 For privacy on shared devices, past sessions are not listed here. <br><br>
+            Please securely save your <strong>Health ID</strong> and enter it manually above to restore your previous consultations and Medical Vault.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TUTORIAL MODAL ===== -->
+    <div class="session-panel-backdrop" id="tutorialBackdrop" onclick="closeTutorial()"></div>
+    <div class="tutorial-modal" id="tutorialModal" style="max-width: 750px; width: 90%;">
+      <div class="tut-header">
+        <span>🤖 RAMAN AI: SYSTEM MANUAL</span>
+        <button class="sp-close" onclick="closeTutorial()">✕</button>
+      </div>
+      <div class="tut-body" style="padding-top: 10px;">
+        
+        <!-- Tab Selector Row -->
+        <div class="hub-tabs" style="display:flex; border-bottom:1px solid rgba(255,255,255,0.1); margin-bottom:15px; gap:10px;">
+          <button class="hub-tab-btn active" id="btnTabUserGuide" onclick="window.switchTutorialTab('guide')" style="background:none; border:none; border-bottom:2px solid var(--cyan); color:var(--cyan); padding:10px 15px; font-weight:bold; cursor:pointer; font-family:var(--font-head); font-size:0.8rem; letter-spacing:0.5px; transition:all 0.2s;">❓ USER GUIDE</button>
+          <button class="hub-tab-btn" id="btnTabWikiSpec" onclick="window.switchTutorialTab('wiki')" style="background:none; border:none; border-bottom:2px solid transparent; color:var(--text-muted); padding:10px 15px; font-weight:bold; cursor:pointer; font-family:var(--font-head); font-size:0.8rem; letter-spacing:0.5px; transition:all 0.2s;">📖 TECHNICAL SPEC WIKI</button>
+        </div>
+
+        <!-- 1. TAB CONTENT: USER GUIDE -->
+        <div id="tutContentUserGuide" style="display:block;">
+          <div class="tut-step">
+            <div class="tut-icon">🌐</div>
+            <div class="tut-content">
+              <h4>Bilingual Chat (English &amp; Odia)</h4>
+              <p>You can type in English or Odia (e.g. "munda bindhuchi"). Toggle the language dropdown in the header to switch the AI's responses between English and Odia!</p>
+            </div>
+          </div>
+          <div class="tut-step">
+            <div class="tut-icon">🩺</div>
+            <div class="tut-content">
+              <h4>Diagnostic Engine</h4>
+              <p>Describe your symptoms naturally. RAMAN AI will ask follow-up questions to understand the exact nature of your condition before giving an assessment.</p>
+            </div>
+          </div>
+          <div class="tut-step">
+            <div class="tut-icon">🗂</div>
+            <div class="tut-content">
+              <h4>Sessions &amp; Health ID</h4>
+              <p>Your entire conversation and profile are saved locally. Click <b>End &amp; Save Session</b> in the Session Manager to get a unique Health ID. You can enter this ID later to instantly restore your history!</p>
+            </div>
+          </div>
+          <div class="tut-step">
+            <div class="tut-icon">⚠️</div>
+            <div class="tut-content">
+              <h4>Disclaimer</h4>
+              <p>RAMAN AI is an experimental tool for informational purposes only. It is NOT a substitute for professional medical advice. Always consult a doctor.</p>
+            </div>
+          </div>
+          <button class="sp-btn sp-btn-new" style="margin-top: 15px; width: 100%;" onclick="closeTutorial()">Got it! Start Chatting</button>
+        </div>
+
+        <!-- 2. TAB CONTENT: TECHNICAL SPEC WIKI -->
+        <div id="tutContentWikiSpec" style="display:none; max-height:58vh; overflow-y:auto; padding-right:5px; scrollbar-width:thin; scrollbar-color:rgba(0,229,255,0.2) transparent;">
+          <div style="background:rgba(0, 229, 255, 0.04); border:1px solid rgba(0, 229, 255, 0.15); border-radius:8px; padding:12px; margin-bottom:15px; text-align:center; font-size:0.8rem; line-height:1.4;">
+            🧬 <strong>System Infrastructure Model Specification:</strong> RAMAN AI runs a local triple-model hybrid simple language model (SLM) ensemble and parallel physiological risk trajectory simulations completely offline in browser threads at <strong>&lt; 2 milliseconds</strong> latency.
+          </div>
+
+          <!-- Flowchart & Sequence SVG Schematic -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 255, 179, 0.25); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--primary); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>📊 DYNAMIC TOPOLOGY &amp; SEQUENCE SCHEMATICS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 255, 179, 0.15); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: center;">
+              
+              <!-- 1. FLOWCHART SCHEMATIC -->
+              <h5 style="color:var(--cyan); margin: 0 0 10px 0; font-family:var(--font-head); font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; text-align:left;">I. LOCAL DATA FLOW &amp; PROCESSING PIPELINE</h5>
+              <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:15px 10px; margin-bottom:20px; overflow-x:auto;">
+                <svg viewBox="0 0 690 140" width="100%" height="100%" style="min-width: 600px; display:block; margin:auto;">
+                  <defs>
+                    <linearGradient id="glowCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="var(--cyan)" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="var(--cyan)" stop-opacity="0.05"/>
+                    </linearGradient>
+                    <linearGradient id="glowTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="var(--primary)" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="var(--primary)" stop-opacity="0.05"/>
+                    </linearGradient>
+                    <linearGradient id="glowPink" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#ff00a0" stop-opacity="0.2"/>
+                      <stop offset="100%" stop-color="#ff00a0" stop-opacity="0.05"/>
+                    </linearGradient>
+                    <marker id="arrow" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 1 L 10 5 L 0 9 z" fill="rgba(0, 229, 255, 0.6)"/>
+                    </marker>
+                    <marker id="arrowPrimary" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                      <path d="M 0 1 L 10 5 L 0 9 z" fill="var(--primary)"/>
+                    </marker>
+                  </defs>
+
+                  <!-- 1. Client Input -->
+                  <rect x="5" y="40" width="110" height="60" rx="6" fill="url(#glowCyan)" stroke="var(--cyan)" stroke-width="1.2"/>
+                  <text x="60" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">👤 PATIENT INPUT</text>
+                  <text x="60" y="80" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">Symptoms &amp; Vitals</text>
+
+                  <!-- Arrow 1 -->
+                  <line x1="115" y1="70" x2="140" y2="70" stroke="var(--cyan)" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.6"/>
+
+                  <!-- 2. Intake Sanitizer -->
+                  <rect x="145" y="40" width="115" height="60" rx="6" fill="url(#glowTeal)" stroke="var(--primary)" stroke-width="1.2"/>
+                  <text x="202.5" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🧹 SANITIZER HUD</text>
+                  <text x="202.5" y="80" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">Stop-words &amp; N-grams</text>
+
+                  <!-- Arrow 2 -->
+                  <line x1="260" y1="70" x2="285" y2="70" stroke="var(--primary)" stroke-width="1.5" marker-end="url(#arrowPrimary)"/>
+
+                  <!-- 3. SLM Core -->
+                  <rect x="290" y="40" width="120" height="60" rx="6" fill="url(#glowPink)" stroke="#ff00a0" stroke-width="1.2"/>
+                  <text x="350" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🧬 SLM ENSEMBLE</text>
+                  <text x="350" y="80" fill="var(--text-muted)" font-size="7.5" font-family="var(--font-ui)" text-anchor="middle">SVM + Bayes + Trie</text>
+
+                  <!-- Arrow 3 -->
+                  <line x1="410" y1="70" x2="435" y2="70" stroke="#ff00a0" stroke-width="1.5" marker-end="url(#arrow)" opacity="0.6"/>
+
+                  <!-- 4. Safety Compiler -->
+                  <rect x="440" y="40" width="115" height="60" rx="6" fill="url(#glowTeal)" stroke="var(--primary)" stroke-width="1.2"/>
+                  <text x="497.5" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🛡️ SAFETY ENGINE</text>
+                  <text x="497.5" y="80" fill="var(--text-muted)" font-size="7.5" font-family="var(--font-ui)" text-anchor="middle">Allergy &amp; PGx Overrides</text>
+
+                  <!-- Arrow 4 -->
+                  <line x1="555" y1="70" x2="580" y2="70" stroke="var(--primary)" stroke-width="1.5" marker-end="url(#arrowPrimary)"/>
+
+                  <!-- 5. Output Vault -->
+                  <rect x="585" y="40" width="100" height="60" rx="6" fill="url(#glowCyan)" stroke="var(--cyan)" stroke-width="1.2"/>
+                  <text x="635" y="65" fill="#fff" font-size="9" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">📄 DIGITAL VAULT</text>
+                  <text x="635" y="80" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">Rx PDF &amp; IndexedDB</text>
+                </svg>
+              </div>
+
+              <!-- 2. SEQUENCE SCHEMATIC -->
+              <h5 style="color:var(--cyan); margin: 0 0 10px 0; font-family:var(--font-head); font-size:0.75rem; letter-spacing:1px; text-transform:uppercase; text-align:left;">II. CLINICAL COMPILATION LIFECYCLE SEQUENCE</h5>
+              <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:15px 10px; overflow-x:auto;">
+                <svg viewBox="0 0 690 310" width="100%" height="100%" style="min-width: 600px; display:block; margin:auto;">
+                  <!-- Lifelines -->
+                  <line x1="90" y1="40" x2="90" y2="280" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+                  <line x1="270" y1="40" x2="270" y2="280" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+                  <line x1="450" y1="40" x2="450" y2="280" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+                  <line x1="630" y1="40" x2="630" y2="280" stroke="rgba(255,255,255,0.15)" stroke-width="1" stroke-dasharray="4 4"/>
+
+                  <!-- Headers -->
+                  <rect x="35" y="10" width="110" height="25" rx="4" fill="rgba(0,229,255,0.08)" stroke="var(--cyan)" stroke-width="1"/>
+                  <text x="90" y="26" fill="#fff" font-size="8.5" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">👤 PATIENT / UI</text>
+
+                  <rect x="215" y="10" width="110" height="25" rx="4" fill="rgba(255,0,160,0.08)" stroke="#ff00a0" stroke-width="1"/>
+                  <text x="270" y="26" fill="#fff" font-size="8.5" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🧬 SLM ENGINE</text>
+
+                  <rect x="395" y="10" width="110" height="25" rx="4" fill="rgba(0,255,179,0.08)" stroke="var(--primary)" stroke-width="1"/>
+                  <text x="450" y="26" fill="#fff" font-size="8.5" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🛡️ SAFETY ENGINE</text>
+
+                  <rect x="575" y="10" width="110" height="25" rx="4" fill="rgba(0,229,255,0.08)" stroke="var(--cyan)" stroke-width="1"/>
+                  <text x="630" y="26" fill="#fff" font-size="8.5" font-family="var(--font-head)" font-weight="bold" text-anchor="middle">🔒 INDEXEDDB</text>
+
+                  <!-- Message 1 -->
+                  <text x="180" y="65" fill="var(--cyan)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">1. Submit Symptom Query</text>
+                  <line x1="90" y1="70" x2="265" y2="70" stroke="var(--cyan)" stroke-width="1.2" marker-end="url(#arrow)"/>
+                  <rect x="265" y="70" width="10" height="60" fill="rgba(255,0,160,0.2)" stroke="#ff00a0" stroke-width="0.8"/>
+
+                  <!-- Self call SLM -->
+                  <path d="M 275 80 L 305 80 L 305 105 L 277 105" fill="none" stroke="#ff00a0" stroke-width="1"/>
+                  <text x="310" y="96" fill="var(--text-muted)" font-size="7.5" font-family="var(--font-ui)" text-anchor="start">SVM+NB+Trie Score</text>
+
+                  <!-- Message 1 Return -->
+                  <line x1="265" y1="120" x2="95" y2="120" stroke="var(--cyan)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrow)"/>
+                  <text x="180" y="115" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">2. Classifications Return</text>
+
+                  <!-- Message 2 -->
+                  <text x="270" y="150" fill="var(--primary)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">3. Verify Allergy &amp; PGx Profiles</text>
+                  <line x1="90" y1="155" x2="445" y2="155" stroke="var(--primary)" stroke-width="1.2" marker-end="url(#arrowPrimary)"/>
+                  <rect x="445" y="155" width="10" height="110" fill="rgba(0,255,179,0.2)" stroke="var(--primary)" stroke-width="0.8"/>
+
+                  <!-- Message 3 -->
+                  <text x="540" y="180" fill="var(--cyan)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">4. Store Radiograph</text>
+                  <line x1="455" y1="185" x2="625" y2="185" stroke="var(--cyan)" stroke-width="1.2" marker-end="url(#arrow)"/>
+                  <rect x="625" y="185" width="10" height="35" fill="rgba(0,229,255,0.2)" stroke="var(--cyan)" stroke-width="0.8"/>
+
+                  <!-- Return 3 -->
+                  <line x1="625" y1="210" x2="460" y2="210" stroke="var(--cyan)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrow)"/>
+                  <text x="540" y="205" fill="var(--text-muted)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">5. Acknowledge Saved</text>
+
+                  <!-- Return 2 -->
+                  <line x1="445" y1="250" x2="95" y2="250" stroke="var(--primary)" stroke-width="1.2" stroke-dasharray="3 3" marker-end="url(#arrowPrimary)"/>
+                  <text x="270" y="245" fill="var(--primary)" font-size="8" font-family="var(--font-ui)" text-anchor="middle">6. Render Rx Card &amp; Print PDF</text>
+                </svg>
+              </div>
+
+            </div>
+          </details>
+
+          <!-- Section 1 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>🧬 1. ENSEMBLE CLASSIFIER MATHEMATICS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">The symptom classifier uses an L2-normalized TF-IDF vector space running across a triple-model ensemble:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Filtered Unigrams &amp; N-Grams:</strong> Strips punctuation, filters English and Odia stop-words (e.g. <i>"heuchi"</i>, <i>"laguchi"</i>), and extracts unigrams, bigrams, and trigrams.</li>
+                <li><strong>TF-IDF Weighting:</strong> Dampens common terms and amplifies diagnostic markers via Inverse Document Frequency:
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">IDF(t) = ln((1 + N_docs) / (1 + DF(t))) + 1</code>
+                </li>
+                <li><strong>Multinomial Naive Bayes:</strong> Calculates posterior classes using Laplace smoothing (α=1):
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">ln P(C|W) = ln P(C) + ∑ IDF(t) * ln P(t|C)</code>
+                </li>
+                <li><strong>Fuzzy Trie Sliding Match:</strong> Sliding window scans input character strings in O(L) time. Exact multi-word matches inject an immediate posterior score boost:
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">TrieBoost(C) = ∑ 1.5 * IDF(phrase)</code>
+                </li>
+                <li><strong>Linear SVM:</strong> One-vs-Rest Support Vector Machine trained client-side via SGD with hinge loss to establish strict decision boundaries between overlapping symptoms.</li>
+              </ul>
+              <p style="margin-bottom:0;">Scores are normalized via temperature Softmax (T=2.5) to render clean visual probability bars from 0% to 100%.</p>
+            </div>
+          </details>
+
+          <!-- Section 2 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>⚡ 2. PARALLEL WEBGPU PROGRESSION RUNS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">To simulate complex physiological vital trajectories, the system executes <strong>16,384 parallel calculations</strong> using WebGPU Shading Language (WGSL) compute shaders:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Autonomic Cardiac Progression:</strong>
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">HR_next = HR_base + (severity * 8.5) + sin(time * 0.2) * (age / 12) + noise</code>
+                </li>
+                <li><strong>Thermal Hyperpyrexia Shift:</strong>
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">Temp_next = Temp_base + (severity * 0.8) + ((heat_index - 70) / 40) * 0.5</code>
+                </li>
+                <li><strong>Oxygen Dissociation Curve:</strong>
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">SpO2_next = SpO2_base - (severity * 2.4) - ((HR_next - HR_base) / 15) * 0.3</code>
+                </li>
+              </ul>
+              <p style="margin-bottom:0;">Calculations write to a 32-entry float buffer, displaying a 1,024-point density scatterplot on the canvas, with a seamless, high-speed JavaScript CPU fallback if WebGPU is unavailable.</p>
+            </div>
+          </details>
+
+          <!-- Section 3 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>💊 3. CLINICAL ICD-11, SNOMED CT &amp; PGX SAFETY</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">Features a structured offline medical knowledge base containing <strong>17 ICD-11 conditions</strong>, <strong>47 SNOMED CT medications</strong>, and comprehensive clinical safety override pathways:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Allergic Contraindication Overrides:</strong>
+                  <ul style="padding-left:14px; margin-top:4px;">
+                    <li><strong>Penicillin Allergy:</strong> Intercepts <i>Amoxicillin</i> or <i>Ampicillin</i> and substitutes with **Azithromycin 500mg** (SNOMED CT: `372822002`).</li>
+                    <li><strong>NSAID Allergy:</strong> Intercepts anti-inflammatories (Aspirin, Ibuprofen, Diclofenac) and substitutes with **Paracetamol 650mg** (SNOMED: `387584000`, Calpol/Crocin) to protect renal &amp; mucosal tracts.</li>
+                  </ul>
+                </li>
+                <li><strong>Pharmacogenomic (PGx) Metabolic Interceptors:</strong>
+                  <ul style="padding-left:14px; margin-top:4px;">
+                    <li><strong>G6PD Deficiency:</strong> Blocks hemolytic compounds (such as <i>Nitrofurantoin</i>) and substitutes with safe **Ciprofloxacin 500mg**.</li>
+                    <li><strong>HLA-B*5701 Genotype:</strong> Intercepts <i>Abacavir</i> to prevent severe systemic hypersensitivity reactions.</li>
+                    <li><strong>CYP2D6 Poor Metabolizer:</strong> Detects metabolic failures converting prodrug <i>Codeine</i> to active morphine, overriding it with safe analgesics.</li>
+                  </ul>
+                </li>
+                <li><strong>Vitals Staging:</strong> BP, Heart Rate, SpO2, and Temp are compiled. Deviations exceed safety limits to classify patient into Stage 1, Stage 2, or Stage 3 (Critical).</li>
+              </ul>
+              <p style="margin-bottom:0;">Medications in Chat UI and A4 PDFs are hover-responsive links querying bio-equivalent alternatives instantly upon user click.</p>
+            </div>
+          </details>
+
+          <!-- Section 4 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>🔊 4. IN-MEMORY WEB AUDIO SFX &amp; SPEECH FILTERS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">Operating 100% in-memory without any external asset dependencies using the native browser **HTML5 Web Audio API**:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Laser Sweep (Hotspots click):</strong> Resonant triangle wave sweeping from 300Hz up to 1600Hz through a dynamic Biquad lowpass filter sweep.</li>
+                <li><strong>Telemetry Click (Hotspots hover):</strong> Sharp sine click sweeping from 1500Hz down to 800Hz in 0.04s.</li>
+                <li><strong>Bio-Beep Alarm (Stage 3 vital crisis):</strong> High-priority triple medical alarm sweeps pulsing at 980Hz with rapid linear attack and exponential decay.</li>
+                <li><strong>Keyboard Tick:</strong> Ultra-short mechanical clicks sweeping 2000Hz to 1200Hz in 0.015s for typewriter tactile sound effects.</li>
+                <li><strong>Bilingual Speech Synthesis Filters:</strong> Utilizes clean regex filters to purge emojis, HTML elements, and bracketed metadata before routing to Web Speech synthesis. Automatically switches between `en-US` and `hi-IN` phonetics depending on character script range.</li>
+              </ul>
+            </div>
+          </details>
+
+          <!-- Section 5 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>📈 5. RECOVERY DIARY GRAPH SPARKLINE</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">Provides a secure local symptoms canvas visualizer and calculations grid:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Math-Telemetry Grid:</strong> Calculates Average Severity (mean), Peak Severity (maximum), and Trend State. Renders 🔴 `▲ WORSENING` if latest logged severity is higher than average, 🟢 `▼ IMPROVING` if lower, and 🔵 `● STABLE` if matching.</li>
+                <li><strong>Mouse-Proximity sensor:</strong> Active mouse listener captures cursor coordinates relative to canvas. If cursor falls within a 15px radius of a data node, it triggers an interactive crosshair guide and draws a glowing slate-blue coordinates tooltip.</li>
+              </ul>
+            </div>
+          </details>
+
+          <!-- Section 6 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>🔒 6. AES-256-GCM ENCRYPTED LOCAL SESSION BACKUPS</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">To guarantee security and privacy of patient information on shared devices, session backups utilize the native browser **Web Crypto API**:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>PBKDF2 Key Derivation:</strong> Derives a secure AES key from user password using a random 16-byte salt and **100,000 iterations** of SHA-256.</li>
+                <li><strong>AES-GCM Encryption:</strong> Encrypts the serialized patient profile, chat ledger, and binary radiographs stored in IndexedDB under **AES-256-GCM** with a random 12-byte IV, generating a secure ciphertext with a 16-byte authentication tag to guarantee absolute data integrity.</li>
+              </ul>
+              <p style="margin-bottom:0;">Incorrect passwords or modified backup structures during restore trigger decryption errors, safely discarding unauthorized entries.</p>
+            </div>
+          </details>
+
+          <!-- Section 7 -->
+          <details style="margin-bottom: 12px; border: 1px solid rgba(0, 229, 255, 0.15); border-radius: 8px; background: rgba(0,0,0,0.25);">
+            <summary style="padding: 10px 14px; font-family: var(--font-head); font-size: 0.78rem; text-transform: uppercase; color: var(--cyan); cursor: pointer; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span>🔬 7. CORPUS INJECTION &amp; CLINICIAN DELTA LEARNING</span>
+              <span style="font-size: 0.65rem; color: var(--text-muted); font-family:var(--font-ui);">[TAP TO EXPAND]</span>
+            </summary>
+            <div style="padding: 14px; border-top: 1px solid rgba(0, 229, 255, 0.1); font-size: 0.78rem; line-height: 1.5; color: var(--text-main); text-align: left;">
+              <p style="margin-top:0;">Enables live model recalibrations and active learning in the client thread:</p>
+              <ul style="padding-left:18px; margin-bottom:10px;">
+                <li><strong>Trie Database Reconstruction:</strong> Injecting custom symptom phrases rebuilds the sliding window Trie structure and retrains the Naive Bayes weights in **under 3.5ms**.</li>
+                <li><strong>Clinician Feedback Delta Portal:</strong> Credentialed practitioners can submit corrected diagnoses. Submitting a correction triggers an active weight shift:
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">W_correct = W_correct + η * X_symptoms</code>
+                  <code style="display:block; background:rgba(0,0,0,0.4); padding:6px; margin:6px 0; border-radius:4px; font-family:monospace; color:var(--accent);">W_predicted = W_predicted - η * X_symptoms</code>
+                  where learning rate η = 0.05. Weight deltas are persisted locally as `localClinicianDeltas`, permanently recalibrating local classification boundaries.
+                </li>
+              </ul>
+            </div>
+          </details>
+
+          <button class="sp-btn sp-btn-new" style="margin-top: 15px; width: 100%;" onclick="closeTutorial()">Got it! Start Chatting</button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== API SETTINGS MODAL ===== -->
+    <div class="session-panel-backdrop" id="apiSettingsBackdrop" onclick="closeApiSettings()" style="display:none;"></div>
+    <div class="tutorial-modal" id="apiSettingsModal" style="display:none; max-width: 500px; width: 90%;">
+      <div class="tut-header">
+        <span>⚙️ SYSTEM & MODEL SETTINGS</span>
+        <button class="sp-close" onclick="closeApiSettings()">✕</button>
+      </div>
+      <div class="tut-body">
+        <p style="margin-top: 0; font-size: 0.9rem; color: var(--text-muted);">Configure the core AI reasoning engine powering the RAMAN clinical diagnostics panel.</p>
+        
+        <div style="margin: 15px 0;">
+          <label for="llmProvider" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">AI Reasoning Engine Provider</label>
+          <select id="llmProvider" onchange="toggleProviderSettings()" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; font-family: inherit;">
+            <option value="local-slm">🧠 RAMAN Local SLM (Offline & Fast)</option>
+            <option value="gemini">♊ Google Gemini API (Online)</option>
+            <option value="openai">🔓 OpenAI / Custom API Gateway (Online)</option>
+            <option value="anthropic">🤗 Anthropic Claude API (Online)</option>
+          </select>
+        </div>
+
+        <!-- 1. LOCAL SLM PANEL -->
+        <div id="settingsLocalSlm" style="background: rgba(0, 255, 179, 0.08); border: 1px solid var(--primary); border-radius: 8px; padding: 12px; margin: 15px 0; text-align: center;">
+          <h4 style="color: var(--primary); margin: 0 0 5px 0;">⚡ ACTIVE ENGINE: RAMAN LOCAL SLM</h4>
+          <p style="margin: 0; font-size: 0.85rem;">Custom client-side Simple Language Model trained in Naive Bayes Classification & Markov Transition matrix. Running 100% offline at &lt; 2ms latency.</p>
+          <small style="color: var(--text-muted); display: block; margin-top: 8px;">Highly optimized for local symptom parsing with zero data externalization.</small>
+        </div>
+
+        <!-- 2. GEMINI PANEL -->
+        <div id="settingsGemini" style="display:none; margin: 15px 0;">
+          <div style="background: rgba(0, 229, 255, 0.08); border: 1px solid var(--cyan); border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center;">
+            <h4 style="color: var(--cyan); margin: 0 0 5px 0;">⚡ ACTIVE ENGINE: GOOGLE GEMINI API</h4>
+            <p style="margin: 0; font-size: 0.85rem;">Execute dynamic online model reasoning via official Google Gemini APIs.</p>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="geminiApiKey" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">Google Gemini API Key</label>
+            <input type="password" id="geminiApiKey" placeholder="AIzaSy..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box;" autocomplete="off" />
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="geminiModel" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">Model Identifier</label>
+            <select id="geminiModel" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; font-family: inherit;">
+              <option value="gemini-3.5-flash">gemini-3.5-flash (Recommended, Ultra Fast & Reasoning)</option>
+              <option value="gemini-3.5-pro">gemini-3.5-pro (High intelligence reasoning)</option>
+              <option value="gemini-2.0-flash">gemini-2.0-flash (Latest Stable v2)</option>
+              <option value="gemini-1.5-flash">gemini-1.5-flash (Legacy Fast)</option>
+              <option value="gemini-1.5-pro">gemini-1.5-pro (Legacy Pro)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 3. OPENAI / CUSTOM GATEWAY PANEL -->
+        <div id="settingsOpenAi" style="display:none; margin: 15px 0;">
+          <div style="background: rgba(255, 159, 67, 0.08); border: 1px solid #ff9f43; border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center;">
+            <h4 style="color: #ff9f43; margin: 0 0 5px 0;">⚡ ACTIVE ENGINE: CUSTOM API GATEWAY</h4>
+            <p style="margin: 0; font-size: 0.85rem;">Connect to official OpenAI, local Ollama, LocalAI, or custom OpenAI-compatible endpoints.</p>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="openaiApiKey" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">API Authorization Key</label>
+            <input type="password" id="openaiApiKey" placeholder="sk-... (Optional for local Ollama)" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box;" autocomplete="off" />
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="openaiBaseUrl" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">API Base Endpoint URL</label>
+            <input type="text" id="openaiBaseUrl" placeholder="https://api.openai.com/v1" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box;" autocomplete="off" />
+            <small style="color: var(--text-muted); display: block; margin-top: 4px;">E.g. <code>http://localhost:11434/v1</code> for Ollama or <code>http://localhost:8080/v1</code> for LocalAI.</small>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="openaiModel" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">Model Name / Identifier</label>
+            <input type="text" id="openaiModel" placeholder="gpt-4o" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box;" autocomplete="off" />
+            <small style="color: var(--text-muted); display: block; margin-top: 4px;">E.g. <code>llama3</code>, <code>mistral</code>, or <code>gpt-4o</code>.</small>
+          </div>
+        </div>
+
+        <!-- 4. ANTHROPIC PANEL -->
+        <div id="settingsAnthropic" style="display:none; margin: 15px 0;">
+          <div style="background: rgba(217, 119, 6, 0.08); border: 1px solid #d97706; border-radius: 8px; padding: 12px; margin-bottom: 15px; text-align: center;">
+            <h4 style="color: #d97706; margin: 0 0 5px 0;">⚡ ACTIVE ENGINE: ANTHROPIC API</h4>
+            <p style="margin: 0; font-size: 0.85rem;">Execute dynamic online model reasoning via official Anthropic Claude APIs.</p>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="anthropicApiKey" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">Anthropic API Key</label>
+            <input type="password" id="anthropicApiKey" placeholder="sk-ant-..." style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box;" autocomplete="off" />
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="anthropicBaseUrl" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">API Base Endpoint URL</label>
+            <input type="text" id="anthropicBaseUrl" placeholder="https://api.anthropic.com" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; box-sizing: border-box;" autocomplete="off" />
+            <small style="color: var(--text-muted); display: block; margin-top: 4px;">E.g. <code>https://api.anthropic.com</code> or a custom reverse proxy URL.</small>
+          </div>
+          <div style="margin-bottom: 12px;">
+            <label for="anthropicModel" style="display:block; margin-bottom:5px; font-weight:bold; color:var(--text);">Model Identifier</label>
+            <select id="anthropicModel" style="width: 100%; padding: 10px; background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.2); color: white; border-radius: 8px; font-family: inherit;">
+              <option value="claude-3-7-sonnet-20250219">claude-3-7-sonnet-20250219 (Recommended, Claude 3.7 Sonnet)</option>
+              <option value="claude-3-5-sonnet-20241022">claude-3-5-sonnet-20241022 (Claude 3.5 Sonnet)</option>
+              <option value="claude-opus-4-7">claude-opus-4-7 (Claude Opus 4.7)</option>
+              <option value="claude-opus-4-8">claude-opus-4-8 (Claude Opus 4.8)</option>
+              <option value="claude-3-5-haiku-20241022">claude-3-5-haiku-20241022 (Claude 3.5 Haiku)</option>
+              <option value="claude-3-opus-20240229">claude-3-opus-20240229 (Claude 3 Opus)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ===== GENERAL LLM HYPERPARAMETERS ===== -->
+        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px; margin-top: 15px;">
+          <h4 style="color: var(--accent); margin: 0 0 10px 0; font-family: var(--font-head); font-size: 0.85rem; letter-spacing: 0.5px;">⚙️ LLM REASONING HYPERPARAMETERS</h4>
+          
+          <div style="margin-bottom: 12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <label for="llmTemperature" style="font-weight:bold; color:var(--text); font-size:0.8rem;">Temperature (Creativity): <span id="tempValue" style="color:var(--accent);">0.2</span></label>
+            </div>
+            <input type="range" id="llmTemperature" min="0.0" max="1.0" step="0.1" value="0.2" style="width:100%; accent-color:var(--accent);" oninput="document.getElementById('tempValue').textContent=this.value" />
+            <small style="color: var(--text-muted); display: block; margin-top: 3px;">Lower values (0.0 - 0.3) provide highly consistent and deterministic medical triage. Higher values increase creativity.</small>
+          </div>
+
+          <div style="margin-bottom: 12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+              <label for="llmMaxTokens" style="font-weight:bold; color:var(--text); font-size:0.8rem;">Max Tokens (Length): <span id="tokensValue" style="color:var(--accent);">2048</span></label>
+            </div>
+            <input type="range" id="llmMaxTokens" min="256" max="4096" step="256" value="2048" style="width:100%; accent-color:var(--accent);" oninput="document.getElementById('tokensValue').textContent=this.value" />
+            <small style="color: var(--text-muted); display: block; margin-top: 3px;">Controls the maximum length of generated medical assessments.</small>
+          </div>
+        </div>
+
+        <button class="sp-btn sp-btn-new" style="margin-top: 15px; width: 100%;" onclick="saveApiKey()">Save & Configure</button>
+      </div>
+    </div>
+
+    <!-- ===== VAULT VIEWER MODAL ===== -->
+    <div class="session-panel-backdrop" id="vaultBackdrop" onclick="closeVaultModal()" style="display:none;"></div>
+    <div class="tutorial-modal" id="vaultModal" style="display:none; max-width: 650px;">
+      <div class="tut-header">
+        <span>📁 MEDICAL VAULT DOCUMENT</span>
+        <button class="sp-close" onclick="closeVaultModal()">✕</button>
+      </div>
+      <div class="tut-body" style="display:flex; flex-direction:column; gap:15px;">
+        <div id="vaultModalMediaWrap" style="text-align:center; background:rgba(0,0,0,0.3); border-radius:8px; padding:10px; min-height:100px; display:flex; align-items:center; justify-content:center;"></div>
+        <div id="vaultModalAnalysis" style="max-height: 250px; overflow-y: auto; padding: 10px; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+          <button class="sp-btn sp-btn-end" id="vaultModalDeleteBtn" style="background:#ff4d6d; border-color:#ff4d6d; color:white; padding: 8px 16px;">✕ Delete Document</button>
+          <button class="sp-btn sp-btn-new" onclick="closeVaultModal()" style="padding: 8px 16px;">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SLM TRAINING HUB MODAL ===== -->
+    <div class="session-panel-backdrop" id="trainingHubBackdrop" onclick="closeTrainingHub()" style="display:none;"></div>
+    <div class="tutorial-modal" id="trainingHubModal" style="display:none; max-width: 850px; width: 90%;">
+      <div class="tut-header">
+        <span>🧠 RAMAN LOCAL SLM TRAINING CENTER & SANDBOX</span>
+        <button class="sp-close" onclick="closeTrainingHub()">✕</button>
+      </div>
+      <div class="tut-body" style="display:flex; flex-direction:column; gap:15px; max-height: 80vh; overflow-y: auto;">
+        <!-- Stats Dashboard -->
+        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:10px; background: rgba(0, 255, 179, 0.05); border: 1px solid rgba(0, 255, 179, 0.15); border-radius: 8px; padding: 12px; text-align: center;">
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">CLASSES</div>
+            <strong id="hubStatClasses" style="color:var(--cyan); font-size:1.2rem; font-family:var(--font-head);">11</strong>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">TOTAL DOCS</div>
+            <strong id="hubStatDocs" style="color:var(--cyan); font-size:1.2rem; font-family:var(--font-head);">154</strong>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">VOCAB SIZE</div>
+            <strong id="hubStatVocab" style="color:var(--cyan); font-size:1.2rem; font-family:var(--font-head);">1,280</strong>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">MARKOV PAIRS</div>
+            <strong id="hubStatMarkov" style="color:var(--cyan); font-size:1.2rem; font-family:var(--font-head);">1,840</strong>
+          </div>
+          <div>
+            <div style="font-size:0.75rem; color:var(--text-muted);">TRAINING SPEED</div>
+            <strong style="color:var(--accent); font-size:1.2rem; font-family:var(--font-head);">&lt; 3.5ms</strong>
+          </div>
+        </div>
+
+        <!-- Tab Row for Manual Training vs MCP Multi-Agent Collector -->
+        <div class="hub-tabs" style="display:flex; border-bottom:1px solid rgba(255,255,255,0.1); margin-top:5px; margin-bottom:5px; gap:10px;">
+          <button class="hub-tab-btn active" id="btnTabManual" onclick="window.switchHubTab('manual')" style="background:none; border:none; border-bottom:2px solid var(--accent); color:var(--accent); padding:10px 15px; font-weight:bold; cursor:pointer; font-family:var(--font-head); font-size:0.8rem; letter-spacing:0.5px; transition:all 0.2s;">🔬 SANDBOX & MANUAL TRAINING</button>
+          <button class="hub-tab-btn" id="btnTabMcp" onclick="window.switchHubTab('mcp')" style="background:none; border:none; border-bottom:2px solid transparent; color:var(--text-muted); padding:10px 15px; font-weight:bold; cursor:pointer; font-family:var(--font-head); font-size:0.8rem; letter-spacing:0.5px; transition:all 0.2s;">🤖 MCP MULTI-AGENT AUTO-COLLECTOR</button>
+        </div>
+
+        <!-- Manual Tab Container -->
+        <div id="hubContentManual" class="hub-tab-content" style="display:block;">
+          <div class="hub-columns" style="display:grid; grid-template-columns: 1fr 1fr; gap:15px;">
+            <!-- Left Column: Training Console & Corpus Injector -->
+            <div style="display:flex; flex-direction:column; gap:15px;">
+              <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+                <strong style="color:var(--cyan); display:block; font-size:0.85rem; letter-spacing: 0.5px;">🛠️ RIGOROUS RE-TRAINING CONTROL</strong>
+                <p style="margin:0; font-size:0.75rem; color:var(--text-muted); line-height:1.4;">Re-index N-grams, compute TF-IDF relevance ratios, rebuild Trie search vectors, and recompile bigram transitions.</p>
+                <button class="sp-btn sp-btn-new" id="btnHubRetrain" onclick="retrainModel()" style="background:var(--accent); border-color:var(--accent); color:#0f172a; width: 100%; font-weight:bold;">
+                  ⚡ RUN RIGOROUS RETRAINING
+                </button>
+                
+                <!-- Console Log Trace -->
+                <div id="hubConsoleLog" style="background:#050a12; border:1px solid rgba(0, 229, 255, 0.15); border-radius:6px; height:120px; font-family:monospace; font-size:0.7rem; color:var(--cyan); padding:8px; overflow-y:auto; white-space:pre-wrap; line-height:1.4; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);">[INFO] System waiting for neural calibration...</div>
+              </div>
+
+              <!-- Corpus Injector Form -->
+              <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <strong style="color:var(--cyan); display:block; font-size:0.85rem; letter-spacing: 0.5px;">➕ INJECT NEW SYMPTOM DATA</strong>
+                <p style="margin:0; font-size:0.75rem; color:var(--text-muted); line-height:1.4;">Add customized training phrases in English or Odia to dynamically reinforce and expand the classifier's features.</p>
+                
+                <div style="display:flex; gap:8px;">
+                  <div style="flex:1;">
+                    <label for="hubInjectCondition" style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:2px;">Target Condition</label>
+                    <select id="hubInjectCondition" style="width:100%; padding:6px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; font-size:0.75rem;">
+                      <option value="fever">Fever / ଜ୍ୱର</option>
+                      <option value="headache">Headache / ମୁଣ୍ଡବିନ୍ଧା Suspected Migraine</option>
+                      <option value="cough">Cough / କାଶ Bronchial Risk</option>
+                      <option value="chest pain">Chest Pain / ଛାତି ଯନ୍ତ୍ରଣa Ischemia</option>
+                      <option value="stomach pain">Stomach Pain / ପେଟ କାଟୁଛି</option>
+                      <option value="joint pain">Joint Pain / ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ</option>
+                      <option value="skin rash">Skin Rash / ଚର୍ମ କୁଣ୍ଡେଇ ହେବା</option>
+                      <option value="high blood pressure">Hypertension / ଉଚ୍ଚ ରକ୍ତଚାପ</option>
+                      <option value="diabetes">Diabetes / ମଧୁମେହ Glycemia</option>
+                      <option value="eye pain">Eye Pain / ଆଖି ବିନ୍ଧା Ocular</option>
+                      <option value="back pain">Back Pain / ଅଣ୍ଟା ବୀନ୍ଧା Lumbar</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <label for="hubInjectPhrase" style="font-size:0.7rem; color:var(--text-muted); display:block; margin-bottom:2px;">Symptom Observation Phrase (English or Odia)</label>
+                  <input type="text" id="hubInjectPhrase" placeholder="e.g. jara hela deha tharuchi gachha hot" style="width:100%; padding:8px; background:rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.1); color:white; border-radius:4px; font-size:0.75rem;" autocomplete="off" />
+                </div>
+
+                <button class="sp-btn" id="btnHubInject" onclick="injectTrainingPhrase()" style="width:100%; padding:6px; border-color:var(--teal); color:var(--teal); font-size:0.75rem;">
+                  📥 INJECT INTO TRAINING CORPUS & RETRAIN
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Column: Live Diagnostics Sandbox Playground -->
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px;">
+              <strong style="color:var(--accent); display:block; font-size:0.85rem; letter-spacing: 0.5px;">🔬 LIVE INFERENCE SANDBOX PLAYGROUND</strong>
+              <p style="margin:0; font-size:0.75rem; color:var(--text-muted); line-height:1.4;">Type any arbitrary symptom phrase below. The sandboxed Bayesian classifier will calculate posterior probabilities on-the-fly and update the probability meters instantly.</p>
+              
+              <input type="text" id="hubSandboxInput" placeholder="Type symptom keywords here (e.g. chest pain deha garam)..." oninput="runSandboxInference(this.value)" style="width:100%; padding:8px; background:rgba(0,255,179,0.25); color:white; border-radius:4px; font-size:0.8rem; box-shadow:0 0 8px rgba(0,255,179,0.1);" autocomplete="off" />
+              
+              <div id="hubSandboxOutputList" style="display:flex; flex-direction:column; gap:8px; margin-top:5px; max-height:220px; overflow-y:auto; padding-right:5px;">
+                <!-- Dynamic Diagnostic Probability meters rendered here -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MCP Agent Auto-Collector Container -->
+        <div id="hubContentMcp" class="hub-tab-content" style="display:none; flex-direction:column; gap:15px;">
+          <div style="background: rgba(0, 229, 255, 0.04); border: 1px dashed rgba(0, 229, 255, 0.25); border-radius: 8px; padding: 10px; font-size: 0.75rem; color: var(--text-main); line-height: 1.4;">
+            🤖 <strong>MCP Multi-Agent Protocol Hub:</strong> Automatically orchestrates 3 local clinical AI agents using Model Context Protocol (MCP) tool-calling schemas to scrape datasets, structure medical compositions, and retrain the vocabulary of the SLM.
+          </div>
+
+          <div class="mcp-columns" style="display:grid; grid-template-columns: 1.1fr 0.9fr; gap:15px;">
+            <!-- Left Column: Settings and Agent pipeline visualization -->
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <!-- Dataset Selection -->
+              <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <strong style="color:var(--cyan); display:block; font-size:0.8rem; letter-spacing: 0.5px;">📦 SELECT CLINICAL DATASET TO AUTO-COLLECT</strong>
+                
+                <select id="mcpDatasetSelect" style="width:100%; padding:8px; background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.15); color:white; border-radius:6px; font-size:0.75rem; font-family:var(--font-ui); outline:none; cursor:pointer;">
+                  <option value="otitis">👂 Ear & Otological Infections (Otitis Media, Ear Pain/Discharge)</option>
+                  <option value="cardio">❤️ Cardiovascular & Arrhythmia Disorders (Arrhythmia, Heart Murmurs)</option>
+                  <option value="respiratory">🫁 Respiratory & Bronchial Infections (Bronchial Asthma, Acute Bronchitis)</option>
+                  <option value="neuro">🧠 Neurological & Pain Syndromes (Neuropathic Pain, Cervical Spondylosis)</option>
+                  <option value="gastro">🥑 Gastrointestinal & Metabolic Crises (GERD, Hyperglycemic Crisis)</option>
+                  <option value="dental">🦷 Dental & Oral Infections (Tooth Infection, Pulpitis, Gingivitis)</option>
+                  <option value="ophthalmology">👁️ Ophthalmic & Ocular Disorders (Conjunctivitis, Pink Eye)</option>
+                </select>
+                
+                <!-- Run Button -->
+                <button class="sp-btn sp-btn-new" id="btnMcpRunPipeline" onclick="window.runMcpPipeline()" style="background:var(--accent); border-color:var(--accent); color:#0f172a; width: 100%; font-weight:bold; margin-top:5px; box-shadow:0 0 10px rgba(0, 255, 179, 0.2); font-family:var(--font-head); letter-spacing:0.5px;">
+                  🚀 ACTIVATE MCP MULTI-AGENT PIPELINE
+                </button>
+              </div>
+
+              <!-- Agent Pipeline Cards -->
+              <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
+                <strong style="color:var(--cyan); display:block; font-size:0.8rem; letter-spacing: 0.5px;">🤖 ACTIVE CLINICAL AI AGENTS</strong>
+                
+                <!-- Agent 1 Card -->
+                <div id="mcpAgentCard1" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px; display:flex; gap:10px; align-items:center; transition:all 0.3s;">
+                  <div style="font-size:1.4rem;">📥</div>
+                  <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <strong style="font-size:0.75rem; color:var(--text-main);">1. Symptom Ingestion Agent (MCP Client)</strong>
+                      <span class="mcp-agent-badge" id="mcpAgentBadge1" style="font-size:0.6rem; font-weight:bold; padding:2px 6px; border-radius:10px; background:rgba(255,255,255,0.05); color:var(--text-muted);">IDLE</span>
+                    </div>
+                    <p style="margin:2px 0 0 0; font-size:0.65rem; color:var(--text-muted); line-height:1.2;">Scrapes medical registries & aggregates bilingual symptom descriptors.</p>
+                  </div>
+                </div>
+
+                <!-- Connection Indicator -->
+                <div id="mcpArrow1" style="text-align:center; font-size:0.75rem; margin:-4px 0; color:rgba(255,255,255,0.15); transition:all 0.3s;">⬇</div>
+
+                <!-- Agent 2 Card -->
+                <div id="mcpAgentCard2" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px; display:flex; gap:10px; align-items:center; transition:all 0.3s;">
+                  <div style="font-size:1.4rem;">💊</div>
+                  <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <strong style="font-size:0.75rem; color:var(--text-main);">2. Pharmacotherapy Compiler Agent</strong>
+                      <span class="mcp-agent-badge" id="mcpAgentBadge2" style="font-size:0.6rem; font-weight:bold; padding:2px 6px; border-radius:10px; background:rgba(255,255,255,0.05); color:var(--text-muted);">IDLE</span>
+                    </div>
+                    <p style="margin:2px 0 0 0; font-size:0.65rem; color:var(--text-muted); line-height:1.2;">Binds active chemical compositions, strengths, ICD-11 & SNOMED CT codes.</p>
+                  </div>
+                </div>
+
+                <!-- Connection Indicator -->
+                <div id="mcpArrow2" style="text-align:center; font-size:0.75rem; margin:-4px 0; color:rgba(255,255,255,0.15); transition:all 0.3s;">⬇</div>
+
+                <!-- Agent 3 Card -->
+                <div id="mcpAgentCard3" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:10px; display:flex; gap:10px; align-items:center; transition:all 0.3s;">
+                  <div style="font-size:1.4rem;">🧠</div>
+                  <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                      <strong style="font-size:0.75rem; color:var(--text-main);">3. Vocabulary Training Agent (Compiler)</strong>
+                      <span class="mcp-agent-badge" id="mcpAgentBadge3" style="font-size:0.6rem; font-weight:bold; padding:2px 6px; border-radius:10px; background:rgba(255,255,255,0.05); color:var(--text-muted);">IDLE</span>
+                    </div>
+                    <p style="margin:2px 0 0 0; font-size:0.65rem; color:var(--text-muted); line-height:1.2;">Constructs N-grams, updates Triads, and retrains the Naive Bayes SLM.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right Column: Simulated MCP JSON-RPC Terminal & Progress -->
+            <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 10px; justify-content: space-between;">
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <strong style="color:var(--accent); display:block; font-size:0.8rem; letter-spacing: 0.5px;">📟 MODEL CONTEXT PROTOCOL (MCP) CONSOLE</strong>
+                <div id="mcpTerminalLog" style="background:#050a12; border:1px solid rgba(0, 229, 255, 0.15); border-radius:6px; height:240px; font-family:monospace; font-size:0.68rem; color:var(--cyan); padding:8px; overflow-y:auto; white-space:pre-wrap; line-height:1.4; box-shadow: inset 0 0 10px rgba(0,0,0,0.8);">[INFO] MCP Client ready. Select a dataset and activate the pipeline...</div>
+              </div>
+
+              <!-- Pipeline Progress -->
+              <div style="background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.05); padding: 8px 10px; border-radius: 6px;">
+                <div style="display:flex; justify-content:space-between; font-size:0.68rem; color:var(--text-muted); margin-bottom:4px;">
+                  <span>AUTO-COLLECTION PROGRESS</span>
+                  <strong id="mcpProgressText" style="color:var(--teal); font-family:'Orbitron', sans-serif;">0%</strong>
+                </div>
+                <div style="height:6px; background:rgba(0,0,0,0.4); border-radius:3px; overflow:hidden;">
+                  <div id="mcpProgressBarFill" style="height:100%; width:0%; background:linear-gradient(90deg, var(--teal), var(--primary)); transition:width 0.3s; box-shadow:0 0 8px var(--teal);"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:flex-end; margin-top:5px;">
+          <button class="sp-btn sp-btn-new" onclick="closeTrainingHub()" style="padding: 8px 16px;">Close Training Center</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== MAIN LAYOUT ===== -->
+    <div class="main-layout">
+
+      <!-- ===== SIDEBAR ===== -->
+      <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-section" data-mobile-tab="profile">
+          <div class="sidebar-heading">PATIENT PROFILE</div>
+          <div class="profile-card">
+            <div class="profile-avatar" id="profileAvatar">
+              <span id="avatarEmoji">👤</span>
+            </div>
+            <div class="profile-completeness">
+              <div class="completeness-bar"><div class="completeness-fill" id="completenessFill"></div></div>
+              <span class="completeness-text" id="completenessText">0% Complete</span>
+            </div>
+            <div class="profile-fields">
+              <div class="field-group">
+                <label for="patientName">Patient Name</label>
+                <input type="text" id="patientName" placeholder="Enter full name" />
+              </div>
+              <div class="field-row">
+                <div class="field-group">
+                  <label for="patientAge">Age</label>
+                  <input type="number" id="patientAge" placeholder="--" min="0" max="120" />
+                </div>
+                <div class="field-group">
+                  <label for="patientGender">Gender</label>
+                  <select id="patientGender">
+                    <option value="">Select</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <div class="field-group">
+                <label for="patientBlood">Blood Group</label>
+                <select id="patientBlood">
+                  <option value="">Unknown</option>
+                  <option>A+</option><option>A-</option>
+                  <option>B+</option><option>B-</option>
+                  <option>O+</option><option>O-</option>
+                  <option>AB+</option><option>AB-</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label for="patientAllergies">Known Allergies</label>
+                <input type="text" id="patientAllergies" placeholder="e.g. Penicillin, Aspirin" />
+              </div>
+              <div class="field-group" style="margin-top: 8px;">
+                <label for="patientCurrentMeds">Daily Medications / Current Rx</label>
+                <input type="text" id="patientCurrentMeds" placeholder="e.g. Warfarin, Atorvastatin, Metformin" />
+              </div>
+              
+              <!-- Pharmacogenomic Traits Selection -->
+              <div class="field-group" style="margin-top: 10px;">
+                <label style="color: var(--cyan); font-weight: bold; font-size: 0.72rem; letter-spacing: 0.5px;">🧬 GENOMIC & METABOLIC TRAITS</label>
+                <div style="display: flex; flex-direction: column; gap: 6px; background: rgba(0, 229, 255, 0.02); padding: 8px; border: 1px solid var(--border); border-radius: 6px; margin-top: 4px;">
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 0.72rem; cursor: pointer; color: var(--text-muted); font-weight: normal; margin: 0;">
+                    <input type="checkbox" class="pgx-checkbox" value="g6pd" style="accent-color: var(--cyan); cursor: pointer;" />
+                    G6PD Deficiency (Hemolysis Risk)
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 0.72rem; cursor: pointer; color: var(--text-muted); font-weight: normal; margin: 0;">
+                    <input type="checkbox" class="pgx-checkbox" value="hla-b5701" style="accent-color: var(--cyan); cursor: pointer;" />
+                    HLA-B*5701 Variant (Hypersensitivity)
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 8px; font-size: 0.72rem; cursor: pointer; color: var(--text-muted); font-weight: normal; margin: 0;">
+                    <input type="checkbox" class="pgx-checkbox" value="cyp2d6" style="accent-color: var(--cyan); cursor: pointer;" />
+                    CYP2D6 Poor Metabolizer (Ineffective)
+                  </label>
+                </div>
+              </div>
+              
+              <!-- Optional Vitals Section -->
+              <div style="border-top: 1px dashed rgba(255,255,255,0.1); margin-top: 15px; padding-top: 15px;">
+                <label style="color: var(--accent); font-weight: bold; font-size: 0.75rem; letter-spacing: 0.5px; display: block; margin-bottom: 8px;">📊 CLINICAL VITALS (OPTIONAL)</label>
+                
+                <div class="field-row">
+                  <div class="field-group">
+                    <label for="patientBP">BP (mmHg)</label>
+                    <input type="text" id="patientBP" placeholder="e.g. 120/80" />
+                  </div>
+                  <div class="field-group">
+                    <label for="patientHR">HR (bpm)</label>
+                    <input type="number" id="patientHR" placeholder="e.g. 76" min="30" max="250" />
+                  </div>
+                </div>
+                
+                <div class="field-row">
+                  <div class="field-group">
+                    <label for="patientTemp">Temp (°F)</label>
+                    <input type="number" id="patientTemp" placeholder="e.g. 98.6" step="0.1" min="90" max="110" />
+                  </div>
+                  <div class="field-group">
+                    <label for="patientSpO2">SpO2 (%)</label>
+                    <input type="number" id="patientSpO2" placeholder="e.g. 98" min="50" max="100" />
+                  </div>
+                </div>
+                <div style="margin-top: 10px;">
+                  <button type="button" class="btn-ble" id="btnBleConnect" onclick="if(window.ramanBle) window.ramanBle.connect();">
+                    <span id="bleStatusPill" class="ble-pill disconnected"></span>
+                    <span id="bleStatusLabel">📡 BLE: CONNECT WEARABLE</span>
+                  </button>
+                  <div id="bleWearableInfo" class="ble-wearable-info" style="display:none;"></div>
+                  <!-- Live Physiological Deterioration (NEWS2 / qSOFA / Shock Index) HUD -->
+                  <div id="liveTriageHud" style="margin-top: 12px; background: rgba(0, 243, 255, 0.03); border: 1px solid rgba(0, 243, 255, 0.2); border-radius: 6px; padding: 10px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                      <span style="font-size:0.72rem; font-weight:bold; color:var(--cyan); letter-spacing:0.5px;">🔬 LIVE PHYSIOLOGICAL CDSS</span>
+                      <span id="liveTriageOverallBadge" style="font-size:0.65rem; padding:2px 6px; border-radius:4px; font-weight:bold; background:rgba(0,255,179,0.15); color:var(--teal); border:1px solid rgba(0,255,179,0.3);">STABLE</span>
+                    </div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px; font-size:0.72rem;">
+                      <div style="background:rgba(0,0,0,0.3); padding:5px 8px; border-radius:4px; border-left:3px solid var(--teal);">
+                        <span style="color:var(--text-muted); font-size:0.65rem; display:block;">NEWS2 Score</span>
+                        <strong id="hudNews2Val" style="color:var(--teal); font-family:'Orbitron', monospace; font-size:0.85rem;">0</strong>
+                        <span id="hudNews2Tier" style="font-size:0.62rem; color:var(--text-muted); margin-left:4px;">(LOW)</span>
+                      </div>
+                      <div style="background:rgba(0,0,0,0.3); padding:5px 8px; border-radius:4px; border-left:3px solid var(--cyan);">
+                        <span style="color:var(--text-muted); font-size:0.65rem; display:block;">qSOFA Sepsis</span>
+                        <strong id="hudQsofaVal" style="color:var(--cyan); font-family:'Orbitron', monospace; font-size:0.85rem;">0</strong>
+                        <span id="hudQsofaRisk" style="font-size:0.62rem; color:var(--text-muted); margin-left:4px;">(NORMAL)</span>
+                      </div>
+                      <div style="background:rgba(0,0,0,0.3); padding:5px 8px; border-radius:4px; border-left:3px solid var(--accent);">
+                        <span style="color:var(--text-muted); font-size:0.65rem; display:block;">Shock Index (SI)</span>
+                        <strong id="hudShockIndexVal" style="color:var(--accent); font-family:'Orbitron', monospace; font-size:0.85rem;">0.60</strong>
+                      </div>
+                      <div style="background:rgba(0,0,0,0.3); padding:5px 8px; border-radius:4px; border-left:3px solid var(--purple);">
+                        <span style="color:var(--text-muted); font-size:0.65rem; display:block;">Renal eGFR</span>
+                        <strong id="hudEgfrVal" style="color:var(--purple); font-family:'Orbitron', monospace; font-size:0.85rem;">--</strong>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Markov Generation Temperature Slider -->
+        <div class="sidebar-section" data-mobile-tab="profile">
+          <div class="sidebar-heading">🧠 Conversational Empathy Temp</div>
+          <div class="pain-meter" style="padding: 10px 0;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+              <span style="font-size:0.72rem; color:var(--text-muted);">Markov Temperature:</span>
+              <span id="markovTempDisplay" style="font-family:'Orbitron'; font-weight:bold; color:var(--cyan); font-size:0.85rem;">1.0</span>
+            </div>
+            <input type="range" id="markovTempSlider" min="0.1" max="2.0" step="0.1" value="1.0" style="width:100%; accent-color:var(--cyan); cursor:pointer;" oninput="document.getElementById('markovTempDisplay').textContent = this.value; window.markovTemperature = parseFloat(this.value);" />
+            <div style="display:flex; justify-content:space-between; font-size:0.6rem; color:var(--text-muted); margin-top:4px;">
+              <span>Structured</span><span>Standard</span><span>Creative</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pain Level -->
+        <div class="sidebar-section" data-mobile-tab="profile">
+          <div class="sidebar-heading">PAIN LEVEL METER</div>
+          <div class="pain-meter">
+            <div class="pain-display">
+              <span class="pain-emoji" id="painEmoji">😐</span>
+              <span class="pain-value" id="painValue">5</span><span class="pain-scale">/10</span>
+            </div>
+            <input type="range" id="painSlider" class="pain-slider" min="1" max="10" value="5" />
+            <div class="pain-labels">
+              <span>Mild</span><span>Moderate</span><span>Severe</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Symptom & Vitals Tracker Diary -->
+        <div class="sidebar-section" data-mobile-tab="vault">
+          <div class="sidebar-heading">📈 LOCAL RECOVERY DIARY</div>
+          <div class="diary-widget" style="background: rgba(0,229,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; text-align: center;">
+              Log symptom severity to track your recovery offline.
+            </div>
+            
+            <div style="display: flex; gap: 8px; margin-bottom: 10px;">
+              <div style="flex: 2; display: flex; flex-direction: column; gap: 4px;">
+                <label for="diaryCondition" style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Condition</label>
+                <select id="diaryCondition" style="width: 100%; padding: 6px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 0.72rem; font-family: var(--font-ui); outline: none;">
+                  <option value="fever">Fever</option>
+                  <option value="headache">Headache</option>
+                  <option value="cough">Cough</option>
+                  <option value="chest pain">Chest Pain</option>
+                  <option value="stomach pain">Stomach Pain</option>
+                  <option value="joint pain">Joint Pain</option>
+                  <option value="skin rash">Skin Rash</option>
+                  <option value="high bp">High BP</option>
+                  <option value="diabetes">Diabetes</option>
+                  <option value="eye pain">Eye Pain</option>
+                  <option value="back pain">Back Pain</option>
+                </select>
+              </div>
+              <div style="flex: 1; display: flex; flex-direction: column; gap: 4px;">
+                <label for="diarySeverity" style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase;">Severity</label>
+                <input type="number" id="diarySeverity" placeholder="1-10" min="1" max="10" value="5" style="width: 100%; padding: 6px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 6px; color: var(--text-main); font-size: 0.72rem; font-family: var(--font-ui); text-align: center; outline: none;" />
+              </div>
+            </div>
+            
+            <button class="sp-btn sp-btn-share" style="width: 100%; padding: 8px; font-weight: bold; margin-bottom: 12px; justify-content: center; display: flex; align-items: center; gap: 4px; border-radius: 6px;" onclick="window.logDiaryEntry()">
+              📝 Log Entry
+            </button>
+            
+            <!-- Dynamic Micro Sparkline Canvas Chart -->
+            <div style="margin-top: 10px;">
+              <div style="font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; padding: 0 2px;">
+                <span>Offline Trend Sparkline</span>
+                <span id="diaryTrendCount" style="color: var(--teal); font-weight: bold;">0 logs</span>
+              </div>
+              <canvas id="diaryCanvas" height="75" data-auto-resync="true" style="width: 100%; display: block; background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); position: relative; cursor: crosshair;"></canvas>
+              
+              <!-- Offline Severity Stats Dashboard Grid -->
+              <div id="diaryStatsRow" style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 8px; margin-bottom: 8px; font-size: 0.58rem; text-align: center; color: var(--text-muted);">
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:4px; border-radius:4px;">
+                  <div style="opacity: 0.8; font-size: 0.52rem; letter-spacing: 0.5px; text-transform: uppercase;">Avg Severity</div>
+                  <strong id="diaryStatAvg" style="color:var(--cyan); font-family:var(--font-head); font-size: 0.68rem;">N/A</strong>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:4px; border-radius:4px;">
+                  <div style="opacity: 0.8; font-size: 0.52rem; letter-spacing: 0.5px; text-transform: uppercase;">Peak Severity</div>
+                  <strong id="diaryStatPeak" style="color:#ff4d6d; font-family:var(--font-head); font-size: 0.68rem;">N/A</strong>
+                </div>
+                <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.05); padding:4px; border-radius:4px;">
+                  <div style="opacity: 0.8; font-size: 0.52rem; letter-spacing: 0.5px; text-transform: uppercase;">Trend State</div>
+                  <strong id="diaryStatTrend" style="color:var(--teal); font-family:var(--font-head); font-size: 0.62rem;">N/A</strong>
+                </div>
+              </div>
+
+              <div style="font-size: 0.62rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-top: 6px; padding: 0 4px;">
+                <span>Start</span>
+                <span style="color: #ff4d6d; cursor: pointer; font-weight: bold;" onclick="window.clearDiaryEntries()">🗑️ Clear History</span>
+                <span>Today</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Anatomical Symptom Scanner -->
+        <div class="sidebar-section" data-mobile-tab="anatomy">
+          <div class="sidebar-heading">📈 ANATOMICAL DIAGNOSTIC SCANNER</div>
+          <div class="anatomical-scanner-widget">
+            <div class="anatomical-scanner-title-row">
+              <span class="anatomical-scan-hint">ACTIVE TARGET:</span>
+              <span class="anatomical-scan-zone" id="activeScanZone">SELECT REGION</span>
+            </div>
+            <!-- Dynamic Telemetry Coordinates -->
+            <div class="anatomical-scanner-telemetry-row" style="display: flex; justify-content: space-between; width: 100%; padding: 0 4px; margin-top: -2px; border-bottom: 1px dashed rgba(0, 229, 255, 0.15); padding-bottom: 6px; margin-bottom: 4px;">
+              <span id="activeScanCoords" style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); letter-spacing: 0.5px;">COORDS: X: --, Y: --</span>
+              <span id="activeScanLatency" style="font-family: var(--font-head); font-size: 0.6rem; color: var(--text-muted); letter-spacing: 0.5px;">LATENCY: --ms</span>
+            </div>
+
+            <!-- Dynamic Cyber HUD Canvases for WebGPU/CPU Vitals Density Scatterplot & ECG Oscilloscope -->
+            <details class="hud-accordion-card" id="hudAccordionCard" open>
+              <summary class="hud-accordion-summary">
+                <span>⚡ LIVE BIO-TELEMETRY HUD CANVASES</span>
+                <span class="hud-accordion-chevron">▼</span>
+              </summary>
+              <div class="hud-canvases-wrapper" style="margin-top: 8px; margin-bottom: 8px; display: flex; flex-direction: column; gap: 8px;">
+                <div class="hud-canvas-block">
+                  <div class="hud-canvas-title" style="font-family: var(--font-ui); font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 4px; padding: 0 2px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <span id="hudCanvasModeTitle">⚡ Vital Density Progression</span>
+                    <span id="hudCanvasModeBadge" style="color: var(--cyan);">WebGPU Active</span>
+                  </div>
+                  <div style="display: flex; gap: 4px; margin-bottom: 6px;">
+                    <button type="button" id="btnModeHeatmap" class="btn-hud-mode active" onclick="switchHudSimulationMode('HEATMAP')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(0,229,255,0.15); border: 1px solid var(--cyan); color: var(--cyan); border-radius: 4px; cursor: pointer; font-family: var(--font-head); font-weight: bold;">📊 2D Scatter</button>
+                    <button type="button" id="btnModeOrgan3D" class="btn-hud-mode" onclick="switchHudSimulationMode('ORGAN_3D')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 4px; cursor: pointer; font-family: var(--font-head);">🫀 3D Organ</button>
+                    <button type="button" id="btnModePkpd" class="btn-hud-mode" onclick="switchHudSimulationMode('PKPD')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 4px; cursor: pointer; font-family: var(--font-head);">💊 PK/PD</button>
+                    <button type="button" id="btnModeVcg" class="btn-hud-mode" onclick="switchHudSimulationMode('VCG')" style="flex: 1; font-size: 0.58rem; padding: 4px 2px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); border-radius: 4px; cursor: pointer; font-family: var(--font-head);">⚡ 3D VCG</button>
+                  </div>
+                  <canvas id="progressionCanvas" width="300" height="200" data-auto-resync="true" class="hud-neon-canvas" style="width: 100%; display: block; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.1), inset 0 0 8px rgba(0, 229, 255, 0.15); cursor: crosshair;"></canvas>
+                  <canvas id="organ3dCanvas" width="300" height="200" data-auto-resync="true" class="hud-neon-canvas" style="width: 100%; display: none; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 229, 255, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 229, 255, 0.1), inset 0 0 8px rgba(0, 229, 255, 0.15); cursor: crosshair;"></canvas>
+                  <canvas id="pkpdCanvas" width="300" height="200" data-auto-resync="true" class="hud-neon-canvas" style="width: 100%; display: none; background: rgba(5,13,26,0.65); border: 1px solid rgba(255, 180, 0, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(255, 180, 0, 0.1), inset 0 0 8px rgba(255, 180, 0, 0.15); cursor: crosshair;"></canvas>
+                  <canvas id="vcgCanvas" width="300" height="200" data-auto-resync="true" class="hud-neon-canvas" style="width: 100%; display: none; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 255, 179, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 255, 179, 0.1), inset 0 0 8px rgba(0, 255, 179, 0.15); cursor: crosshair;"></canvas>
+                </div>
+                <div class="hud-canvas-block">
+                  <div class="hud-canvas-title" style="font-family: var(--font-ui); font-size: 0.65rem; color: var(--text-muted); display: flex; justify-content: space-between; margin-bottom: 4px; padding: 0 2px; text-transform: uppercase; letter-spacing: 0.5px;">
+                    <span>❤️ Real-Time ECG Oscilloscope</span>
+                    <span style="color: var(--teal); animation: pulseGlow 1.5s infinite alternate;">Live HUD</span>
+                  </div>
+                  <canvas id="oscilloscopeCanvas" width="300" height="100" data-auto-resync="true" class="hud-neon-canvas" style="width: 100%; display: block; background: rgba(5,13,26,0.65); border: 1px solid rgba(0, 255, 179, 0.2); border-radius: 8px; box-shadow: 0 0 10px rgba(0, 255, 179, 0.1), inset 0 0 8px rgba(0, 255, 179, 0.15);"></canvas>
+                </div>
+              </div>
+            </details>
+
+            <svg viewBox="0 0 150 200" class="anatomical-map-svg" style="width: 100%; max-width: 170px; margin: 0 auto; display: block; filter: drop-shadow(0 0 5px rgba(0, 243, 255, 0.25));">
+              <!-- Radial Glow and Linear Scan Definitions -->
+              <defs>
+                <radialGradient id="nodeGlow" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="var(--cyan)" stop-opacity="1"/>
+                  <stop offset="100%" stop-color="var(--cyan)" stop-opacity="0"/>
+                </radialGradient>
+                <linearGradient id="scanGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stop-color="rgba(0, 229, 255, 0)" stop-opacity="0"/>
+                  <stop offset="50%" stop-color="rgba(0, 229, 255, 0.95)" stop-opacity="0.95"/>
+                  <stop offset="100%" stop-color="rgba(0, 229, 255, 0)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              
+              <!-- Cyber Grid Background and Alignment Crosshairs -->
+              <line x1="75" y1="0" x2="75" y2="200" class="map-grid-line pulse"/>
+              <line x1="0" y1="100" x2="150" y2="100" class="map-grid-line pulse"/>
+              
+              <!-- Symmetrical Horizontal Alignment Marks -->
+              <line x1="50" y1="20" x2="100" y2="20" class="map-grid-line"/>
+              <line x1="30" y1="50" x2="120" y2="50" class="map-grid-line"/>
+              <line x1="30" y1="80" x2="120" y2="80" class="map-grid-line"/>
+              <line x1="40" y1="110" x2="110" y2="110" class="map-grid-line"/>
+              <line x1="40" y1="145" x2="110" y2="145" class="map-grid-line"/>
+              <line x1="40" y1="180" x2="110" y2="180" class="map-grid-line"/>
+              
+              <!-- Crosshair Markers (Scope Aesthetics) -->
+              <line x1="75" y1="5" x2="75" y2="15" class="map-crosshair"/>
+              <line x1="70" y1="10" x2="80" y2="10" class="map-crosshair"/>
+              <line x1="75" y1="185" x2="75" y2="195" class="map-crosshair"/>
+              <line x1="70" y1="190" x2="80" y2="190" class="map-crosshair"/>
+              
+              <!-- High-Tech Scanning Laser Sweep Line -->
+              <line x1="5" y1="0" x2="145" y2="0" class="map-scan-sweep"/>
+              
+              <!-- Sleek Cyber Real-Time Anatomical Body Map Image -->
+              <image href="human_body_map.webp" onerror="this.setAttribute('href','human_body_map.png')" x="2" y="2" width="146" height="196" class="human-map-image" preserveAspectRatio="none" />
+              
+              <!-- Interactive Hotspots (Precise Bio-Targets aligned with high-fidelity PNG map) -->
+              <!-- 1. Head (Headache / ମୁଣ୍ଡବିନ୍ଧା) -->
+              <circle cx="75" cy="32" r="5.5" class="map-hotspot" data-symptom="headache" data-en="I have a severe headache and suspected migraine" data-or="ମୋ ମୁଣ୍ଡ ବହୁତ ବିନ୍ଧୁଛି" data-label="HEAD (ମୁଣ୍ଡବିନ୍ଧା)" fill="var(--cyan)"/>
+              <circle cx="75" cy="32" r="10" fill="url(#nodeGlow)" opacity="0.35" pointer-events="none"/>
+              
+              <!-- 2. Eyes (Eye Pain / ଆଖି ବିନ୍ଧା) -->
+              <circle cx="71.5" cy="36" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
+              <circle cx="78.5" cy="36" r="3" class="map-hotspot" data-symptom="eye pain" data-en="I have severe eye pain and blurred vision" data-or="ମୋ ଆଖି ବିନ୍ଧୁଛି ଏବଂ ଆଖି ଲାଲ ପଡିଛି" data-label="EYES (ଆଖି ବିନ୍ଧା)" fill="var(--teal)"/>
+              
+              <!-- 2B. Ears (Otitis Media / କାନ ବିନ୍ଧା) -->
+              <circle cx="67" cy="32" r="3" class="map-hotspot" data-symptom="otitis media" data-en="Child has severe ear pain and ear tugging with fever" data-or="ପିଲାଟିର କାନ ବିନ୍ଧୁଛି ଏବଂ କାନ ଟାଣୁଛି ଜ୍ୱର ସହିତ" data-label="EARS (କାନ ବିନ୍ଧା / OTITIS)" fill="#00e5ff"/>
+              <circle cx="83" cy="32" r="3" class="map-hotspot" data-symptom="otitis media" data-en="Child has severe ear pain and ear tugging with fever" data-or="ପିଲାଟିର କାନ ବିନ୍ଧୁଛି ଏବଂ କାନ ଟାଣୁଛି ଜ୍ୱର ସହିତ" data-label="EARS (କାନ ବିନ୍ଧା / OTITIS)" fill="#00e5ff"/>
+              
+              <!-- 3. Throat (Cough / କାଶ) -->
+              <circle cx="75" cy="47" r="4" class="map-hotspot" data-symptom="cough" data-en="I have a persistent cough with mucus and a sore throat" data-or="ମୋର ବହୁତ କାଶ ଏବଂ ଥଣ୍ଡା ହେଉଛି" data-label="THROAT (କାଶ / ଗଳା)" fill="#ff00a0"/>
+              
+              <!-- 4. Chest (Chest Pain / ଛାତି ଯନ୍ତ୍ରଣା) -->
+              <circle cx="75" cy="68" r="6" class="map-hotspot" data-symptom="chest pain" data-en="I am experiencing crushing chest pain and shortness of breath" data-or="ମୋ ଛାତି ଯନ୍ତ୍ରଣା ହେଉଛି ଏବଂ ନିଶ୍ୱାସ ନେବାରେ କଷ୍ଟ" data-label="CHEST (ଛାତି ଯନ୍ତ୍ରଣା)" fill="var(--red-warn)"/>
+              
+              <!-- 5. Heart/BP (High Blood Pressure / ଉଚ୍ଚ ରକ୍ତଚାପ) -->
+              <circle cx="70" cy="70" r="3.5" class="map-hotspot" data-symptom="high blood pressure" data-en="I have high blood pressure, dizziness, and palpitations" data-or="ମୋର ରକ୍ତଚାପ ବୃଦ୍ଧି ପାଇଛି ଏବଂ ମୁଣ୍ଡ ଘୁରାଉଛି" data-label="HEART (ଉଚ୍ଚ ରକ୍ତଚାପ)" fill="#ff4d6d"/>
+              
+              <!-- 6. Stomach (Stomach Pain / ପେଟ କାଟୁଛି) -->
+              <circle cx="75" cy="94" r="5.5" class="map-hotspot" data-symptom="stomach pain" data-en="I have severe stomach pain and nausea" data-or="ମୋ ପେଟ ବହୁତ କାଟୁଛି" data-label="ABDOMEN (ପେଟ କାଟୁଛି)" fill="#ff9f43"/>
+              
+              <!-- 7. Back (Back Pain / ଅଣ୍ଟା ବୀନ୍ଧା) -->
+              <circle cx="75" cy="114" r="5" class="map-hotspot" data-symptom="back pain" data-en="I have severe back pain and stiffness in my spine" data-or="ମୋ ଅଣ୍ଟା ବହୁତ ବୀନ୍ଧୁଛି ଏବଂ ଚାଲିବାରେ କଷ୍ଟ" data-label="BACK (ଅଣ୍ଟା ବୀନ୍ଧା)" fill="#a020f0"/>
+
+              <!-- 8. Metabolic (Diabetes / ମଧୁମେହ) -->
+              <circle cx="75" cy="126" r="4" class="map-hotspot" data-symptom="diabetes" data-en="I have high blood sugar, extreme thirst, and frequent urination" data-or="ମୋର ରକ୍ତ ଶର୍କରା ବୃଦ୍ଧି ପାଇଛି" data-label="METABOLIC (ମଧୁମେହ)" fill="#00e5ff"/>
+              
+              <!-- 8B. Pelvis (Dysmenorrhea & Women's Health / ଋତୁସ୍ରାବ ଯନ୍ତ୍ରଣା) -->
+              <circle cx="75" cy="138" r="5" class="map-hotspot" data-symptom="dysmenorrhea" data-en="I have severe menstrual cramps and lower pelvic pain" data-or="ମୋର ପ୍ରବଳ ଋତୁସ୍ରାବ ଯନ୍ତ୍ରଣା ଏବଂ ପେଲଭିକ୍ ବ୍ୟଥା ହେଉଛି" data-label="PELVIS (ଋତୁସ୍ରାବ / DYSMENORRHEA)" fill="#ff0077"/>
+
+              <!-- 9. Skin (Skin Rash / ଚର୍ମ କୁଣ୍ଡେଇ ହେବା) -->
+              <circle cx="46" cy="114" r="4" class="map-hotspot" data-symptom="skin rash" data-en="I have an itchy red skin rash and allergic skin patches" data-or="ମୋ ଚର୍ମ କୁଣ୍ଡେଇ ହେଉଛି ଏବଂ ଲାଲ ପଡିଯାଇଛି" data-label="SKIN (ଚର୍ମ କୁଣ୍ଡେଇ ହେବା)" fill="#a8ff78"/>
+
+              <!-- 10. Joints (Joint Pain / ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ) -->
+              <circle cx="58" cy="165" r="4.5" class="map-hotspot" data-symptom="joint pain" data-en="I have severe joint pain and swelling in my knee joints" data-or="ମୋ ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ ଜନିତ ବିନ୍ଧା ହେଉଛି" data-label="JOINTS (ଗଣ୍ଠି ବାତ)" fill="#00ffb3"/>
+              <circle cx="92" cy="165" r="4.5" class="map-hotspot" data-symptom="joint pain" data-en="I have severe joint pain and swelling in my knee joints" data-or="ମୋ ଆଣ୍ଠୁ ଗଣ୍ଠି ବାତ ଜନିତ ବିନ୍ଧା ହେଉଛି" data-label="JOINTS (ଗଣ୍ଠି ବାତ)" fill="#00ffb3"/>
+              
+              <!-- Dynamic Holographic Targeting Reticle -->
+              <g id="mapReticle" style="display: none; transition: transform 0.35s cubic-bezier(0.19, 1, 0.22, 1); transform-box: fill-box; transform-origin: center; pointer-events: none;">
+                <!-- Glowing Outer Ring -->
+                <circle cx="0" cy="0" r="13" fill="none" stroke="var(--cyan)" stroke-width="0.8" stroke-dasharray="4 2" class="reticle-outer" />
+                <!-- Inner Warning Target -->
+                <circle cx="0" cy="0" r="6" fill="none" stroke="var(--accent)" stroke-width="1.2" opacity="0.8" class="reticle-inner" />
+                <!-- Precision Crosshairs -->
+                <line x1="-16" y1="0" x2="16" y2="0" stroke="var(--cyan)" stroke-width="0.5" opacity="0.5" />
+                <line x1="0" y1="-16" x2="0" y2="16" stroke="var(--cyan)" stroke-width="0.5" opacity="0.5" />
+              </g>
+            </svg>
+
+            <!-- Touch-Optimized Organ Chips Carousel -->
+            <div class="anatomical-chips-carousel" id="anatomicalChipsCarousel">
+              <button type="button" class="organ-chip" data-symptom="headache" onclick="window.handleOrganChipClick(this)">🤕 Head / ମୁଣ୍ଡ</button>
+              <button type="button" class="organ-chip" data-symptom="eye pain" onclick="window.handleOrganChipClick(this)">👁️ Eyes / ଆଖି</button>
+              <button type="button" class="organ-chip" data-symptom="otitis media" onclick="window.handleOrganChipClick(this)">👂 Ears / କାନ</button>
+              <button type="button" class="organ-chip" data-symptom="cough" onclick="window.handleOrganChipClick(this)">🗣️ Throat / କାଶ</button>
+              <button type="button" class="organ-chip" data-symptom="chest pain" onclick="window.handleOrganChipClick(this)">💔 Chest / ଛାତି</button>
+              <button type="button" class="organ-chip" data-symptom="high blood pressure" onclick="window.handleOrganChipClick(this)">❤️ Heart / ରକ୍ତଚାପ</button>
+              <button type="button" class="organ-chip" data-symptom="stomach pain" onclick="window.handleOrganChipClick(this)">🤢 Stomach / ପେଟ</button>
+              <button type="button" class="organ-chip" data-symptom="back pain" onclick="window.handleOrganChipClick(this)">🔩 Back / ଅଣ୍ଟା</button>
+              <button type="button" class="organ-chip" data-symptom="diabetes" onclick="window.handleOrganChipClick(this)">🩸 Metabolic / ମଧୁମେହ</button>
+              <button type="button" class="organ-chip" data-symptom="skin rash" onclick="window.handleOrganChipClick(this)">🩹 Skin / ଚର୍ମ</button>
+              <button type="button" class="organ-chip" data-symptom="joint pain" onclick="window.handleOrganChipClick(this)">🦵 Joints / ଗଣ୍ଠି</button>
+              <button type="button" class="organ-chip" data-symptom="dysmenorrhea" onclick="window.handleOrganChipClick(this)">🌸 Pelvis / ଋତୁସ୍ରାବ</button>
+              <button type="button" class="organ-chip" data-symptom="dengue fever" onclick="window.handleOrganChipClick(this)">🦟 Dengue / ଡେଙ୍ଗୁ</button>
+              <button type="button" class="organ-chip" data-symptom="malaria chills" onclick="window.handleOrganChipClick(this)">🩸 Malaria / ମ୍ୟାଲେରିଆ</button>
+              <button type="button" class="organ-chip" data-symptom="typhoid enteric fever" onclick="window.handleOrganChipClick(this)">🌡️ Typhoid / ଟାଇଫଏଡ୍</button>
+              <button type="button" class="organ-chip" data-symptom="gastroenteritis diarrhea" onclick="window.handleOrganChipClick(this)">💧 Diarrhea / ଝାଡ଼ାବାନ୍ତି</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="sidebar-section" data-mobile-tab="anatomy">
+          <div class="sidebar-heading">QUICK SYMPTOMS</div>
+          <div class="quick-symptoms">
+            <button class="symptom-tag" data-symptom="I have a severe headache and fever of 101°F">🤕 Headache + Fever</button>
+            <button class="symptom-tag" data-symptom="I am experiencing chest pain and shortness of breath">💔 Chest Pain</button>
+            <button class="symptom-tag" data-symptom="I have a persistent cough with mucus">🫁 Cough</button>
+            <button class="symptom-tag" data-symptom="I have stomach pain and nausea">🤢 Stomach Pain</button>
+            <button class="symptom-tag" data-symptom="I have joint pain and swelling in my knees">🦵 Joint Pain</button>
+            <button class="symptom-tag" data-symptom="I have a skin rash and itching all over my body">🩹 Skin Rash</button>
+            <button class="symptom-tag" data-symptom="I have high blood pressure and dizziness">💊 Hypertension</button>
+            <button class="symptom-tag" data-symptom="I have diabetes and my blood sugar is high">🩸 Diabetes</button>
+            <button class="symptom-tag" data-symptom="I have eye pain and blurred vision">👁️ Eye Problems</button>
+            <button class="symptom-tag" data-symptom="I have back pain and difficulty moving">🔩 Back Pain</button>
+            <button class="symptom-tag" data-symptom="Child ear tugging and acute ear pain with fever in toddler">👂 Ear Infection / Otitis</button>
+            <button class="symptom-tag" data-symptom="Severe menstrual cramps with lower pelvic pain dysmenorrhea">🌸 Period Cramps / Dysmenorrhea</button>
+            <button class="symptom-tag" data-symptom="High blood pressure in pregnancy with headache and preeclampsia risk">🤰 High BP in Pregnancy</button>
+            <button class="symptom-tag" data-symptom="Infant lethargy and yellow skin eyes neonatal jaundice">👶 Neonatal Jaundice</button>
+            <button class="symptom-tag" data-symptom="I have high fever with severe retro-orbital eye pain and joint ache">🦟 Dengue Fever</button>
+            <button class="symptom-tag" data-symptom="I have cyclical high fever with intense shivering chills and profuse sweating">🩸 Malaria Rigors</button>
+            <button class="symptom-tag" data-symptom="I have step-ladder fever with abdominal pain, headache, and rose spots">🌡️ Typhoid Fever</button>
+            <button class="symptom-tag" data-symptom="I have acute watery diarrhea with frequent vomiting and severe dehydration cramps">💧 Gastroenteritis</button>
+          </div>
+        </div>
+
+        <div class="sidebar-section" data-mobile-tab="profile">
+          <div class="sidebar-heading">AI CAPABILITIES</div>
+          <ul class="capabilities-list">
+            <li><span class="cap-dot"></span>Symptom Analysis</li>
+            <li><span class="cap-dot"></span>Medication Suggestions</li>
+            <li><span class="cap-dot"></span>Dosage Guidance</li>
+            <li><span class="cap-dot"></span>Precaution Alerts</li>
+            <li><span class="cap-dot"></span>Diet Recommendations</li>
+            <li><span class="cap-dot teal"></span>🖼 Photo/Video Recognition</li>
+            <li><span class="cap-dot teal"></span>🎙 Voice Input</li>
+            <li><span class="cap-dot teal"></span>🧠 Profile Memory</li>
+            <li><span class="cap-dot teal"></span>📁 Medical Vault</li>
+            <li><span class="cap-dot"></span>Specialist Referrals</li>
+          </ul>
+        </div>
+
+        <!-- ===== MEDICAL VAULT ===== -->
+        <div class="sidebar-section" id="vaultSection" data-mobile-tab="vault">
+          <div class="sidebar-heading" style="display:flex;align-items:center;justify-content:space-between;">
+            <span>📁 MEDICAL VAULT</span>
+            <span class="vault-count" id="vaultCount">0 docs</span>
+          </div>
+          <div id="vaultList"></div>
+          <div id="vaultEmpty" class="vault-empty">No documents yet.<br>Upload prescriptions, lab reports,<br>X-rays or MRI scans to get started.</div>
+        </div>
+        <!-- Mobile-Only Sidebar Actions -->
+        <div class="sidebar-section mobile-only-sidebar-action" data-mobile-tab="profile" style="margin-top: 15px;">
+          <div class="sidebar-heading">SYSTEM ACTIONS</div>
+          <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="btn-session-mgr" onclick="openApiSettings()" style="width: 100% !important; justify-content: center; height: 36px; border-radius: 8px;">
+              <span>⚙️</span> API SETTINGS
+            </button>
+            <button class="btn-session-mgr" onclick="openTrainingHub()" style="width: 100% !important; justify-content: center; height: 36px; border-radius: 8px; border-color: var(--accent) !important; color: var(--accent) !important;">
+              <span>🧠</span> SLM TRAINING HUB
+            </button>
+          </div>
+        </div>
+
+        <div class="disclaimer-box" data-mobile-tab="profile">
+          <div class="disclaimer-icon">⚠️</div>
+          <p>RAMAN AI provides informational suggestions only. Always consult a licensed physician for medical decisions.</p>
+        </div>
+      </aside>
+
+      <!-- ===== CHAT AREA ===== -->
+      <main class="chat-area">
+        <!-- Context Indicator -->
+        <div class="context-indicator" id="contextIndicator" style="display:none;">
+          <span class="ctx-icon">🧠</span>
+          <span class="ctx-label" id="ctxLabel">Discussing:</span>
+          <span class="ctx-value" id="ctxValue">--</span>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+          <!-- Welcome Message -->
+          <div class="message ai-message" id="welcomeMsg">
+            <div class="message-avatar ai-avatar">
+              <span>🤖</span>
+            </div>
+            <div class="message-content">
+              <div class="message-header">
+                <span class="sender-name">RAMAN AI</span>
+                <span class="message-badge">Experiment № 170</span>
+                <span class="message-time" id="welcomeTime"></span>
+              </div>
+              <div class="message-bubble ai-bubble">
+                <div class="typing-intro">
+                  <p>Hello! I am <strong>RAMAN AI – Experiment No. 170</strong>, your dedicated medical intelligence assistant. Developed by <strong>Ramanuja Pathy</strong>. 🏥</p>
+                  <p>I am designed to:</p>
+                  <ul>
+                    <li>📋 <strong>Understand</strong> your symptoms in detail</li>
+                    <li>🔬 <strong>Analyze</strong> possible conditions</li>
+                    <li>💊 <strong>Suggest</strong> appropriate medications</li>
+                    <li>📷 <strong>Recognize</strong> medical images & photos</li>
+                    <li>🎥 <strong>Analyze</strong> symptom videos in real-time</li>
+                    <li>🎙 <strong>Listen</strong> to your voice description</li>
+                  </ul>
+                  <p><span class="desktop-guidance">Please fill in your <strong>Patient Profile</strong> on the left, then describe your symptoms below. You can also 📎 upload a photo or 🎙 use voice input! 🩺</span><span class="mobile-guidance">Tap <strong>Profile</strong> or <strong>Anatomy</strong> below to log vitals, or describe symptoms below to begin! 🩺</span></p>
+                  <div style="margin-top:15px; display:flex; gap:10px; flex-wrap: wrap; align-items: center;">
+                    <button class="btn-consult" id="btnStartConsultation" style="background:var(--accent); border:none; padding:8px 16px; border-radius:6px; font-weight:bold; color:#0f172a; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px; transition:all 0.3s; box-shadow:0 0 10px rgba(0,255,179,0.3);">💬 START HUMAN-LIKE CLINICAL CONSULTATION</button>
+                  </div>
+                  
+                  <!-- Inside-app Returning Patient Session Restore Box -->
+                  <details class="welcome-restore-details" id="welcomeRestoreDetails">
+                    <summary class="welcome-restore-summary">
+                      <span>🔐 RETURNING PATIENT? RESTORE PREVIOUS SESSION</span>
+                      <span class="restore-chevron">▾</span>
+                    </summary>
+                    <div class="welcome-restore-body">
+                      <div class="welcome-restore-input-row">
+                        <input type="text" id="welcomeHidInput" placeholder="Enter Health ID e.g. RMN-A3F9K2" maxlength="12" />
+                        <button id="welcomeHidBtn">↩ RESTORE</button>
+                      </div>
+                      <div id="welcomeHidError"></div>
+                    </div>
+                  </details>
+                </div>
+              </div>
+              <div class="msg-reactions" data-msgid="welcome">
+                <button class="reaction-btn" data-emoji="👍" title="Helpful">👍</button>
+                <button class="reaction-btn" data-emoji="❤️" title="Love it">❤️</button>
+                <button class="reaction-btn" data-emoji="🙌" title="Great">🙌</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Typing Indicator -->
+        <div class="typing-indicator" id="typingIndicator" style="display:none;">
+          <div class="message-avatar ai-avatar"><span>🤖</span></div>
+          <div class="typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <div class="typing-label">RAMAN AI is analyzing...</div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="chat-input-area">
+          <!-- Mobile Quick Symptoms Horizontal Scroller -->
+          <div class="quick-symptoms-scroller" id="quickSymptomsScroller">
+            <button type="button" class="symptom-tag" data-symptom="I have a severe headache and fever of 101°F">🤕 Headache + Fever</button>
+            <button type="button" class="symptom-tag" data-symptom="I am experiencing chest pain and shortness of breath">💔 Chest Pain</button>
+            <button type="button" class="symptom-tag" data-symptom="I have a persistent cough with mucus">🫁 Cough</button>
+            <button type="button" class="symptom-tag" data-symptom="I have stomach pain and nausea">🤢 Stomach Pain</button>
+            <button type="button" class="symptom-tag" data-symptom="I have joint pain and swelling in my knees">🦵 Joint Pain</button>
+            <button type="button" class="symptom-tag" data-symptom="I have a skin rash and itching all over my body">🩹 Skin Rash</button>
+            <button type="button" class="symptom-tag" data-symptom="I have high blood pressure and dizziness">💊 Hypertension</button>
+            <button type="button" class="symptom-tag" data-symptom="I have diabetes and my blood sugar is high">🩸 Diabetes</button>
+            <button type="button" class="symptom-tag" data-symptom="I have eye pain and blurred vision">👁️ Eye Problems</button>
+            <button type="button" class="symptom-tag" data-symptom="I have back pain and difficulty moving">🔩 Back Pain</button>
+            <button type="button" class="symptom-tag" data-symptom="I have high fever with severe retro-orbital eye pain and joint ache">🦟 Dengue Fever</button>
+            <button type="button" class="symptom-tag" data-symptom="I have cyclical high fever with intense shivering chills and profuse sweating">🩸 Malaria Rigors</button>
+            <button type="button" class="symptom-tag" data-symptom="I have step-ladder fever with abdominal pain, headache, and rose spots">🌡️ Typhoid Fever</button>
+            <button type="button" class="symptom-tag" data-symptom="I have acute watery diarrhea with frequent vomiting and severe dehydration cramps">💧 Gastroenteritis</button>
+          </div>
+
+          <div class="chat-input-row" id="chatInputRow">
+<!-- Media Toolbar -->
+          <div class="media-toolbar">
+            <button class="media-btn" id="btnCamera" title="Open Camera">
+              <span>📷</span>
+              <span class="media-btn-label">Camera</span>
+            </button>
+            <button class="media-btn" id="btnUpload" title="Upload Photo/Video">
+              <span>📎</span>
+              <span class="media-btn-label">Upload</span>
+            </button>
+            <button class="media-btn voice-btn" id="btnVoice" title="Voice Input">
+              <span id="voiceIcon">🎙</span>
+              <span class="media-btn-label" id="voiceLabel">Voice</span>
+            </button>
+            <div class="media-separator"></div>
+            <div class="voice-waveform" id="voiceWaveform" style="display:none;">
+              <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+              <div class="wave-bar"></div><div class="wave-bar"></div><div class="wave-bar"></div>
+              <div class="wave-bar"></div>
+            </div>
+            <span class="voice-status" id="voiceStatus"></span>
+          </div>
+
+          <!-- Hidden file input -->
+          <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;" />
+
+          <div class="input-bar">
+            <div class="input-icon">🩺</div>
+            <textarea
+              id="userInput"
+              placeholder="Describe your symptoms, upload a photo/video, or use voice input..."
+              rows="1"
+              maxlength="1000"
+            ></textarea>
+            <div class="input-actions">
+              <span class="char-count" id="charCount">0/1000</span>
+              <button class="btn-send" id="btnSend" title="Send">
+                <span class="send-icon">➤</span>
+              </button>
+            </div>
+          </div>
+          </div><!-- end chat-input-row -->
+          <div class="input-hint" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+            <span>Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line · 📷 Upload medical images for AI visual analysis</span>
+            <span style="color: var(--accent); font-weight: bold; font-family: var(--font-head); font-size: 0.68rem; letter-spacing: 0.5px;">🏥 ENGINE & UI DESIGNED BY RAMANUJA PATHY</span>
+          </div>
+        </div>
+      </main>
+
+    </div><!-- end main-layout -->
+
+    <!-- ===== 4-TAB THUMB-ZONE BOTTOM NAVIGATION BAR ===== -->
+    <nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="Mobile Navigation">
+      <button class="nav-tab-btn active" id="navBtnConsult" onclick="switchMobileTab('consult')" role="tab" aria-selected="true">
+        <span class="nav-tab-icon">💬</span>
+        <span class="nav-tab-label">CONSULT</span>
+      </button>
+      <button class="nav-tab-btn" id="navBtnAnatomy" onclick="switchMobileTab('anatomy')" role="tab" aria-selected="false">
+        <span class="nav-tab-icon">🗺️</span>
+        <span class="nav-tab-label">ANATOMY</span>
+      </button>
+      <button class="nav-tab-btn" id="navBtnVault" onclick="switchMobileTab('vault')" role="tab" aria-selected="false">
+        <span class="nav-tab-icon">📁</span>
+        <span class="nav-tab-label">VAULT</span>
+        <span class="nav-tab-badge" id="navVaultBadge" style="display:none;">0</span>
+      </button>
+      <button class="nav-tab-btn" id="navBtnProfile" onclick="switchMobileTab('profile')" role="tab" aria-selected="false">
+        <span class="nav-tab-icon">👤</span>
+        <span class="nav-tab-label">PROFILE</span>
+      </button>
+    </nav>
+  </div><!-- end appContainer -->
+  <!-- ===== MOBILE QUICK CONTROL SHEET (BOTTOM DRAWER) ===== -->
+  <div class="session-panel-backdrop mobile-control-backdrop" id="mobileControlBackdrop" onclick="closeMobileControlSheet()" style="display:none; z-index: 950;"></div>
+  <div class="mobile-control-sheet" id="mobileControlSheet">
+    <div class="sheet-drag-handle" onclick="closeMobileControlSheet()"></div>
+    <div class="sheet-header">
+      <div class="sheet-title-group">
+        <span class="sheet-icon">⚙️</span>
+        <span class="sheet-title">SYSTEM TOOLS &amp; CONTROLS</span>
+      </div>
+      <button class="sheet-close-btn" onclick="closeMobileControlSheet()" aria-label="Close Controls">✕</button>
+    </div>
+    <div class="sheet-body">
+      <!-- Active Session Status Badge -->
+      <div class="sheet-status-card">
+        <div class="sheet-status-row">
+          <div class="status-dot"></div>
+          <span class="sheet-status-text">SYSTEM ONLINE · EXPERIMENT № 170</span>
+        </div>
+        <div class="sheet-hid-preview">
+          <span class="sheet-hid-lbl">ACTIVE HEALTH ID</span>
+          <span class="sheet-hid-code" id="sheetHidCode">NO ACTIVE SESSION</span>
+        </div>
+      </div>
+
+      <!-- Quick Tools Grid -->
+      <div class="sheet-tools-grid">
+        <button type="button" class="sheet-tool-btn" onclick="openApiSettings(); closeMobileControlSheet();">
+          <span class="tool-icon">⚙️</span>
+          <div class="tool-info">
+            <strong>API SETTINGS</strong>
+            <small>AI Model Providers &amp; Keys</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn highlight" onclick="openTrainingHub(); closeMobileControlSheet();">
+          <span class="tool-icon">🧠</span>
+          <div class="tool-info">
+            <strong>SLM TRAINING HUB</strong>
+            <small>Offline Neural Diagnostic Models</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn" onclick="openClinicalDictModal(); closeMobileControlSheet();">
+          <span class="tool-icon">📖</span>
+          <div class="tool-info">
+            <strong>CLINICAL DICTIONARY</strong>
+            <small>Medical Terms, Drugs &amp; Codes</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn" onclick="toggleSessionPanel(); closeMobileControlSheet();">
+          <span class="tool-icon">🗂️</span>
+          <div class="tool-info">
+            <strong>SESSION MANAGER</strong>
+            <small>Backup, Export &amp; Restore ID</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn" onclick="openTutorial(); closeMobileControlSheet();">
+          <span class="tool-icon">❓</span>
+          <div class="tool-info">
+            <strong>HELP &amp; SYSTEM MANUAL</strong>
+            <small>Technical Specs &amp; Guide</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn" id="sheetAudioBtn" onclick="window.toggleBioTelemetryAudio(); updateSheetAudioLabel();">
+          <span class="tool-icon" id="sheetAudioIcon">🔊</span>
+          <div class="tool-info">
+            <strong id="sheetAudioLabel">SOUND: ON</strong>
+            <small>Bio-Telemetry Audio SFX</small>
+          </div>
+        </button>
+      </div>
+
+      <!-- Quick Language Selection Row -->
+      <div class="sheet-lang-row">
+        <span class="sheet-lang-label">🌐 INTERFACE LANGUAGE:</span>
+        <select id="sheetLangSelect" class="lang-select" onchange="window.currentLang = this.value; const d=document.getElementById('langSelect'); if(d) d.value=this.value;">
+          <option value="en">English (EN)</option>
+          <option value="or">ଓଡ଼ିଆ (Odia)</option>
+          <option value="hi">हिंदी (Hindi)</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CLINICAL MEDICAL DICTIONARY MODAL ===== -->
+  <div class="session-panel-backdrop" id="clinicalDictBackdrop" onclick="closeClinicalDictModal()" style="display:none; z-index: 10000;"></div>
+  <div class="tutorial-modal" id="clinicalDictModal" style="display:none; max-width: 600px; width: 90%; z-index: 10001; border: 2px solid var(--accent); box-shadow: 0 0 25px rgba(0, 243, 255, 0.25);">
+    <div class="tut-header" style="border-bottom: 1px solid rgba(0, 243, 255, 0.2); padding-bottom: 12px;">
+      <span style="color: var(--accent); font-family: var(--font-head); font-weight: bold; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+        <span>📖</span> CLINICAL MEDICAL DICTIONARY
+      </span>
+      <button class="sp-close" onclick="closeClinicalDictModal()" style="color: var(--accent); font-weight: bold; background: none; border: none; cursor: pointer; font-size: 1.2rem;">✕</button>
+    </div>
+    <div class="tut-body" style="display: flex; flex-direction: column; gap: 15px; margin-top: 15px; max-height: 70vh; overflow-y: auto;">
+      <!-- Title & Classification Code -->
+      <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 243, 255, 0.05); padding: 10px 15px; border-radius: 8px; border: 1px solid rgba(0, 243, 255, 0.15);">
+        <div>
+          <h4 id="dictTermName" style="margin: 0; font-size: 1.1rem; color: #fff; font-family: var(--font-head);">Term Name</h4>
+          <small id="dictSubcategory" style="color: var(--text-muted); font-size: 0.75rem;">Subcategory Mapping</small>
+        </div>
+        <span id="dictCodeValue" class="clinical-code" style="background: var(--accent); color: #000; font-weight: bold; font-size: 0.85rem; padding: 4px 10px; border-radius: 6px; box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); margin-left: 6px;">CODE</span>
+      </div>
+
+      <!-- Description / Definition -->
+      <div class="med-section info" style="background: rgba(255,255,255,0.02); border-left: 4px solid var(--accent); padding: 12px 15px; border-radius: 0 8px 8px 0; margin: 0;">
+        <strong style="color: var(--accent); font-size: 0.8rem; display: block; margin-bottom: 5px; text-transform: uppercase; font-family: var(--font-head);">Clinical Assessment & Definition</strong>
+        <p id="dictDefinition" style="margin: 0; font-size: 0.85rem; line-height: 1.4; color: var(--text-main);">Clinical definition will load here.</p>
+      </div>
+
+      <!-- Detail Grid -->
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px;">
+          <strong style="color: var(--primary); font-size: 0.75rem; display: block; margin-bottom: 5px; text-transform: uppercase; font-family: var(--font-head);">Anatomical Mapping</strong>
+          <p id="dictAnatomy" style="margin: 0; font-size: 0.8rem; color: var(--text-main); line-height: 1.3;">Target anatomy</p>
+        </div>
+        <div style="background: rgba(255, 255, 255, 0.01); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px 12px;">
+          <strong style="color: var(--teal); font-size: 0.75rem; display: block; margin-bottom: 5px; text-transform: uppercase; font-family: var(--font-head);">Drug Mechanism</strong>
+          <p id="dictMechanism" style="margin: 0; font-size: 0.8rem; color: var(--text-main); line-height: 1.3;">Mechanism of action</p>
+        </div>
+      </div>
+
+      <!-- Precautions & Risks -->
+      <div class="med-section warning" style="background: rgba(255, 77, 109, 0.05); border-left: 4px solid var(--red-warn); padding: 12px 15px; border-radius: 0 8px 8px 0; margin: 0;">
+        <strong style="color: var(--red-warn); font-size: 0.8rem; display: block; margin-bottom: 5px; text-transform: uppercase; font-family: var(--font-head);">Clinical Precautions & Contraindications</strong>
+        <p id="dictPrecautions" style="margin: 0; font-size: 0.82rem; line-height: 1.4; color: var(--text-main);">Trusted precautions will load here.</p>
+      </div>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 5px;">
+        <button class="sp-btn sp-btn-new" onclick="closeClinicalDictModal()" style="padding: 8px 20px; font-weight: bold; font-family: var(--font-head); letter-spacing: 0.5px;">CLOSE DICTIONARY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ZERO-KNOWLEDGE PROOF (ZKP) MODAL ===== -->
+  <div class="zkp-modal" id="zkpModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">
+    <div style="position:relative; width:92%; max-width:480px; margin:8vh auto; background:rgba(15,23,42,0.95); border:1px solid var(--cyan); border-radius:12px; padding:20px; box-shadow:0 0 30px rgba(0,229,255,0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:8px;">
+        <span style="font-family:var(--font-head); font-weight:bold; color:var(--cyan); font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+          <span>🛡️</span> ZERO-KNOWLEDGE HEALTH PROVER
+        </span>
+        <button onclick="document.getElementById('zkpModal').style.display='none'" style="background:transparent; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
+      </div>
+
+      <p style="font-size:0.75rem; color:var(--text-main); margin-bottom:15px; line-height:1.4;">
+        Cryptographically prove specific health attestations to third parties <strong>without exposing your identity, full diagnosis, or raw Protected Health Information (PHI)</strong>.
+      </p>
+
+      <div style="margin-bottom:14px;">
+        <label for="zkpCircuitSelect" style="font-size:0.7rem; color:var(--text-muted); display:block; text-transform:uppercase; margin-bottom:5px;">Select Attestation Circuit</label>
+        <select id="zkpCircuitSelect" style="width:100%; background:#070a14; border:1px solid var(--border); border-radius:6px; color:var(--text-main); padding:8px; font-size:0.8rem; outline:none; cursor:pointer;">
+          <option value="ALLERGY_ABSENCE">Allergy Absence (Proves NO Penicillin Allergy)</option>
+          <option value="VITAL_STABILITY">Vital Stability (Proves SpO2 >= 95% & Normal Pulse)</option>
+          <option value="STAGE1_LOW_RISK">Stage 1 Triaged (Proves Low Pain Severity <= 4)</option>
+        </select>
+      </div>
+
+      <div id="zkpResultArea" style="display:none; background:rgba(0,0,0,0.6); border:1px solid var(--primary); border-radius:8px; padding:12px; margin-bottom:15px;">
+        <div style="display:flex; align-items:center; gap:6px; color:var(--primary); font-family:var(--font-head); font-weight:bold; font-size:0.8rem; margin-bottom:6px;">
+          <span>✅</span> PROOF VALIDATED (Groth16 BN254)
+        </div>
+        <div id="zkpStatementText" style="font-size:0.75rem; color:var(--text-main); margin-bottom:8px;"></div>
+        <div style="font-family:'Courier New', monospace; font-size:0.62rem; color:var(--cyan); word-break:break-all; background:rgba(0,229,255,0.05); padding:6px; border-radius:4px;" id="zkpProofDigest"></div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button onclick="document.getElementById('zkpModal').style.display='none'" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); padding:7px 15px; border-radius:4px; font-size:0.75rem; font-family:var(--font-head); cursor:pointer;">Cancel</button>
+        <button id="btnExecuteZkp" onclick="executeZkpGeneration()" style="background:rgba(0,229,255,0.15); border:1px solid var(--cyan); color:var(--cyan); padding:7px 18px; border-radius:4px; font-size:0.75rem; font-family:var(--font-head); cursor:pointer; font-weight:bold; box-shadow:0 0 10px rgba(0,229,255,0.2);">Generate Cryptographic Proof</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HYBRID MEDICAL SEARCH MODAL (BM25 + DENSE) ===== -->
+  <div class="search-modal" id="searchModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">
+    <div style="position:relative; width:92%; max-width:540px; margin:7vh auto; background:rgba(15,23,42,0.96); border:1px solid #ffb400; border-radius:12px; padding:20px; box-shadow:0 0 30px rgba(255,180,0,0.25);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(255,180,0,0.2); padding-bottom:8px;">
+        <span style="font-family:var(--font-head); font-weight:bold; color:#ffb400; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
+          <span>🔍</span> HYBRID MEDICAL SEARCH (BM25 + DENSE)
+        </span>
+        <button onclick="closeSearchModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
+      </div>
+
+      <div style="margin-bottom:14px; display:flex; gap:8px;">
+        <input type="text" id="inputHybridSearch" placeholder="Search pharmacopeia, SNOMED, contraindications..." style="flex:1; background:#070a14; border:1px solid var(--border); border-radius:6px; color:var(--text-main); padding:8px 12px; font-size:0.82rem; outline:none;" onkeydown="if(event.key==='Enter') executeHybridSearch()" />
+        <button id="btnExecuteSearch" onclick="executeHybridSearch()" style="background:rgba(255,180,0,0.18); border:1px solid #ffb400; color:#ffb400; padding:8px 16px; border-radius:6px; font-size:0.78rem; font-family:var(--font-head); font-weight:bold; cursor:pointer;">Search</button>
+      </div>
+
+      <div id="searchResultList" style="max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:0.75rem; color:var(--text-muted); text-align:center; padding:20px;">
+          Enter symptoms, drugs (e.g. Paracetamol, Ibuprofen), or conditions to query the offline hybrid index.
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; margin-top:14px;">
+        <button onclick="closeSearchModal()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); padding:6px 14px; border-radius:4px; font-size:0.75rem; font-family:var(--font-head); cursor:pointer;">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CLINICIAN PORTAL OVERRIDE MODAL ===== -->
+  <div class="modal-backdrop" id="clinicianOverrideModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(10,15,30,0.85); backdrop-filter:blur(6px); z-index:10000; align-items:center; justify-content:center;">
+    <div style="background:#0e1428; border:2px solid var(--cyan); border-radius:12px; padding:20px; width:90%; max-width:400px; box-shadow:0 0 25px rgba(0, 229, 255, 0.4); text-align:left; color:var(--text-main); position:relative;">
+      <h3 style="font-family:var(--font-head); color:var(--cyan); margin-top:0; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:8px; font-size:1.1rem; letter-spacing:0.5px;">🔬 CLINICIAN DIAGNOSTIC OVERRIDE</h3>
+      <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.4; margin-bottom:15px;">
+        As a credentialed practitioner, you can override the local SLM classification. This registers a localized active learning gradient delta for matching symptom tokens.
+      </p>
+      
+      <div style="margin-bottom:15px;">
+        <span style="font-size:0.7rem; color:var(--text-muted); display:block; text-transform:uppercase;">Predicted Condition</span>
+        <strong id="overridePredicted" style="color:var(--red-warn); font-family:'Orbitron'; font-size:0.95rem;">STOMACH PAIN</strong>
+      </div>
+      
+      <div style="margin-bottom:20px;">
+        <label for="overrideSelect" style="font-size:0.7rem; color:var(--text-muted); display:block; text-transform:uppercase; margin-bottom:5px;">Correct Clinical Diagnosis</label>
+        <select id="overrideSelect" style="width:100%; background:#070a14; border:1px solid var(--border); border-radius:6px; color:var(--text-main); padding:8px; font-size:0.8rem; outline:none; cursor:pointer;">
+          <option value="fever">Fever (ICD-11: MG26)</option>
+          <option value="headache">Headache (ICD-11: 8A80)</option>
+          <option value="cough">Cough & Bronchial Congestion (ICD-11: MD11)</option>
+          <option value="chest pain">Chest Pain & Cardiac Risk (ICD-11: MD30)</option>
+          <option value="stomach pain">Stomach Pain & Colic (ICD-11: MD80)</option>
+          <option value="back pain">Back Pain & Stiffness (ICD-11: ME84)</option>
+          <option value="skin rash">Skin Rash & Dermatitis (ICD-11: EA80)</option>
+          <option value="uti">Urinary Tract Infection (ICD-11: GB50)</option>
+          <option value="asthma">Bronchial Asthma & Dyspnea (ICD-11: CA23)</option>
+          <option value="vertigo">Vertigo & Vestibular (ICD-11: AB13)</option>
+          <option value="anemia">Anemia & Chronic Fatigue (ICD-11: 5A00)</option>
+          <option value="tonsillitis">Tonsillitis & Pharyngitis (ICD-11: CA01)</option>
+          <option value="wound">Wound & Tetanus Risk (ICD-11: NF00)</option>
+        </select>
+      </div>
+      
+      <div style="display:flex; justify-content:flex-end; gap:10px;">
+        <button onclick="document.getElementById('clinicianOverrideModal').style.display='none'" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); padding:6px 15px; border-radius:4px; font-size:0.75rem; font-family:var(--font-head); cursor:pointer;">Cancel</button>
+        <button onclick="window.applyOverrideAndTrain()" style="background:rgba(0,229,255,0.15); border:1px solid var(--cyan); color:var(--cyan); padding:6px 15px; border-radius:4px; font-size:0.75rem; font-family:var(--font-head); cursor:pointer; font-weight:bold; box-shadow:0 0 10px rgba(0,229,255,0.2);">Confirm & Train</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="raman.bundle.min.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('./sw.js').then(function(reg){ if(reg) reg.update(); }).catch(function(err) {
+          console.warn('[SW] Offline worker registration notice:', err);
+        });
+      });
+    }
+  </script>
+</body>
+</html>

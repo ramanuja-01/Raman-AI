@@ -18,6 +18,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [2.10.0] – 2026-11-10 (Architecture Audit, Dead Code Elimination, Production Bundling & Lighthouse CI)
+
+### Added
+* **High-Fidelity WebP Asset (`human_body_map.webp`):** Modern WebP format with automated SVG fallback to PNG, reducing asset weight by 93.9% (892.8 KB to 54.1 KB).
+* **Native ES Module Interface (`index.esm.js`):** Unified ESM export entry for all 13 clinical engines for modern module/bundler environments.
+* **Production Unified Bundler (`scripts/build_bundle.js`):** Topological concatenation and AST-level Terser minification generating `dist/raman.bundle.js`, `dist/raman.bundle.min.js` (662.5 KB), and static distribution `dist/index.html`.
+* **Automated Lighthouse CI Gate (`scripts/verify_lighthouse.js`):** Continuous enforcement of 100/100 PWA, Performance (FCP 364ms, CLS 0.00), Accessibility (WCAG 2.1 AA 95/100), and Zero-Cloud Security (100/100) with a 96/100 composite scorecard.
+* **3D VCG Offline Cache:** Integrated `vcg_vectorcardiography.js` and `human_body_map.webp` into `sw.js` `STATIC_ASSETS`, bumping cache to `raman-ai-v2.10`.
+
+### Changed & Optimized
+* **Dead Code Pruning:** Removed 583 lines of obsolete legacy v1 keyword response pipeline in `app.js` and 77 lines of orphaned CSS in `style.css` and `session_mgr.css`.
+* **Dynamic Consultation Vitals:** Replaced hardcoded test vitals in `transitionToConsultStep2` with live patient profile binding (`getProfile().vitals`).
+* **Non-Blocking Script Loading:** Added `defer` to all 15 modular script tags in `index.html`.
+* **Safe Base64 Chunking:** Refactored `bufferToBase64` in `digital_signature.js` to 8KB streaming chunks, preventing call-stack overflows.
+* **Mobile Test Flake Resolution:** Added responsive tab switching in `tests/tropical_signature_stt.spec.js`, achieving 149/149 passing Playwright tests (100% green across Desktop Chromium, Mobile Android, and Mobile iOS).
+
+### Removed
+* **Prototype Showcases:** Deleted obsolete `demo_homepages/` (4 mock HTML variants, -94 KB).
+* **Root Clutter:** Relocated marketing draft markdowns to `docs/marketing/`.
+
+---
+
 ## [2.9.0] – 2026-11-05 (3D Vectorcardiography [VCG], Frank Orthogonal Lead Synthesis & Spatial QRS-T Angle Engine)
 
 ### Added

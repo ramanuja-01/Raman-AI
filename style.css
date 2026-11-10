@@ -393,16 +393,6 @@ button, .symptom-tag, .map-hotspot, .nav-tab, .consult-chip-btn, .organ-chip {
   background: var(--bg-card);
   color: var(--cyan);
 }
-.btn-clear {
-  display: flex; align-items: center; gap: 6px;
-  padding: 7px 14px; border-radius: 20px;
-  border: 1px solid rgba(0,229,255,0.35);
-  background: rgba(0,229,255,0.08);
-  color: var(--cyan); font-family: var(--font-ui);
-  font-size: 0.72rem; letter-spacing: 2px;
-  cursor: pointer; transition: all 0.2s;
-}
-.btn-clear:hover { background: rgba(0,229,255,0.18); box-shadow: 0 0 12px rgba(0,229,255,0.2); }
 
 /* ===== MAIN LAYOUT ===== */
 .main-layout {
@@ -1026,12 +1016,6 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
   0%,100% { transform: scale(1); box-shadow: 0 0 0 transparent; border-color: var(--border); }
   50% { transform: scale(1.05); box-shadow: 0 0 15px var(--cyan); border-color: var(--cyan); }
 }
-.hid-copy-btn {
-  background: none; border: none; cursor: pointer;
-  font-size: 0.8rem; padding: 0 2px; opacity: 0.7;
-  transition: opacity 0.2s;
-}
-.hid-copy-btn:hover { opacity: 1; }
 
 /* ===== HEALTH ID CARD (chat) ===== */
 .hid-card {
@@ -1125,18 +1109,6 @@ input::placeholder, textarea::placeholder { color: rgba(106,139,173,0.5); }
 .mobile-only-sidebar-action {
   display: none !important;
 }
-
-.mobile-menu-btn {
-  display: none !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
-  width: 0 !important;
-  height: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-}
-.mobile-menu-btn:hover { color: #fff; border-color: var(--cyan); }
 
 .sidebar-backdrop {
   position: fixed; inset: 0; background: rgba(0,0,0,0.6);
@@ -1281,11 +1253,6 @@ details[open] .hud-accordion-chevron {
     align-items: center !important;
     justify-content: space-between !important;
     flex-wrap: nowrap !important;
-  }
-  .mobile-menu-btn, #mobileMenuBtn {
-    display: none !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
   }
 
   /* Vital chips single row */
@@ -1691,8 +1658,6 @@ details[open] .hud-accordion-chevron {
   #chipTime, .session-chip, .bio-mode-chip { display: none !important; }
   
   .header-title { font-size: 1.1rem; }
-  .msg-content { font-size: 0.85rem; padding: 12px 14px; }
-  .msg-group { max-width: 92%; }
   
   /* Stacked Medication Cards */
   .med-section table,
@@ -1905,12 +1870,6 @@ details[open] .hud-accordion-chevron {
   100% { transform: scale(1.15); opacity: 1; stroke: var(--cyan); }
 }
 
-/* Targeting Lock-On Scanning Effect */
-#mapReticle.lock-sequence {
-  animation: reticleLockOn 0.45s cubic-bezier(0.19, 1, 0.22, 1) forwards;
-}
-@keyframes reticleLockOn {
-  0% { transform: scale(2.8) rotate(-45deg); opacity: 0; filter: brightness(2); }
   100% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(1); }
 }
 
@@ -1923,27 +1882,6 @@ details[open] .hud-accordion-chevron {
   letter-spacing: 0.8px;
   white-space: nowrap;
   transition: all 0.2s ease;
-}
-.anatomical-scanner-telemetry-row.active-scan span {
-  color: var(--primary) !important;
-  text-shadow: 0 0 8px rgba(0, 255, 179, 0.5);
-}
-
-/* ===== CLARIFY INTAKE INPUTS ===== */
-.clarify-input-field {
-  background: rgba(0, 0, 0, 0.5) !important;
-  border: 1px solid var(--accent) !important;
-  border-radius: 6px !important;
-  padding: 8px 12px !important;
-  color: #fff !important;
-  font-size: 0.82rem !important;
-  outline: none !important;
-  transition: all 0.3s !important;
-  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.8) !important;
-}
-.clarify-input-field:focus {
-  border-color: #fff !important;
-  box-shadow: 0 0 10px rgba(0, 243, 255, 0.3), inset 0 0 5px rgba(0, 0, 0, 0.8) !important;
 }
 
 /* ===== DYNAMIC HUD CANVASES CYBERPUNK NEON STYLING ===== */
@@ -2007,7 +1945,6 @@ body.light-theme .sidebar {
 
 body.light-theme .profile-card,
 body.light-theme .symptom-tag,
-body.light-theme .vital-input-group input,
 body.light-theme .field-group input,
 body.light-theme .field-group select {
   background: #f8fafc;
@@ -2073,13 +2010,6 @@ body.light-theme .sp-btn-copy {
   background: #f1f5f9;
   border-color: var(--border);
   color: #0f172a;
-}
-
-body.light-theme .clarify-input-field {
-  background: #f8fafc !important;
-  color: #0f172a !important;
-  border: 1px solid var(--border) !important;
-  box-shadow: inset 0 0 4px rgba(15,23,42,0.05) !important;
 }
 
 body.light-theme .hud-canvas-block {
@@ -2457,14 +2387,6 @@ body[data-keyboard-open="true"] .chat-messages {
   scroll-behavior: smooth;
 }
 
-body[data-keyboard-open="true"] .clinical-alert,
-body[data-keyboard-open="true"] .contraindication-card {
-  position: sticky !important;
-  top: 8px !important;
-  z-index: 120 !important;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5) !important;
-}
-
 /* Horizontal Spill Self-Healing */
 body[data-spill-detected="true"] {
   overflow-x: hidden !important;
@@ -2493,8 +2415,6 @@ body[data-ui-tier="tablet-portrait"] .sidebar {
 }
 
 /* Touch Target Accessibility (WCAG 2.1 AA >= 44x44px) */
-body[data-pointer-type="touch"] .nav-tab-btn,
-body[data-pointer-type="touch"] .btn-primary,
-body[data-pointer-type="touch"] .btn-secondary {
+body[data-pointer-type="touch"] .nav-tab-btn {
   min-height: var(--ui-touch-target-min, 44px);
 }

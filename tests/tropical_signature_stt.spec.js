@@ -73,8 +73,12 @@ test.describe('Tropical Diseases, Web Crypto Asymmetric Signatures & Multilingua
     expect(textContent.toLowerCase()).toMatch(/dengue|1d20\.0|paracetamol/i);
   });
 
-  test('should render tropical organ chips and populate consultation input on click', async ({ page }) => {
+  test('should render tropical organ chips and populate consultation input on click', async ({ page, isMobile }) => {
     await loadRamanApp(page);
+    if (isMobile) {
+      await page.click('#navBtnAnatomy');
+      await page.waitForTimeout(300);
+    }
 
     const dengueChip = page.locator('.organ-chip[data-symptom="dengue fever"]');
     await expect(dengueChip).toBeVisible();
@@ -174,8 +178,12 @@ test.describe('Tropical Diseases, Web Crypto Asymmetric Signatures & Multilingua
     expect(ddiText).toMatch(/CRITICAL_AVOID|Warfarin/i);
   });
 
-  test('should switch HUD to 3D Vectorcardiography (VCG) mode and render rotating cardiac dipole canvas', async ({ page }) => {
+  test('should switch HUD to 3D Vectorcardiography (VCG) mode and render rotating cardiac dipole canvas', async ({ page, isMobile }) => {
     await loadRamanApp(page);
+    if (isMobile) {
+      await page.click('#navBtnAnatomy');
+      await page.waitForTimeout(300);
+    }
 
     // Verify VCG button is rendered in the HUD
     const vcgBtn = page.locator('#btnModeVcg');

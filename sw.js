@@ -1,5 +1,5 @@
 /* ===== RAMAN AI – Service Worker (sw.js) ===== */
-const CACHE_NAME = 'raman-ai-v2.9';
+const CACHE_NAME = 'raman-ai-v2.10';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -20,7 +20,9 @@ const STATIC_ASSETS = [
   './federated_learning.js',
   './quantized_slm.js',
   './ui_responsive_agent.js',
+  './vcg_vectorcardiography.js',
   './favicon.svg',
+  './human_body_map.webp',
   './human_body_map.png',
   './manifest.json'
 ];

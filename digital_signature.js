@@ -29,17 +29,20 @@
     return null;
   }
 
-  // Helper: Convert ArrayBuffer to URL-safe Base64
+  // Helper: Convert ArrayBuffer to URL-safe Base64 using 8KB chunking
   function bufferToBase64(buffer) {
     const bytes = new Uint8Array(buffer);
+    if (typeof Buffer !== 'undefined') {
+      return Buffer.from(bytes).toString('base64');
+    }
     let binary = '';
-    for (let i = 0; i < bytes.byteLength; i++) {
-      binary += String.fromCharCode(bytes[i]);
+    const len = bytes.byteLength;
+    const chunkSize = 8192;
+    for (let i = 0; i < len; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+      binary += String.fromCharCode.apply(null, chunk);
     }
-    if (typeof btoa === 'function') {
-      return btoa(binary);
-    }
-    return Buffer.from(bytes).toString('base64');
+    return btoa(binary);
   }
 
   // Helper: Convert Base64 to ArrayBuffer
