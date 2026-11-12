@@ -112,9 +112,62 @@ async function build() {
   // Generate production index.html in dist/
   generateProductionHtml();
 
+  // Copy essential static assets into dist/
+  copyStaticAssets();
+
+  // Generate production service worker in dist/
+  generateProductionServiceWorker();
+
   console.log('==================================================================');
   console.log('🎉 PRODUCTION BUNDLE BUILD COMPLETED SUCCESSFULLY!');
   console.log('==================================================================\n');
+}
+
+const STATIC_ASSETS_TO_COPY = [
+  'style.css',
+  'session_mgr.css',
+  'favicon.svg',
+  'manifest.json',
+  'human_body_map.webp',
+  'human_body_map.png',
+  'mcp_agent_worker.js',
+  'index.esm.js'
+];
+
+/**
+ * Copies static CSS, icons, images, and worker files to dist/
+ */
+function copyStaticAssets() {
+  for (const file of STATIC_ASSETS_TO_COPY) {
+    const src = path.join(ROOT_DIR, file);
+    const dest = path.join(DIST_DIR, file);
+    if (fs.existsSync(src)) {
+      fs.copyFileSync(src, dest);
+      console.log(`  📋 Copied static asset: ${file.padEnd(24)} -> dist/${file}`);
+    } else {
+      console.warn(`  ⚠️ Warning: Asset not found: ${file}`);
+    }
+  }
+}
+
+/**
+ * Generates dist/sw.js configured to cache raman.bundle.min.js instead of individual dev modules
+ */
+function generateProductionServiceWorker() {
+  const srcSwPath = path.join(ROOT_DIR, 'sw.js');
+  if (!fs.existsSync(srcSwPath)) return;
+  let swContent = fs.readFileSync(srcSwPath, 'utf8');
+
+  // Replace individual script entries in STATIC_ASSETS with the production bundle
+  const moduleListRegex = /'\.\/app\.js',[\s\S]*?'\.\/vcg_vectorcardiography\.js',/;
+  if (moduleListRegex.test(swContent)) {
+    swContent = swContent.replace(
+      moduleListRegex,
+      "  './raman.bundle.min.js',\n  './mcp_agent_worker.js',"
+    );
+  }
+  fs.writeFileSync(path.join(DIST_DIR, 'sw.js'), swContent, 'utf8');
+  console.log('  📄 Generated production Service Worker: dist/sw.js (caching raman.bundle.min.js)');
 }
 
 /**
@@ -125,7 +178,7 @@ function generateProductionHtml() {
   let html = fs.readFileSync(srcHtmlPath, 'utf8');
 
   // Replace individual script tags with unified bundle
-  const scriptsRegex = /<script defer src="webgpu_volumetric\.js[\s\S]*?<script defer src="app\.js\?v=2\.1"><\/script>/;
+  const scriptsRegex = /<script defer src="webgpu_volumetric\.js[\s\S]*?<script defer src="app\.js[^"]*"><\/script>/;
   const bundleScriptTag = '<script defer src="raman.bundle.min.js"></script>';
 
   if (scriptsRegex.test(html)) {
