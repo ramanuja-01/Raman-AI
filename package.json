@@ -12,6 +12,9 @@
   },
   "scripts": {
     "test": "node test_slm.js",
+    "test:multimodal": "node tests/test_multimodal_slm.js",
+    "test:cloud": "node tests/test_cloud_orchestrator.js",
+    "start:gateway": "node cloud_orchestrator_bridge.js",
     "test:gates": "node scripts/verify_3gates.js",
     "test:e2e": "playwright test",
     "build": "node scripts/build_bundle.js",

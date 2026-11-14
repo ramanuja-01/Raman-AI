@@ -551,7 +551,205 @@ function downloadFhirR4Json(profile, sessionData, vitals) {
   return bundle;
 }
 
+
+/**
+ * Generates an HL7 FHIR R4 DiagnosticReport Document Bundle for Multimodal Diagnostics.
+ * Encapsulates Video rPPG, Dermal ABCD, 12-Lead ECG, Lab Analytes, Radiology, and Conformal Prediction Sets.
+ */
+function generateMultimodalFhirDiagnosticReport(healthId = "RMN-UNKNOWN", diagnosisData = {}, profile = {}, rawInputs = {}) {
+  const timestamp = new Date().toISOString();
+  const cleanId = String(healthId || "anon").replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  const patientId = `patient-${cleanId}`;
+  const reportId = `report-${cleanId}-${Date.now()}`;
+
+  const entries = [];
+
+  // 1. Patient Resource
+  const patientResource = {
+    resourceType: "Patient",
+    id: patientId,
+    identifier: [{ system: "https://raman.ai/health-id", value: healthId }],
+    active: true,
+    name: profile.name ? [{ use: "official", text: profile.name }] : undefined,
+    gender: profile.gender ? profile.gender.toLowerCase() : "unknown"
+  };
+  entries.push({ fullUrl: `urn:uuid:${patientId}`, resource: patientResource });
+
+  const resultReferences = [];
+
+  // 2. Observations for Lab Analytes (if present)
+  if (rawInputs.labData && rawInputs.labData.analytes) {
+    rawInputs.labData.analytes.forEach((analyte, idx) => {
+      const obsId = `obs-lab-${idx + 1}-${Date.now()}`;
+      const labObs = {
+        resourceType: "Observation",
+        id: obsId,
+        status: "final",
+        category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "laboratory", display: "Laboratory" }] }],
+        code: {
+          coding: [{ system: "http://loinc.org", code: analyte.loincCode, display: analyte.testName }],
+          text: analyte.testName
+        },
+        subject: { reference: `urn:uuid:${patientId}` },
+        effectiveDateTime: timestamp,
+        valueQuantity: { value: analyte.value, unit: analyte.units, system: "http://unitsofmeasure.org" },
+        interpretation: [{
+          coding: [{
+            system: "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+            code: analyte.flag && analyte.flag.includes("CRITICAL") ? "CR" : (analyte.flag === "HIGH" ? "H" : (analyte.flag === "LOW" ? "L" : "N")),
+            display: analyte.flag || "NORMAL"
+          }]
+        }]
+      };
+      entries.push({ fullUrl: `urn:uuid:${obsId}`, resource: labObs });
+      resultReferences.push({ reference: `urn:uuid:${obsId}` });
+    });
+  }
+
+  // 3. Observation for 12-Lead ECG (if present)
+  if (rawInputs.ecgData) {
+    const ecgObsId = `obs-ecg-${Date.now()}`;
+    const ecgObs = {
+      resourceType: "Observation",
+      id: ecgObsId,
+      status: "final",
+      category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "procedure", display: "Procedure" }] }],
+      code: {
+        coding: [{ system: "http://loinc.org", code: "11524-6", display: "12 lead EKG [Interpretation]" }],
+        text: "12-Lead Electrocardiogram Telemetry"
+      },
+      subject: { reference: `urn:uuid:${patientId}` },
+      effectiveDateTime: timestamp,
+      valueString: rawInputs.ecgData.rhythmClassification,
+      component: [
+        { code: { coding: [{ system: "http://loinc.org", code: "8867-4", display: "Heart rate" }] }, valueQuantity: { value: rawInputs.ecgData.heartRateBpm, unit: "BPM" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "8625-6", display: "P-R Interval" }] }, valueQuantity: { value: rawInputs.ecgData.prIntervalMs, unit: "ms" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "8633-0", display: "QRS duration" }] }, valueQuantity: { value: rawInputs.ecgData.qrsDurationMs, unit: "ms" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "8634-8", display: "Q-T interval.corrected" }] }, valueQuantity: { value: rawInputs.ecgData.qtcIntervalMs, unit: "ms" } },
+        { code: { text: "ST Segment Elevation" }, valueQuantity: { value: rawInputs.ecgData.stElevationMv, unit: "mV" } }
+      ]
+    };
+    entries.push({ fullUrl: `urn:uuid:${ecgObsId}`, resource: ecgObs });
+    resultReferences.push({ reference: `urn:uuid:${ecgObsId}` });
+  }
+
+  // 4. Observation for Video rPPG Hemodynamics (if present)
+  if (rawInputs.rppgData) {
+    const rppgObsId = `obs-rppg-${Date.now()}`;
+    const rppgObs = {
+      resourceType: "Observation",
+      id: rppgObsId,
+      status: "final",
+      category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "vital-signs", display: "Vital Signs" }] }],
+      code: {
+        coding: [{ system: "http://loinc.org", code: "8867-4", display: "Heart Rate by Optical rPPG" }],
+        text: "Remote Photoplethysmography Hemodynamic Telemetry"
+      },
+      subject: { reference: `urn:uuid:${patientId}` },
+      effectiveDateTime: timestamp,
+      component: [
+        { code: { coding: [{ system: "http://loinc.org", code: "8867-4", display: "Heart rate" }] }, valueQuantity: { value: rawInputs.rppgData.heartRateBpm, unit: "BPM" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "80404-7", display: "R-R interval.standard deviation (SDNN)" }] }, valueQuantity: { value: rawInputs.rppgData.hrvSdnnMs, unit: "ms" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "9279-1", display: "Respiratory rate" }] }, valueQuantity: { value: rawInputs.rppgData.respirationRateBpm, unit: "bpm" } }
+      ]
+    };
+    entries.push({ fullUrl: `urn:uuid:${rppgObsId}`, resource: rppgObs });
+    resultReferences.push({ reference: `urn:uuid:${rppgObsId}` });
+  }
+
+  // 5. DiagnosticReport Resource (Omnimodal Reasoning & Conformal Sets)
+  const reportResource = {
+    resourceType: "DiagnosticReport",
+    id: reportId,
+    status: "final",
+    category: [
+      {
+        coding: [
+          {
+            system: "http://terminology.hl7.org/CodeSystem/v2-0074",
+            code: "MDx",
+            display: "Multimodal Diagnostic Support"
+          }
+        ]
+      }
+    ],
+    code: {
+      coding: [
+        {
+          system: "http://loinc.org",
+          code: "11526-1",
+          display: "Pathology study diagnostic statement"
+        }
+      ],
+      text: "Multimodal Diagnostic Reasoning Report"
+    },
+    subject: { reference: `urn:uuid:${patientId}` },
+    effectiveDateTime: timestamp,
+    issued: timestamp,
+    conclusion: diagnosisData.primaryDiagnosis || "Assessment Complete",
+    conclusionCode: [
+      {
+        coding: [
+          {
+            system: "http://hl7.org/fhir/sid/icd-10",
+            code: diagnosisData.primaryIcd10 || "Z00.00",
+            display: diagnosisData.primaryDiagnosis || "Baseline Assessment"
+          }
+        ]
+      }
+    ],
+    result: resultReferences,
+    extension: [
+      {
+        url: "http://medical-ai.org/fhir/StructureDefinition/conformal-prediction-set",
+        valueString: JSON.stringify(diagnosisData.conformalPredictionSet || [])
+      },
+      {
+        url: "http://medical-ai.org/fhir/StructureDefinition/conformal-coverage-target",
+        valueDecimal: 0.99
+      },
+      {
+        url: "http://medical-ai.org/fhir/StructureDefinition/model-provenance",
+        valueString: "RAMAN-SLM-Adapter-v1.0.1 + Med-Gemini-Cloud"
+      }
+    ]
+  };
+  entries.push({ fullUrl: `urn:uuid:${reportId}`, resource: reportResource });
+
+  return {
+    resourceType: "Bundle",
+    id: `raman-multimodal-bundle-${cleanId}`,
+    identifier: { system: "https://raman.ai/bundles", value: `MM-BUNDLE-${healthId}` },
+    type: "document",
+    timestamp: timestamp,
+    total: entries.length,
+    entry: entries
+  };
+}
+
+function downloadMultimodalFhirJson(healthId, diagnosisData, profile, rawInputs) {
+  const bundle = generateMultimodalFhirDiagnosticReport(healthId, diagnosisData, profile, rawInputs);
+  const jsonStr = JSON.stringify(bundle, null, 2);
+  if (typeof Blob !== 'undefined' && typeof document !== 'undefined') {
+    const blob = new Blob([jsonStr], { type: "application/fhir+json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `raman_multimodal_fhir_r4_${healthId || 'export'}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    if (typeof window !== 'undefined' && window.BioTelemetrySFX) {
+      window.BioTelemetrySFX.playSuccess();
+    }
+  }
+  return bundle;
+}
+
 if (typeof window !== 'undefined') {
+  window.generateMultimodalFhirDiagnosticReport = generateMultimodalFhirDiagnosticReport;
+  window.downloadMultimodalFhirJson = downloadMultimodalFhirJson;
   window.generateFhirR4Bundle = generateFhirR4Bundle;
   window.downloadFhirR4Json = downloadFhirR4Json;
 }
@@ -559,6 +757,8 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     generateFhirR4Bundle,
-    downloadFhirR4Json
+    downloadFhirR4Json,
+    generateMultimodalFhirDiagnosticReport,
+    downloadMultimodalFhirJson
   };
 }
