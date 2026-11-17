@@ -1,7 +1,7 @@
 /**
  * RAMAN AI (Experiment No. 170) – Production Unified Engine Bundle
  * Offline, Zero-Cloud Air-Gapped Clinical Intelligence System
- * Build Date: 2026-11-12T21:36:58.594Z
+ * Build Date: 2026-11-17T00:40:34.437Z
  * License: ISC
  */
 
@@ -3736,7 +3736,205 @@ function downloadFhirR4Json(profile, sessionData, vitals) {
   return bundle;
 }
 
+
+/**
+ * Generates an HL7 FHIR R4 DiagnosticReport Document Bundle for Multimodal Diagnostics.
+ * Encapsulates Video rPPG, Dermal ABCD, 12-Lead ECG, Lab Analytes, Radiology, and Conformal Prediction Sets.
+ */
+function generateMultimodalFhirDiagnosticReport(healthId = "RMN-UNKNOWN", diagnosisData = {}, profile = {}, rawInputs = {}) {
+  const timestamp = new Date().toISOString();
+  const cleanId = String(healthId || "anon").replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+  const patientId = `patient-${cleanId}`;
+  const reportId = `report-${cleanId}-${Date.now()}`;
+
+  const entries = [];
+
+  // 1. Patient Resource
+  const patientResource = {
+    resourceType: "Patient",
+    id: patientId,
+    identifier: [{ system: "https://raman.ai/health-id", value: healthId }],
+    active: true,
+    name: profile.name ? [{ use: "official", text: profile.name }] : undefined,
+    gender: profile.gender ? profile.gender.toLowerCase() : "unknown"
+  };
+  entries.push({ fullUrl: `urn:uuid:${patientId}`, resource: patientResource });
+
+  const resultReferences = [];
+
+  // 2. Observations for Lab Analytes (if present)
+  if (rawInputs.labData && rawInputs.labData.analytes) {
+    rawInputs.labData.analytes.forEach((analyte, idx) => {
+      const obsId = `obs-lab-${idx + 1}-${Date.now()}`;
+      const labObs = {
+        resourceType: "Observation",
+        id: obsId,
+        status: "final",
+        category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "laboratory", display: "Laboratory" }] }],
+        code: {
+          coding: [{ system: "http://loinc.org", code: analyte.loincCode, display: analyte.testName }],
+          text: analyte.testName
+        },
+        subject: { reference: `urn:uuid:${patientId}` },
+        effectiveDateTime: timestamp,
+        valueQuantity: { value: analyte.value, unit: analyte.units, system: "http://unitsofmeasure.org" },
+        interpretation: [{
+          coding: [{
+            system: "http://terminology.hl7.org/CodeSystem/v3-ObservationInterpretation",
+            code: analyte.flag && analyte.flag.includes("CRITICAL") ? "CR" : (analyte.flag === "HIGH" ? "H" : (analyte.flag === "LOW" ? "L" : "N")),
+            display: analyte.flag || "NORMAL"
+          }]
+        }]
+      };
+      entries.push({ fullUrl: `urn:uuid:${obsId}`, resource: labObs });
+      resultReferences.push({ reference: `urn:uuid:${obsId}` });
+    });
+  }
+
+  // 3. Observation for 12-Lead ECG (if present)
+  if (rawInputs.ecgData) {
+    const ecgObsId = `obs-ecg-${Date.now()}`;
+    const ecgObs = {
+      resourceType: "Observation",
+      id: ecgObsId,
+      status: "final",
+      category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "procedure", display: "Procedure" }] }],
+      code: {
+        coding: [{ system: "http://loinc.org", code: "11524-6", display: "12 lead EKG [Interpretation]" }],
+        text: "12-Lead Electrocardiogram Telemetry"
+      },
+      subject: { reference: `urn:uuid:${patientId}` },
+      effectiveDateTime: timestamp,
+      valueString: rawInputs.ecgData.rhythmClassification,
+      component: [
+        { code: { coding: [{ system: "http://loinc.org", code: "8867-4", display: "Heart rate" }] }, valueQuantity: { value: rawInputs.ecgData.heartRateBpm, unit: "BPM" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "8625-6", display: "P-R Interval" }] }, valueQuantity: { value: rawInputs.ecgData.prIntervalMs, unit: "ms" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "8633-0", display: "QRS duration" }] }, valueQuantity: { value: rawInputs.ecgData.qrsDurationMs, unit: "ms" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "8634-8", display: "Q-T interval.corrected" }] }, valueQuantity: { value: rawInputs.ecgData.qtcIntervalMs, unit: "ms" } },
+        { code: { text: "ST Segment Elevation" }, valueQuantity: { value: rawInputs.ecgData.stElevationMv, unit: "mV" } }
+      ]
+    };
+    entries.push({ fullUrl: `urn:uuid:${ecgObsId}`, resource: ecgObs });
+    resultReferences.push({ reference: `urn:uuid:${ecgObsId}` });
+  }
+
+  // 4. Observation for Video rPPG Hemodynamics (if present)
+  if (rawInputs.rppgData) {
+    const rppgObsId = `obs-rppg-${Date.now()}`;
+    const rppgObs = {
+      resourceType: "Observation",
+      id: rppgObsId,
+      status: "final",
+      category: [{ coding: [{ system: "http://terminology.hl7.org/CodeSystem/observation-category", code: "vital-signs", display: "Vital Signs" }] }],
+      code: {
+        coding: [{ system: "http://loinc.org", code: "8867-4", display: "Heart Rate by Optical rPPG" }],
+        text: "Remote Photoplethysmography Hemodynamic Telemetry"
+      },
+      subject: { reference: `urn:uuid:${patientId}` },
+      effectiveDateTime: timestamp,
+      component: [
+        { code: { coding: [{ system: "http://loinc.org", code: "8867-4", display: "Heart rate" }] }, valueQuantity: { value: rawInputs.rppgData.heartRateBpm, unit: "BPM" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "80404-7", display: "R-R interval.standard deviation (SDNN)" }] }, valueQuantity: { value: rawInputs.rppgData.hrvSdnnMs, unit: "ms" } },
+        { code: { coding: [{ system: "http://loinc.org", code: "9279-1", display: "Respiratory rate" }] }, valueQuantity: { value: rawInputs.rppgData.respirationRateBpm, unit: "bpm" } }
+      ]
+    };
+    entries.push({ fullUrl: `urn:uuid:${rppgObsId}`, resource: rppgObs });
+    resultReferences.push({ reference: `urn:uuid:${rppgObsId}` });
+  }
+
+  // 5. DiagnosticReport Resource (Omnimodal Reasoning & Conformal Sets)
+  const reportResource = {
+    resourceType: "DiagnosticReport",
+    id: reportId,
+    status: "final",
+    category: [
+      {
+        coding: [
+          {
+            system: "http://terminology.hl7.org/CodeSystem/v2-0074",
+            code: "MDx",
+            display: "Multimodal Diagnostic Support"
+          }
+        ]
+      }
+    ],
+    code: {
+      coding: [
+        {
+          system: "http://loinc.org",
+          code: "11526-1",
+          display: "Pathology study diagnostic statement"
+        }
+      ],
+      text: "Multimodal Diagnostic Reasoning Report"
+    },
+    subject: { reference: `urn:uuid:${patientId}` },
+    effectiveDateTime: timestamp,
+    issued: timestamp,
+    conclusion: diagnosisData.primaryDiagnosis || "Assessment Complete",
+    conclusionCode: [
+      {
+        coding: [
+          {
+            system: "http://hl7.org/fhir/sid/icd-10",
+            code: diagnosisData.primaryIcd10 || "Z00.00",
+            display: diagnosisData.primaryDiagnosis || "Baseline Assessment"
+          }
+        ]
+      }
+    ],
+    result: resultReferences,
+    extension: [
+      {
+        url: "http://medical-ai.org/fhir/StructureDefinition/conformal-prediction-set",
+        valueString: JSON.stringify(diagnosisData.conformalPredictionSet || [])
+      },
+      {
+        url: "http://medical-ai.org/fhir/StructureDefinition/conformal-coverage-target",
+        valueDecimal: 0.99
+      },
+      {
+        url: "http://medical-ai.org/fhir/StructureDefinition/model-provenance",
+        valueString: "RAMAN-SLM-Adapter-v1.0.1 + Med-Gemini-Cloud"
+      }
+    ]
+  };
+  entries.push({ fullUrl: `urn:uuid:${reportId}`, resource: reportResource });
+
+  return {
+    resourceType: "Bundle",
+    id: `raman-multimodal-bundle-${cleanId}`,
+    identifier: { system: "https://raman.ai/bundles", value: `MM-BUNDLE-${healthId}` },
+    type: "document",
+    timestamp: timestamp,
+    total: entries.length,
+    entry: entries
+  };
+}
+
+function downloadMultimodalFhirJson(healthId, diagnosisData, profile, rawInputs) {
+  const bundle = generateMultimodalFhirDiagnosticReport(healthId, diagnosisData, profile, rawInputs);
+  const jsonStr = JSON.stringify(bundle, null, 2);
+  if (typeof Blob !== 'undefined' && typeof document !== 'undefined') {
+    const blob = new Blob([jsonStr], { type: "application/fhir+json;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `raman_multimodal_fhir_r4_${healthId || 'export'}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    if (typeof window !== 'undefined' && window.BioTelemetrySFX) {
+      window.BioTelemetrySFX.playSuccess();
+    }
+  }
+  return bundle;
+}
+
 if (typeof window !== 'undefined') {
+  window.generateMultimodalFhirDiagnosticReport = generateMultimodalFhirDiagnosticReport;
+  window.downloadMultimodalFhirJson = downloadMultimodalFhirJson;
   window.generateFhirR4Bundle = generateFhirR4Bundle;
   window.downloadFhirR4Json = downloadFhirR4Json;
 }
@@ -3744,7 +3942,9 @@ if (typeof window !== 'undefined') {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
     generateFhirR4Bundle,
-    downloadFhirR4Json
+    downloadFhirR4Json,
+    generateMultimodalFhirDiagnosticReport,
+    downloadMultimodalFhirJson
   };
 }
 
@@ -16616,6 +16816,168 @@ window.switchMobileTab = function(tabName) {
   }
 };
 
+// ── Native Touch Swipe Navigation for Mobile Tabs ─────────────────
+(function initMobileTabSwipes() {
+  if (typeof window === 'undefined') return;
+
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let touchStartTime = 0;
+  const SWIPE_THRESHOLD = 50; // px
+  const MAX_PERPENDICULAR = 45; // px (prevent vertical scroll hijacking)
+  const MAX_TIME = 450; // ms
+
+  const tabs = ['consult', 'anatomy', 'vault', 'profile'];
+
+  function handleTouchStart(e) {
+    if (!e.touches || e.touches.length !== 1) return;
+    const target = e.target;
+    // Skip if touching interactive or horizontal scrolling child elements
+    if (target.closest('#diaryCanvas, canvas, .quick-symptoms-scroller, .anatomical-chips-carousel, input, textarea, select, button, .modal, .tutorial-modal, .mobile-control-sheet')) {
+      return;
+    }
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchStartTime = Date.now();
+  }
+
+  function handleTouchEnd(e) {
+    if (!touchStartX || !touchStartY) return;
+    if (!e.changedTouches || e.changedTouches.length !== 1) return;
+
+    const diffX = e.changedTouches[0].clientX - touchStartX;
+    const diffY = e.changedTouches[0].clientY - touchStartY;
+    const elapsed = Date.now() - touchStartTime;
+
+    touchStartX = 0;
+    touchStartY = 0;
+
+    if (elapsed > MAX_TIME) return;
+    if (Math.abs(diffY) > MAX_PERPENDICULAR) return;
+    if (Math.abs(diffX) < SWIPE_THRESHOLD) return;
+
+    const currentTab = (document.body && document.body.getAttribute('data-active-tab')) || 'consult';
+    const currentIndex = tabs.indexOf(currentTab);
+    if (currentIndex === -1) return;
+
+    if (diffX < -SWIPE_THRESHOLD && currentIndex < tabs.length - 1) {
+      window.switchMobileTab(tabs[currentIndex + 1]);
+    } else if (diffX > SWIPE_THRESHOLD && currentIndex > 0) {
+      window.switchMobileTab(tabs[currentIndex - 1]);
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      const appContainer = document.getElementById('appContainer') || document.body;
+      if (appContainer) {
+        appContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+        appContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
+      }
+    });
+  } else {
+    const appContainer = document.getElementById('appContainer') || document.body;
+    if (appContainer) {
+      appContainer.addEventListener('touchstart', handleTouchStart, { passive: true });
+      appContainer.addEventListener('touchend', handleTouchEnd, { passive: true });
+    }
+  }
+})();
+
+// ── Clinical Medical Dictionary Modal Controller ──────────────
+const CLINICAL_DICTIONARY = {
+  'paracetamol': {
+    name: 'Paracetamol (Acetaminophen)',
+    category: 'Analgesics & Antipyretics · WHO Essential',
+    code: 'RxNorm: 161',
+    definition: 'Central-acting cyclooxygenase inhibitor and analgesic used as first-line treatment for acute mild-to-moderate pain and pyrexia.',
+    anatomy: 'Hypothalamus (Thermoregulatory Center) & Peripheral Nociceptors',
+    mechanism: 'Inhibition of central prostaglandin synthesis through COX-1/COX-2 variant inhibition and endocannabinoid reuptake modulation.',
+    precautions: 'Strict hepatic threshold: Maximum 4000 mg/24h. Chronic alcohol use or pre-existing hepatic cirrhosis requires dosage cap at 2000 mg/24h.'
+  },
+  'amoxicillin': {
+    name: 'Amoxicillin Trihydrate',
+    category: 'Beta-Lactam Antibiotics · Aminopenicillin',
+    code: 'RxNorm: 723',
+    definition: 'Broad-spectrum bactericidal penicillin-derivative active against common gram-positive and selected gram-negative respiratory and otic pathogens.',
+    anatomy: 'Respiratory Epithelium, Middle Ear & Sinus Mucosa',
+    mechanism: 'Binds penicillin-binding proteins (PBPs), inhibiting bacterial cell-wall peptidoglycan cross-linking leading to osmotic lysis.',
+    precautions: 'Absolute contraindication in known penicillin/beta-lactam anaphylaxis. Complete full prescribed regimen to prevent antimicrobial resistance.'
+  },
+  'chest pain': {
+    name: 'Acute Angina & Precordial Pain',
+    category: 'Cardiovascular Triaging · High Priority',
+    code: 'ICD-10: R07.9',
+    definition: 'Substernal chest pressure or discomfort indicating myocardial ischemia or thoracic visceral inflammation.',
+    anatomy: 'Myocardium, Coronary Arteries & Pericardium',
+    mechanism: 'Coronary perfusion-demand mismatch leading to cellular hypoxia, lactic acidosis, and afferent sympathetic nociceptive transmission.',
+    precautions: 'RED ALERT: Any crushing pressure radiating to left arm, jaw, or accompanied by diaphoresis and dyspnea requires immediate emergency EMS dispatch.'
+  },
+  'fever': {
+    name: 'Pyrexia / Fever',
+    category: 'Systemic Inflammatory Response',
+    code: 'ICD-10: R50.9',
+    definition: 'Elevated core body temperature (>38.0°C / 100.4°F) mediated by endogenous pyrogenic cytokine release.',
+    anatomy: 'Anterior Preoptic Hypothalamic Nuclei',
+    mechanism: 'Pyrogens stimulate vascular endothelium to synthesize PGE2, elevating hypothalamic thermoregulatory set-point.',
+    precautions: 'Temperatures exceeding 40.0°C (104.0°F) or persisting past 72h require diagnostic workup for tropical infections (Dengue, Malaria, Typhoid).'
+  },
+  'headache': {
+    name: 'Cephalea & Neurovascular Migraine',
+    category: 'Neurological & Pain Syndromes',
+    code: 'ICD-10: G43.9',
+    definition: 'Unilateral or bilateral cephalic pain resulting from trigeminovascular activation and neurogenic meningeal vasodilation.',
+    anatomy: 'Trigeminovascular System & Meningeal Vessels',
+    mechanism: 'Calcitonin gene-related peptide (CGRP) release inducing sterile dural inflammation and sensory cortex sensitization.',
+    precautions: 'Sudden "thunderclap" headache peaking within seconds or accompanied by focal neurological deficits requires immediate neuroimaging.'
+  }
+};
+
+window.openClinicalDictModal = function(term) {
+  if (window.BioTelemetrySFX && typeof window.BioTelemetrySFX.playSlide === 'function') {
+    window.BioTelemetrySFX.playSlide();
+  }
+  const modal = document.getElementById('clinicalDictModal');
+  const backdrop = document.getElementById('clinicalDictBackdrop');
+  if (!modal) return;
+
+  const lookupKey = (term || '').toLowerCase().trim();
+  const entry = CLINICAL_DICTIONARY[lookupKey] || CLINICAL_DICTIONARY['paracetamol'];
+
+  const nameEl = document.getElementById('dictTermName');
+  const catEl = document.getElementById('dictSubcategory');
+  const codeEl = document.getElementById('dictCodeValue');
+  const defEl = document.getElementById('dictDefinition');
+  const anatEl = document.getElementById('dictAnatomy');
+  const mechEl = document.getElementById('dictMechanism');
+  const precEl = document.getElementById('dictPrecautions');
+
+  if (nameEl) nameEl.textContent = entry.name;
+  if (catEl) catEl.textContent = entry.category;
+  if (codeEl) codeEl.textContent = entry.code;
+  if (defEl) defEl.textContent = entry.definition;
+  if (anatEl) anatEl.textContent = entry.anatomy;
+  if (mechEl) mechEl.textContent = entry.mechanism;
+  if (precEl) precEl.textContent = entry.precautions;
+
+  modal.style.display = 'block';
+  if (backdrop) backdrop.style.display = 'block';
+  requestAnimationFrame(() => modal.classList.add('open'));
+};
+
+window.closeClinicalDictModal = function() {
+  if (window.BioTelemetrySFX && typeof window.BioTelemetrySFX.playSlide === 'function') {
+    window.BioTelemetrySFX.playSlide();
+  }
+  const modal = document.getElementById('clinicalDictModal');
+  const backdrop = document.getElementById('clinicalDictBackdrop');
+  if (modal) {
+    modal.classList.remove('open');
+    setTimeout(() => { modal.style.display = 'none'; }, 250);
+  }
+  if (backdrop) backdrop.style.display = 'none';
+};
+
 // Set default active mobile tab on DOM readiness
 if (typeof document !== 'undefined' && document.body && typeof document.body.getAttribute === 'function' && !document.body.getAttribute('data-active-tab')) {
   if (typeof document.body.setAttribute === 'function') {
@@ -17160,6 +17522,26 @@ window.applyClinicianCorrection = function(predictedClass, correctClass, queryTe
   slmClassifier.train(SLM_TRAINING_CORPUS);
 };
 
+window.openClinicianOverrideModal = function(predictedCondition) {
+  const modal = document.getElementById("clinicianOverrideModal");
+  if (modal) {
+    if (predictedCondition) {
+      const pred = document.getElementById("overridePredicted");
+      if (pred) pred.textContent = predictedCondition.toUpperCase();
+    }
+    modal.style.display = "flex";
+    modal.classList.add("open");
+  }
+};
+
+window.closeClinicianOverrideModal = function() {
+  const modal = document.getElementById("clinicianOverrideModal");
+  if (modal) {
+    modal.classList.remove("open");
+    modal.style.display = "none";
+  }
+};
+
 window.applyOverrideAndTrain = function() {
   const overrideSelect = document.getElementById("overrideSelect");
   const overridePredicted = document.getElementById("overridePredicted");
@@ -17174,8 +17556,7 @@ window.applyOverrideAndTrain = function() {
   window.applyClinicianCorrection(predictedClass, correctClass, queryText);
 
   // Hide modal
-  const modal = document.getElementById("clinicianOverrideModal");
-  if (modal) modal.style.display = "none";
+  window.closeClinicianOverrideModal();
 
   if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
   alert("Clinician override successfully registered and SLM classifier dynamically updated!");
@@ -18831,9 +19212,18 @@ window.triggerMcpAutoPipeline = function(msgId, originalText, datasetKey, profil
 window.openZkpModal = function() {
   const modal = document.getElementById("zkpModal");
   if (modal) {
-    modal.style.display = "block";
+    modal.style.display = "flex";
+    modal.classList.add("open");
     const resultArea = document.getElementById("zkpResultArea");
     if (resultArea) resultArea.style.display = "none";
+  }
+};
+
+window.closeZkpModal = function() {
+  const modal = document.getElementById("zkpModal");
+  if (modal) {
+    modal.classList.remove("open");
+    modal.style.display = "none";
   }
 };
 
@@ -19020,7 +19410,10 @@ window.switchHudSimulationMode = function(mode) {
 
 window.openSearchModal = function() {
   const modal = document.getElementById("searchModal");
-  if (modal) modal.style.display = "block";
+  if (modal) {
+    modal.style.display = "flex";
+    modal.classList.add("open");
+  }
   const input = document.getElementById("inputHybridSearch");
   if (input) {
     input.focus();
@@ -19030,7 +19423,10 @@ window.openSearchModal = function() {
 
 window.closeSearchModal = function() {
   const modal = document.getElementById("searchModal");
-  if (modal) modal.style.display = "none";
+  if (modal) {
+    modal.classList.remove("open");
+    modal.style.display = "none";
+  }
 };
 
 window.executeHybridSearch = function() {
@@ -19183,6 +19579,56 @@ window.transferVisionToConsultation = function() {
     }
   }
 };
+
+// =========================================================================
+// ── MOBILE PWA INSTALLATION LIFECYCLE ─────────────────────────────────────
+// =========================================================================
+
+window.deferredPwaPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+  e.preventDefault();
+  window.deferredPwaPrompt = e;
+  console.log('[PWA] beforeinstallprompt captured and ready for mobile install');
+  const installBtn = document.getElementById('sheetInstallBtn');
+  if (installBtn) {
+    installBtn.style.display = 'flex';
+  }
+});
+
+window.addEventListener('appinstalled', () => {
+  window.deferredPwaPrompt = null;
+  console.log('[PWA] RAMAN AI was successfully installed as standalone PWA');
+  const installBtn = document.getElementById('sheetInstallBtn');
+  if (installBtn) {
+    const lbl = installBtn.querySelector('strong');
+    if (lbl) lbl.textContent = 'APP INSTALLED (PWA)';
+  }
+  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+});
+
+window.installPwaPrompt = async function() {
+  if (window.deferredPwaPrompt) {
+    try {
+      window.deferredPwaPrompt.prompt();
+      const choice = await window.deferredPwaPrompt.userChoice;
+      console.log('[PWA] User choice:', choice.outcome);
+      window.deferredPwaPrompt = null;
+      if (typeof closeMobileControlSheet === 'function') closeMobileControlSheet();
+    } catch (err) {
+      console.warn('[PWA] Install prompt error:', err);
+    }
+  } else {
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    if (isIOS) {
+      alert("📱 To install RAMAN AI on iOS:\n1. Tap the Share button in Safari (box with arrow pointing up ⎋)\n2. Scroll down and tap 'Add to Home Screen' ➕\n3. Tap 'Add' in the top-right corner to launch standalone offline.");
+    } else {
+      alert("📱 To install RAMAN AI:\nTap your browser's menu (three dots ⋮) and select 'Install app' or 'Add to Home screen' to run completely offline!");
+    }
+    if (typeof closeMobileControlSheet === 'function') closeMobileControlSheet();
+  }
+};
+
 
 
 // --- END MODULE: app.js ---

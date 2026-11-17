@@ -36,7 +36,10 @@ class MultimodalHubUI {
   openModal() {
     const modal = document.getElementById("multimodalHubModal");
     const backdrop = document.getElementById("multimodalHubBackdrop");
-    if (modal) modal.style.display = "block";
+    if (modal) {
+      modal.style.display = "block";
+      requestAnimationFrame(() => modal.classList.add("open"));
+    }
     if (backdrop) backdrop.style.display = "block";
     this.switchTab(this.activeTab);
     this.updateTrainingTelemetry();
@@ -45,7 +48,10 @@ class MultimodalHubUI {
   closeModal() {
     const modal = document.getElementById("multimodalHubModal");
     const backdrop = document.getElementById("multimodalHubBackdrop");
-    if (modal) modal.style.display = "none";
+    if (modal) {
+      modal.classList.remove("open");
+      setTimeout(() => { modal.style.display = "none"; }, 250);
+    }
     if (backdrop) backdrop.style.display = "none";
     this.stopRppgCamera();
   }

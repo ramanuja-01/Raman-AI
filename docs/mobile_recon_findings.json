@@ -1,0 +1,281 @@
+[
+  {
+    "category": "TOUCH_TARGETS",
+    "title": "Found 30 undersized interactive elements (<44px)",
+    "severity": "HIGH",
+    "details": [
+      {
+        "id": "btnThemeToggle",
+        "className": "btn-session-mgr",
+        "tag": "BUTTON",
+        "text": "🌙\nDARK",
+        "width": 36,
+        "height": 36
+      },
+      {
+        "id": "btnMultimodalHub",
+        "className": "btn-session-mgr",
+        "tag": "BUTTON",
+        "text": "🔬\nMULTIMODAL HUB",
+        "width": 118,
+        "height": 28
+      },
+      {
+        "id": "btnMobileControls",
+        "className": "btn-session-mgr btn-mobile-controls",
+        "tag": "BUTTON",
+        "text": "⚙️\nOPTIONS",
+        "width": 95,
+        "height": 36
+      },
+      {
+        "id": "",
+        "className": "sp-close",
+        "tag": "BUTTON",
+        "text": "✕",
+        "width": 13,
+        "height": 16
+      },
+      {
+        "id": "",
+        "className": "sp-close",
+        "tag": "BUTTON",
+        "text": "✕",
+        "width": 13,
+        "height": 16
+      },
+      {
+        "id": "welcomeHidInput",
+        "className": "",
+        "tag": "INPUT",
+        "text": "",
+        "width": 112,
+        "height": 39
+      },
+      {
+        "id": "welcomeHidBtn",
+        "className": "",
+        "tag": "BUTTON",
+        "text": "",
+        "width": 86,
+        "height": 39
+      },
+      {
+        "id": "",
+        "className": "reaction-btn",
+        "tag": "BUTTON",
+        "text": "👍",
+        "width": 41,
+        "height": 28
+      },
+      {
+        "id": "",
+        "className": "reaction-btn",
+        "tag": "BUTTON",
+        "text": "❤️",
+        "width": 41,
+        "height": 28
+      },
+      {
+        "id": "",
+        "className": "reaction-btn",
+        "tag": "BUTTON",
+        "text": "🙌",
+        "width": 41,
+        "height": 28
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🤕 Headache + Fever",
+        "width": 141,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "💔 Chest Pain",
+        "width": 100,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🫁 Cough",
+        "width": 77,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🤢 Stomach Pain",
+        "width": 116,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🦵 Joint Pain",
+        "width": 95,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🩹 Skin Rash",
+        "width": 94,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "💊 Hypertension",
+        "width": 114,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🩸 Diabetes",
+        "width": 89,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "👁️ Eye Problems",
+        "width": 115,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🔩 Back Pain",
+        "width": 95,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🦟 Dengue Fever",
+        "width": 117,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🩸 Malaria Rigors",
+        "width": 119,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "🌡️ Typhoid Fever",
+        "width": 118,
+        "height": 32
+      },
+      {
+        "id": "",
+        "className": "symptom-tag",
+        "tag": "BUTTON",
+        "text": "💧 Gastroenteritis",
+        "width": 121,
+        "height": 32
+      },
+      {
+        "id": "btnCamera",
+        "className": "media-btn",
+        "tag": "BUTTON",
+        "text": "📷",
+        "width": 38,
+        "height": 38
+      },
+      {
+        "id": "btnUpload",
+        "className": "media-btn",
+        "tag": "BUTTON",
+        "text": "📎",
+        "width": 38,
+        "height": 38
+      },
+      {
+        "id": "btnVoice",
+        "className": "media-btn voice-btn",
+        "tag": "BUTTON",
+        "text": "🎙",
+        "width": 38,
+        "height": 38
+      },
+      {
+        "id": "userInput",
+        "className": "",
+        "tag": "TEXTAREA",
+        "text": "",
+        "width": 176,
+        "height": 28
+      },
+      {
+        "id": "btnSend",
+        "className": "btn-send",
+        "tag": "BUTTON",
+        "text": "➤",
+        "width": 34,
+        "height": 34
+      },
+      {
+        "id": "",
+        "className": "sheet-close-btn",
+        "tag": "BUTTON",
+        "text": "✕",
+        "width": 32,
+        "height": 32
+      }
+    ]
+  },
+  {
+    "category": "VIRTUAL_KEYBOARD",
+    "title": "Virtual keyboard covers input deck! User cannot see typed text or send button",
+    "severity": "CRITICAL",
+    "details": {
+      "viewportH": 664,
+      "keyboardH": 300,
+      "activeVisualH": 364,
+      "inputAreaBottomBefore": 602,
+      "inputAreaBottomAfter": 602,
+      "isInputCovered": true,
+      "bodyKbAttr": "true",
+      "isNavVisibleDuringTyping": true,
+      "navBottomAfter": 664
+    }
+  },
+  {
+    "category": "VIRTUAL_KEYBOARD",
+    "title": "Bottom navigation remains displayed or misaligned when keyboard is active, wasting vertical space",
+    "severity": "MEDIUM",
+    "details": {
+      "viewportH": 664,
+      "keyboardH": 300,
+      "activeVisualH": 364,
+      "inputAreaBottomBefore": 602,
+      "inputAreaBottomAfter": 602,
+      "isInputCovered": true,
+      "bodyKbAttr": "true",
+      "isNavVisibleDuringTyping": true,
+      "navBottomAfter": 664
+    }
+  }
+]

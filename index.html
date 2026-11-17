@@ -1714,6 +1714,30 @@
           </div>
         </button>
 
+        <button type="button" class="sheet-tool-btn" onclick="openZkpModal(); closeMobileControlSheet();">
+          <span class="tool-icon">🛡️</span>
+          <div class="tool-info">
+            <strong>ZKP HEALTH PROVER</strong>
+            <small>Privacy-Preserving Proofs</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn" onclick="openSearchModal(); closeMobileControlSheet();">
+          <span class="tool-icon">🔍</span>
+          <div class="tool-info">
+            <strong>HYBRID SEARCH</strong>
+            <small>Offline BM25 + Dense Vectors</small>
+          </div>
+        </button>
+
+        <button type="button" class="sheet-tool-btn highlight" id="sheetInstallBtn" onclick="window.installPwaPrompt();" style="border-color: #00ffb3 !important;">
+          <span class="tool-icon">📱</span>
+          <div class="tool-info">
+            <strong style="color: #00ffb3;">INSTALL RAMAN APP</strong>
+            <small>Offline Mobile PWA Mode</small>
+          </div>
+        </button>
+
         <button type="button" class="sheet-tool-btn" id="sheetAudioBtn" onclick="window.toggleBioTelemetryAudio(); updateSheetAudioLabel();">
           <span class="tool-icon" id="sheetAudioIcon">🔊</span>
           <div class="tool-info">
@@ -1785,13 +1809,13 @@
   </div>
 
   <!-- ===== ZERO-KNOWLEDGE PROOF (ZKP) MODAL ===== -->
-  <div class="zkp-modal" id="zkpModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">
-    <div style="position:relative; width:92%; max-width:480px; margin:8vh auto; background:rgba(15,23,42,0.95); border:1px solid var(--cyan); border-radius:12px; padding:20px; box-shadow:0 0 30px rgba(0,229,255,0.25);">
+  <div class="zkp-modal" id="zkpModal" onclick="if(event.target===this) document.getElementById('zkpModal').style.display='none';" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">
+    <div class="zkp-modal-dialog">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:8px;">
         <span style="font-family:var(--font-head); font-weight:bold; color:var(--cyan); font-size:0.95rem; display:flex; align-items:center; gap:8px;">
           <span>🛡️</span> ZERO-KNOWLEDGE HEALTH PROVER
         </span>
-        <button onclick="document.getElementById('zkpModal').style.display='none'" style="background:transparent; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
+        <button class="sheet-close-btn" onclick="document.getElementById('zkpModal').style.display='none'" aria-label="Close ZKP modal">✕</button>
       </div>
 
       <p style="font-size:0.75rem; color:var(--text-main); margin-bottom:15px; line-height:1.4;">
@@ -1962,13 +1986,13 @@
   </div>
 
   <!-- ===== HYBRID MEDICAL SEARCH MODAL (BM25 + DENSE) ===== -->
-  <div class="search-modal" id="searchModal" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">
-    <div style="position:relative; width:92%; max-width:540px; margin:7vh auto; background:rgba(15,23,42,0.96); border:1px solid #ffb400; border-radius:12px; padding:20px; box-shadow:0 0 30px rgba(255,180,0,0.25);">
+  <div class="search-modal" id="searchModal" onclick="if(event.target===this) closeSearchModal();" style="display:none; position:fixed; inset:0; z-index:99999; background:rgba(0,0,0,0.75); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);">
+    <div class="search-modal-dialog">
       <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(255,180,0,0.2); padding-bottom:8px;">
         <span style="font-family:var(--font-head); font-weight:bold; color:#ffb400; font-size:0.95rem; display:flex; align-items:center; gap:8px;">
           <span>🔍</span> HYBRID MEDICAL SEARCH (BM25 + DENSE)
         </span>
-        <button onclick="closeSearchModal()" style="background:transparent; border:none; color:var(--text-muted); font-size:1.1rem; cursor:pointer;">✕</button>
+        <button class="sheet-close-btn" onclick="closeSearchModal()" aria-label="Close search modal">✕</button>
       </div>
 
       <div style="margin-bottom:14px; display:flex; gap:8px;">
@@ -1989,9 +2013,14 @@
   </div>
 
   <!-- ===== CLINICIAN PORTAL OVERRIDE MODAL ===== -->
-  <div class="modal-backdrop" id="clinicianOverrideModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(10,15,30,0.85); backdrop-filter:blur(6px); z-index:10000; align-items:center; justify-content:center;">
-    <div style="background:#0e1428; border:2px solid var(--cyan); border-radius:12px; padding:20px; width:90%; max-width:400px; box-shadow:0 0 25px rgba(0, 229, 255, 0.4); text-align:left; color:var(--text-main); position:relative;">
-      <h3 style="font-family:var(--font-head); color:var(--cyan); margin-top:0; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:8px; font-size:1.1rem; letter-spacing:0.5px;">🔬 CLINICIAN DIAGNOSTIC OVERRIDE</h3>
+  <div class="modal-backdrop" id="clinicianOverrideModal" onclick="if(event.target===this) document.getElementById('clinicianOverrideModal').style.display='none';" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(10,15,30,0.85); backdrop-filter:blur(6px); z-index:10000; align-items:center; justify-content:center;">
+    <div class="override-modal-dialog">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; border-bottom:1px solid rgba(0,229,255,0.2); padding-bottom:8px;">
+        <h3 style="font-family:var(--font-head); color:var(--cyan); margin:0; font-size:1.05rem; letter-spacing:0.5px; display:flex; align-items:center; gap:8px;">
+          <span>🔬</span> CLINICIAN DIAGNOSTIC OVERRIDE
+        </h3>
+        <button class="sheet-close-btn" onclick="document.getElementById('clinicianOverrideModal').style.display='none'" aria-label="Close clinician override modal">✕</button>
+      </div>
       <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.4; margin-bottom:15px;">
         As a credentialed practitioner, you can override the local SLM classification. This registers a localized active learning gradient delta for matching symptom tokens.
       </p>
