@@ -46,8 +46,8 @@
       
       <div class="splash-brand">
         <div class="splash-title-glowing">RAMAN AI</div>
-        <div class="splash-subtitle-cyber">SYSTEM DIAGNOSTICS & INFRASTRUCTURE</div>
-        <div class="splash-tagline-glow">EXPERIMENT № 170 · HYPER-LOCAL INFRASTRUCTURE</div>
+        <div class="splash-subtitle-cyber">CLINICAL INTELLIGENCE SYSTEM</div>
+        <div class="splash-tagline-glow">OFFLINE MEDICAL SLM · PRIVATE & SECURE</div>
       </div>
 
       <!-- High-tech heartbeat/ECG visualizer -->
@@ -169,15 +169,15 @@
         </div>
         <div class="header-title-group">
           <h1 class="header-title">RAMAN AI</h1>
-          <span class="header-badge">EXPERIMENT № 170</span>
+          <span class="header-badge">CLINICAL INTELLIGENCE</span>
         </div>
       </div>
       <div class="header-center">
         <div class="status-indicator">
           <div class="status-dot"></div>
-          <span>SYSTEM ONLINE</span>
+          <span>OPERATIONAL • AIR-GAPPED</span>
         </div>
-        <div class="header-vitals">
+        <div class="header-vitals" style="display:none;">
           <div class="vital-mini" title="AI Processing Power">
             <span class="vital-mini-label">CPU</span>
             <div class="vital-mini-bar"><div class="vital-mini-fill" id="cpuFill"></div></div>
@@ -205,7 +205,7 @@
             <span id="hidDisplay">---</span>
             <span class="hid-chip-arrow">▾</span>
           </div>
-          <div class="vital-chip bio-mode-chip">
+          <div class="vital-chip bio-mode-chip" style="display:none;">
             <span class="chip-icon">🧬</span>
             <span>BIO-MODE</span>
           </div>
@@ -791,7 +791,7 @@
     <div class="session-panel-backdrop" id="vaultBackdrop" onclick="closeVaultModal()" style="display:none;"></div>
     <div class="tutorial-modal" id="vaultModal" style="display:none; max-width: 650px;">
       <div class="tut-header">
-        <span>📁 MEDICAL VAULT DOCUMENT</span>
+        <span>HEALTH VAULT DOCUMENT</span>
         <button class="sp-close" onclick="closeVaultModal()">✕</button>
       </div>
       <div class="tut-body" style="display:flex; flex-direction:column; gap:15px;">
@@ -1018,7 +1018,7 @@
       <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
       <aside class="sidebar" id="sidebar">
         <div class="sidebar-section" data-mobile-tab="profile">
-          <div class="sidebar-heading">PATIENT PROFILE</div>
+          <div class="sidebar-heading">PATIENT PROFILE & VITALS</div>
           <div class="profile-card">
             <div class="profile-avatar" id="profileAvatar">
               <span id="avatarEmoji">👤</span>
@@ -1151,7 +1151,7 @@
 
         <!-- Markov Generation Temperature Slider -->
         <div class="sidebar-section" data-mobile-tab="profile">
-          <div class="sidebar-heading">🧠 Conversational Empathy Temp</div>
+          <div class="sidebar-heading">CONVERSATIONAL TEMPERATURE</div>
           <div class="pain-meter" style="padding: 10px 0;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
               <span style="font-size:0.72rem; color:var(--text-muted);">Markov Temperature:</span>
@@ -1166,7 +1166,7 @@
 
         <!-- Pain Level -->
         <div class="sidebar-section" data-mobile-tab="profile">
-          <div class="sidebar-heading">PAIN LEVEL METER</div>
+          <div class="sidebar-heading">PAIN SCALE (1–10)</div>
           <div class="pain-meter">
             <div class="pain-display">
               <span class="pain-emoji" id="painEmoji">😐</span>
@@ -1181,7 +1181,7 @@
 
         <!-- Symptom & Vitals Tracker Diary -->
         <div class="sidebar-section" data-mobile-tab="vault">
-          <div class="sidebar-heading">📈 LOCAL RECOVERY DIARY</div>
+          <div class="sidebar-heading">RECOVERY DIARY</div>
           <div class="diary-widget" style="background: rgba(0,229,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 12px;">
             <div style="font-size: 0.72rem; color: var(--text-muted); margin-bottom: 8px; text-align: center;">
               Log symptom severity to track your recovery offline.
@@ -1249,7 +1249,7 @@
 
         <!-- Anatomical Symptom Scanner -->
         <div class="sidebar-section" data-mobile-tab="anatomy">
-          <div class="sidebar-heading">📈 ANATOMICAL DIAGNOSTIC SCANNER</div>
+          <div class="sidebar-heading">ANATOMICAL BODY MAP</div>
           <div class="anatomical-scanner-widget">
             <div class="anatomical-scanner-title-row">
               <span class="anatomical-scan-hint">ACTIVE TARGET:</span>
@@ -1408,7 +1408,7 @@
         </div>
 
         <div class="sidebar-section" data-mobile-tab="anatomy">
-          <div class="sidebar-heading">QUICK SYMPTOMS</div>
+          <div class="sidebar-heading">COMMON SYMPTOMS</div>
           <div class="quick-symptoms">
             <button class="symptom-tag" data-symptom="I have a severe headache and fever of 101°F">🤕 Headache + Fever</button>
             <button class="symptom-tag" data-symptom="I am experiencing chest pain and shortness of breath">💔 Chest Pain</button>
@@ -1432,7 +1432,7 @@
         </div>
 
         <div class="sidebar-section" data-mobile-tab="profile">
-          <div class="sidebar-heading">AI CAPABILITIES</div>
+          <div class="sidebar-heading">SYSTEM CAPABILITIES</div>
           <ul class="capabilities-list">
             <li><span class="cap-dot"></span>Symptom Analysis</li>
             <li><span class="cap-dot"></span>Medication Suggestions</li>
@@ -1458,7 +1458,7 @@
         </div>
         <!-- Mobile-Only Sidebar Actions -->
         <div class="sidebar-section mobile-only-sidebar-action" data-mobile-tab="profile" style="margin-top: 15px;">
-          <div class="sidebar-heading">SYSTEM ACTIONS</div>
+          <div class="sidebar-heading">ACTIONS</div>
           <div style="display: flex; flex-direction: column; gap: 8px;">
             <button class="btn-session-mgr" onclick="openApiSettings()" style="width: 100% !important; justify-content: center; height: 36px; border-radius: 8px;">
               <span>⚙️</span> API SETTINGS
@@ -1493,43 +1493,33 @@
             <div class="message-content">
               <div class="message-header">
                 <span class="sender-name">RAMAN AI</span>
-                <span class="message-badge">Experiment № 170</span>
+                <span class="message-badge">Clinical SLM</span>
                 <span class="message-time" id="welcomeTime"></span>
               </div>
               <div class="message-bubble ai-bubble">
                 <div class="typing-intro">
-                  <p>Hello! I am <strong>RAMAN AI – Experiment No. 170</strong>, your dedicated medical intelligence assistant. Developed by <strong>Ramanuja Pathy</strong>. 🏥</p>
-                  <p>I am designed to:</p>
-                  <ul>
-                    <li>📋 <strong>Understand</strong> your symptoms in detail</li>
-                    <li>🔬 <strong>Analyze</strong> possible conditions</li>
-                    <li>💊 <strong>Suggest</strong> appropriate medications</li>
-                    <li>📷 <strong>Recognize</strong> medical images & photos</li>
-                    <li>🎥 <strong>Analyze</strong> symptom videos in real-time</li>
-                    <li>🎙 <strong>Listen</strong> to your voice description</li>
-                  </ul>
-                  <p><span class="desktop-guidance">Please fill in your <strong>Patient Profile</strong> on the left, then describe your symptoms below. You can also 📎 upload a photo or 🎙 use voice input! 🩺</span><span class="mobile-guidance">Tap <strong>Profile</strong> or <strong>Anatomy</strong> below to log vitals, or describe symptoms below to begin! 🩺</span></p>
-                  <div style="margin-top:15px; display:flex; gap:10px; flex-wrap: wrap; align-items: center;">
-                    <button class="btn-consult" id="btnStartConsultation" style="background:var(--accent); border:none; padding:8px 16px; border-radius:6px; font-weight:bold; color:#0f172a; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px; transition:all 0.3s; box-shadow:0 0 10px rgba(0,255,179,0.3);">💬 START HUMAN-LIKE CLINICAL CONSULTATION</button>
+                  <p>Welcome to <strong>RAMAN AI</strong> — your local, private clinical intelligence assistant.</p>
+                  <p><span class="desktop-guidance">Please review your <strong>Patient Profile</strong> and vitals on the left, then describe your symptoms below or select an anatomical region on the body map to begin.</span><span class="mobile-guidance">Select <strong>Profile</strong> or <strong>Anatomy</strong> below to log vitals, or describe symptoms below to begin clinical evaluation.</span></p>
+                  <div style="margin-top:14px; margin-bottom:12px; display:flex; gap:10px; flex-wrap: wrap; align-items: center;">
+                    <button class="btn-consult" id="btnStartConsultation" style="background:var(--cyan); border:none; padding:9px 18px; border-radius:8px; font-weight:600; color:#ffffff; cursor:pointer; font-size:0.85rem; display:flex; align-items:center; gap:6px; transition:all 0.2s;">Start Clinical Consultation</button>
                   </div>
-                  
                   <!-- Inside-app Returning Patient Session Restore Box -->
                   <details class="welcome-restore-details" id="welcomeRestoreDetails">
                     <summary class="welcome-restore-summary">
-                      <span>🔐 RETURNING PATIENT? RESTORE PREVIOUS SESSION</span>
+                      <span>Returning Patient? Restore Previous Session</span>
                       <span class="restore-chevron">▾</span>
                     </summary>
                     <div class="welcome-restore-body">
                       <div class="welcome-restore-input-row">
                         <input type="text" id="welcomeHidInput" placeholder="Enter Health ID e.g. RMN-A3F9K2" maxlength="12" />
-                        <button id="welcomeHidBtn">↩ RESTORE</button>
+                        <button id="welcomeHidBtn">Restore</button>
                       </div>
                       <div id="welcomeHidError"></div>
                     </div>
                   </details>
                 </div>
               </div>
-              <div class="msg-reactions" data-msgid="welcome">
+              <div class="msg-reactions" data-msgid="welcome" style="display:none;">
                 <button class="reaction-btn" data-emoji="👍" title="Helpful">👍</button>
                 <button class="reaction-btn" data-emoji="❤️" title="Love it">❤️</button>
                 <button class="reaction-btn" data-emoji="🙌" title="Great">🙌</button>

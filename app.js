@@ -3810,7 +3810,7 @@ function addMessage(role, content, isHTML = false) {
   const avatarClass = role === "user" ? "user-avatar" : "ai-avatar";
   const senderName = role === "user" ? "YOU" : "RAMAN AI";
   const bubbleClass = role === "user" ? "user-bubble" : "ai-bubble";
-  const badge = role === "ai" ? `<span class="message-badge">Experiment № 170</span>` : "";
+  const badge = role === "ai" ? `<span class="message-badge">Clinical SLM</span>` : "";
 
   div.innerHTML = `
     <div class="message-avatar ${avatarClass}"><span>${avatarIcon}</span></div>
@@ -6546,7 +6546,7 @@ window.transitionToApp = function(sessionRestored = false) {
 
 window._splashTimer = setTimeout(() => {
   window.transitionToApp(false);
-}, 4800);
+}, 500);
 
 // ═══════════════════════════════════════════════════════
 // ── SESSION MANAGER ────────────────────────────────────
@@ -7753,7 +7753,7 @@ function initiateClinicalConsultation() {
     <div class="message-content">
       <div class="message-header">
         <span class="sender-name">RAMAN AI</span>
-        <span class="message-badge">Experiment № 170</span>
+        <span class="message-badge">Clinical SLM</span>
         <span class="message-time">${nowTime()}</span>
       </div>
       <div class="message-bubble ai-bubble" style="background:var(--bg-glass); border:1px solid rgba(0,229,255,0.25); box-shadow:0 0 15px rgba(0,229,255,0.15); backdrop-filter:blur(8px);" id="wizardBubbleBody">
@@ -8373,7 +8373,7 @@ function completeClinicalConsultation() {
     <div class="message-content">
       <div class="message-header">
         <span class="sender-name">RAMAN AI</span>
-        <span class="message-badge">Experiment № 170</span>
+        <span class="message-badge">Clinical SLM</span>
         <span class="message-time">${nowTime()}</span>
       </div>
       <div class="message-bubble ai-bubble" style="background:var(--bg-glass); border:1px solid rgba(0,255,179,0.25); box-shadow:0 0 15px rgba(0,255,179,0.15); backdrop-filter:blur(8px); max-width:85%;">

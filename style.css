@@ -2,23 +2,23 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg-deep:    #050d1a;
-  --bg-card:    #0a1628;
+  --bg-deep:    #090e1a;
+  --bg-card:    #0f172a;
   --bg-glass:   rgba(10,22,40,0.85);
-  --cyan:       #00e5ff;
-  --cyan-dim:   #00b8cc;
-  --teal:       #00ffb3;
+  --cyan:       #0284c7;
+  --cyan-dim:   #0369a1;
+  --teal:       #0d9488;
   --accent:     var(--teal);
   --blue:       #1a6fff;
   --red-warn:   #ff4d6d;
   --text-main:  #e2eaf5;
   --text-muted: #8da3be;
-  --border:     rgba(0,229,255,0.15);
-  --border-glow:rgba(0,229,255,0.4);
-  --gradient:   linear-gradient(135deg,#00e5ff22,#1a6fff22);
-  --font-head:  'Orbitron', sans-serif;
+  --border:     rgba(148, 163, 184, 0.16);
+  --border-glow:rgba(2, 132, 199, 0.25);
+  --gradient:   linear-gradient(135deg, rgba(2, 132, 199, 0.08), rgba(13, 148, 136, 0.08));
+  --font-head:  'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-body:  'Inter', sans-serif;
-  --font-ui:    'Rajdhani', sans-serif;
+  --font-ui:    'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
   /* Mobile viewport and safe-area insets */
   --app-height: 100dvh;
@@ -47,7 +47,7 @@ button, .symptom-tag, .map-hotspot, .nav-tab, .consult-chip-btn, .organ-chip {
 }
 
 /* ===== BACKGROUND PARTICLES ===== */
-.bg-particles { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.bg-particles { display: none !important; }
 .particle {
   position: absolute;
   border-radius: 50%;
@@ -63,7 +63,7 @@ button, .symptom-tag, .map-hotspot, .nav-tab, .consult-chip-btn, .organ-chip {
 }
 
 /* DNA decorations with breathing animation */
-.dna-left, .dna-right {
+.dna-left, .dna-right { display: none !important;
   position: fixed; top: 0; bottom: 0; width: 3px; z-index: 0;
   background: repeating-linear-gradient(
     to bottom,
@@ -88,7 +88,7 @@ button, .symptom-tag, .map-hotspot, .nav-tab, .consult-chip-btn, .organ-chip {
   display: flex; align-items: center; justify-content: center;
   flex-direction: column;
   overflow: hidden;
-  animation: splashFadeOut 0.8s cubic-bezier(0.4, 0, 0.2, 1) 4.2s forwards;
+  animation: splashFadeOut 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.5s forwards;
 }
 @keyframes splashFadeOut { to { opacity: 0; pointer-events: none; } }
 
@@ -316,7 +316,7 @@ button, .symptom-tag, .map-hotspot, .nav-tab, .consult-chip-btn, .organ-chip {
   background: rgba(5,13,26,0.95);
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(12px);
-  box-shadow: 0 2px 30px rgba(0,229,255,0.08);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
   flex-shrink: 0; z-index: 10;
 }
 
@@ -325,11 +325,11 @@ button, .symptom-tag, .map-hotspot, .nav-tab, .consult-chip-btn, .organ-chip {
   position: relative; width: 44px; height: 44px;
   border-radius: 50%; border: 2px solid var(--cyan);
   display: flex; align-items: center; justify-content: center;
-  background: radial-gradient(circle, rgba(0,229,255,0.15), transparent);
-  box-shadow: 0 0 16px rgba(0,229,255,0.3);
+  background: rgba(2, 132, 199, 0.12);
+  box-shadow: none;
 }
-.header-cross { font-size: 22px; color: var(--cyan); filter: drop-shadow(0 0 8px var(--cyan)); }
-.header-pulse {
+.header-cross { font-size: 18px; color: var(--cyan); filter: none; }
+.header-pulse { display: none !important;
   position: absolute; inset: -4px; border-radius: 50%;
   border: 1px solid var(--cyan); opacity: 0.4;
   animation: headerPulse 2s ease-in-out infinite;
@@ -339,8 +339,7 @@ button, .symptom-tag, .map-hotspot, .nav-tab, .consult-chip-btn, .organ-chip {
 .header-title-group { display: flex; flex-direction: column; }
 .header-title {
   font-family: var(--font-head); font-size: 1.25rem; font-weight: 900;
-  background: linear-gradient(90deg, var(--cyan), var(--teal));
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  color: var(--text-main);
   letter-spacing: 3px; line-height: 1;
 }
 .header-badge {
@@ -402,7 +401,7 @@ button, .symptom-tag, .map-hotspot, .nav-tab, .consult-chip-btn, .organ-chip {
 /* ===== SIDEBAR ===== */
 .sidebar {
   width: 280px; flex-shrink: 0;
-  background: rgba(8,18,35,0.9);
+  background: #0b1322;
   border-right: 1px solid var(--border);
   overflow-y: auto; overflow-x: hidden;
   display: flex; flex-direction: column; gap: 0;
@@ -414,9 +413,7 @@ button, .symptom-tag, .map-hotspot, .nav-tab, .consult-chip-btn, .organ-chip {
 
 .sidebar-section { padding: 18px 16px 12px; border-bottom: 1px solid var(--border); }
 .sidebar-heading {
-  font-family: var(--font-ui); font-size: 0.65rem;
-  letter-spacing: 3px; color: var(--cyan);
-  margin-bottom: 12px; opacity: 0.8;
+  font-family: var(--font-ui); font-size: 0.68rem; font-weight: 700; letter-spacing: 1.2px; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; opacity: 1;
 }
 
 /* Profile Card */
