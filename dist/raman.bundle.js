@@ -1,7 +1,7 @@
 /**
  * RAMAN AI (Experiment No. 170) – Production Unified Engine Bundle
  * Offline, Zero-Cloud Air-Gapped Clinical Intelligence System
- * Build Date: 2026-11-23T21:18:02.449Z
+ * Build Date: 2026-11-23T21:34:14.605Z
  * License: ISC
  */
 
@@ -17394,9 +17394,9 @@ window.toggleTheme = function() {
   localStorage.setItem("ramanai_theme", isLight ? "light" : "dark");
 
   if (isLight) {
-    btn.innerHTML = "<span>☀️</span> LITE";
+    btn.innerHTML = "<span>☀️</span> <span class=\"theme-btn-text\">LITE</span>";
   } else {
-    btn.innerHTML = "<span>🌙</span> DARK";
+    btn.innerHTML = "<span>🌙</span> <span class=\"theme-btn-text\">DARK</span>";
   }
 };
 
@@ -17407,7 +17407,7 @@ window.toggleTheme = function() {
     document.body.classList.add("light-theme");
     const btn = document.getElementById("btnThemeToggle");
     if (btn) {
-      btn.innerHTML = "<span>☀️</span> LITE";
+      btn.innerHTML = "<span>☀️</span> <span class=\"theme-btn-text\">LITE</span>";
     }
   }
 })();

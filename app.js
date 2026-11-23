@@ -11459,9 +11459,9 @@ window.toggleTheme = function() {
   localStorage.setItem("ramanai_theme", isLight ? "light" : "dark");
 
   if (isLight) {
-    btn.innerHTML = "<span>☀️</span> LITE";
+    btn.innerHTML = "<span>☀️</span> <span class=\"theme-btn-text\">LITE</span>";
   } else {
-    btn.innerHTML = "<span>🌙</span> DARK";
+    btn.innerHTML = "<span>🌙</span> <span class=\"theme-btn-text\">DARK</span>";
   }
 };
 
@@ -11472,7 +11472,7 @@ window.toggleTheme = function() {
     document.body.classList.add("light-theme");
     const btn = document.getElementById("btnThemeToggle");
     if (btn) {
-      btn.innerHTML = "<span>☀️</span> LITE";
+      btn.innerHTML = "<span>☀️</span> <span class=\"theme-btn-text\">LITE</span>";
     }
   }
 })();

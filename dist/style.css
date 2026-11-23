@@ -1267,7 +1267,7 @@ details[open] .hud-accordion-chevron {
   /* Hide overflowing desktop buttons from mobile header */
   #chipTime, .session-chip, .bio-mode-chip, #hidChip,
   #langSelect, #btnAudioToggle, #btnApiSettings, #btnTrainingHub,
-  #btnHelp, #btnSessionMgr {
+  #btnMultimodalHub, #btnHelp, #btnSessionMgr {
     display: none !important;
   }
 
@@ -1281,15 +1281,15 @@ details[open] .hud-accordion-chevron {
     height: 44px !important;
     min-height: 44px !important;
     border-radius: 22px !important;
-    background: rgba(0, 229, 255, 0.1) !important;
+    background: rgba(2, 132, 199, 0.12) !important;
     border: 1px solid var(--cyan) !important;
     color: var(--cyan) !important;
     font-family: var(--font-ui) !important;
     font-size: 0.75rem !important;
-    font-weight: bold !important;
-    letter-spacing: 1px !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.8px !important;
     cursor: pointer !important;
-    box-shadow: 0 0 10px rgba(0, 229, 255, 0.2) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
     white-space: nowrap !important;
     flex-shrink: 0 !important;
     touch-action: manipulation !important;
@@ -1307,7 +1307,14 @@ details[open] .hud-accordion-chevron {
     align-items: center !important;
     justify-content: center !important;
     margin: 0 !important;
+    font-size: 1.15rem !important;
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-main) !important;
     touch-action: manipulation !important;
+  }
+  #btnThemeToggle .theme-btn-text {
+    display: none !important;
   }
 
   /* Mobile adaptive welcome guidance */
@@ -1448,13 +1455,23 @@ details[open] .hud-accordion-chevron {
     transition: all 0.25s ease !important;
   }
   .quick-symptoms-scroller .symptom-tag {
-    padding: 8px 14px !important;
-    font-size: 0.76rem !important;
-    border-radius: 19px !important;
-    min-height: 38px !important;
+    padding: 6px 13px !important;
+    font-size: 0.74rem !important;
+    font-weight: 500 !important;
+    border-radius: 16px !important;
+    min-height: 36px !important;
     display: inline-flex !important;
     align-items: center !important;
+    background: rgba(15, 23, 42, 0.9) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-main) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15) !important;
     touch-action: manipulation !important;
+  }
+  .quick-symptoms-scroller .symptom-tag:active {
+    background: rgba(2, 132, 199, 0.18) !important;
+    border-color: var(--cyan) !important;
+    color: #ffffff !important;
   }
 
   /* Unified Single-Row Input Deck */
@@ -1486,9 +1503,16 @@ details[open] .hud-accordion-chevron {
     align-items: center !important;
     justify-content: center !important;
     flex-direction: row !important;
-    background: rgba(0, 229, 255, 0.08) !important;
-    border: 1px solid rgba(0, 229, 255, 0.25) !important;
+    background: rgba(15, 23, 42, 0.95) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-muted) !important;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.15) !important;
     touch-action: manipulation !important;
+  }
+  .media-toolbar .media-btn:active {
+    background: rgba(2, 132, 199, 0.18) !important;
+    border-color: var(--cyan) !important;
+    color: var(--cyan) !important;
   }
   .media-toolbar .media-btn span:first-child { font-size: 1.2rem !important; }
   .media-toolbar .media-btn-label,
@@ -1520,9 +1544,15 @@ details[open] .hud-accordion-chevron {
   }
 
   .input-bar textarea {
-    padding: 5px 0 !important;
+    padding: 6px 0 !important;
     max-height: 75px !important;
     min-height: 28px !important;
+    resize: none !important;
+    overflow-y: hidden !important;
+    scrollbar-width: none !important;
+  }
+  .input-bar textarea::-webkit-scrollbar {
+    display: none !important;
   }
 
   .input-actions {
@@ -1543,6 +1573,10 @@ details[open] .hud-accordion-chevron {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    background: var(--cyan) !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2) !important;
     touch-action: manipulation !important;
   }
 
