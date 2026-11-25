@@ -1990,6 +1990,7 @@
             <div style="font-weight:bold; color:var(--cyan); font-size:0.78rem; margin-bottom:6px;">📤 EXPORT DP GRADIENT PACKAGE</div>
             <textarea id="fedPackageOutput" aria-label="Exported Federated Gradient Package" rows="3" readonly style="width:100%; background:#070a14; border:1px solid var(--border); border-radius:6px; color:var(--text-main); font-size:0.72rem; padding:6px; font-family:monospace; box-sizing:border-box;" placeholder="Click Export to generate DP-noised gradient delta..."></textarea>
             <button type="button" id="btnFedExport" onclick="window.ramanMultimodalHubUI.exportFederatedPackage()" style="margin-top:8px; background:rgba(0,243,255,0.15); border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:6px; font-size:0.74rem; cursor:pointer; font-weight:bold;">🔒 Export DP Gradients</button>
+            <div id="fedQrContainer" style="margin-top:10px; display:none; align-items:center; gap:10px; background:rgba(0,0,0,0.35); border:1px solid rgba(0,243,255,0.2); border-radius:6px; padding:8px;"></div>
           </div>
           <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px;">
             <div style="font-weight:bold; color:var(--teal); font-size:0.78rem; margin-bottom:6px;">📥 PEER FEDAVG AGGREGATION</div>

@@ -1,7 +1,7 @@
 /**
  * RAMAN AI (Experiment No. 170) – Production Unified Engine Bundle
  * Offline, Zero-Cloud Air-Gapped Clinical Intelligence System
- * Build Date: 2026-11-25T03:11:14.432Z
+ * Build Date: 2026-11-25T03:26:43.854Z
  * License: ISC
  */
 
@@ -7787,6 +7787,26 @@ class MultimodalHubUI {
     if (outEl) {
       outEl.value = JSON.stringify(pkg);
     }
+    const qrEl = document.getElementById("fedQrContainer");
+    if (qrEl && window.RamanQrCode && typeof window.RamanQrCode.toSvg === "function") {
+      // Compact handshake digest (< 200 bytes) for offline QR peer transfer
+      const topVec = (pkg.gradientVector || []).slice(0, 8).map(v => Number(v.toFixed(2)));
+      const qrDigest = JSON.stringify({
+        p: "RMN-FED1",
+        n: pkg.sampleCount || 0,
+        e: pkg.privacyMetrics?.epsilon || 1.5,
+        g: topVec
+      });
+      const svg = window.RamanQrCode.toSvg(qrDigest, { size: 96, ecLevel: "M", margin: 1 });
+      qrEl.style.display = "flex";
+      qrEl.innerHTML = `
+        <div style="flex-shrink:0; border-radius:4px; overflow:hidden;">${svg}</div>
+        <div style="font-size:0.7rem; color:var(--text-muted); line-height:1.4;">
+          <strong style="color:var(--cyan); display:block;">📱 Offline QR Handshake</strong>
+          Scan on nearby clinic device to sync DP-protected gradient digest (${qrDigest.length}B).
+        </div>
+      `;
+    }
     if (logEl) {
       logEl.innerHTML = `
         <div style="color:var(--teal); font-weight:bold; margin-bottom:4px;">🔒 DP-PROTECTED GRADIENT PACKAGE EXPORTED</div>
@@ -10156,6 +10176,22 @@ const SLM_TRAINING_CORPUS = {
     "kala daag churna kasta ghoro jaro scrub typhus",
     "orientia scrub typhus persistent high fever lymphadenopathy characteristic eschar",
     "black necrotic eschar continuous fever myalgia scrub typhus"
+  ],
+  leptospirosis: [
+    "leptospirosis high fever conjunctival suffusion severe calf muscle pain jaundice",
+    "weil disease flood water exposure fever red eyes calf tenderness dark urine",
+    "barish ke pani me chalne ke baad tez bukhar pindli me dard pili aankhen leptospirosis",
+    "leptospirosis fever severe myalgia calves conjunctival redness oliguria renal",
+    "high fever chills calf tenderness subconjunctival hemorrhage leptospirosis",
+    "barsa pani chala pare ghoro jaro goda pinduli bitha kamala leptospirosis"
+  ],
+  pancreatitis: [
+    "acute pancreatitis severe epigastric pain radiating to back nausea vomiting",
+    "upper abdominal boring pain radiating to the back worse after eating pancreatitis",
+    "pet ke upari hisse me tez dard jo peeth ki taraf jaye ulti pancreatitis",
+    "epigastric tenderness elevated amylase lipase persistent vomiting pancreatitis",
+    "acute pancreatitis severe upper belly pain leaning forward relief gallstones",
+    "upara pete ghoro bitha pithi aduku jaithiba banti pancreatitis"
   ]
 };
 
@@ -11388,6 +11424,30 @@ const MEDICAL_KB = {
     precautions: ["Carefully examine the entire body surface for the pathognomonic black eschar (cigarette burn lesion), especially in hidden skin folds (axilla, groin)", "Initiate empiric Doxycycline immediately upon clinical suspicion in endemic zones without waiting for Weil-Felix serology", "Hospitalize urgently if dyspnea, acute respiratory distress (ARDS), delirium, or renal impairment develops", "Apply permethrin to clothing and wear tuck-in pants when walking in grass, brush, or jungle terrain"],
     diet: ["High-protein nutritious diet to counteract intense systemic catabolism", "Plenty of oral hydration with electrolyte broths", "Easily chewable nourishing soups"],
     specialist: "Infectious Disease Specialist / Internal Medicine Physician"
+  },
+  leptospirosis: {
+    icd11: "1B91",
+    conditions: ["Leptospirosis (Weil's Disease)", "Icteric Leptospirosis", "Anicteric Leptospirosis"],
+    medications: [
+      { name: "Doxycycline 100mg (Brand: Doxicip, Doxy-1)", snomed: "387532007", dose: "100 mg orally twice daily for 7 days (mild-to-moderate anicteric cases)", note: "First-line oral antibiotic for early leptospirosis; reduces fever duration and leptospiruria." },
+      { name: "Azithromycin 500mg (Brand: Azithral 500)", snomed: "387532007", dose: "500 mg orally once daily for 3-5 days (pregnancy / pediatric alternative)", note: "Safe macrolide alternative when Doxycycline is contraindicated." },
+      { name: "Ceftriaxone 1g IV / Benzylpenicillin (Inpatient)", snomed: "372670001", dose: "1 g IV once daily for 7 days in severe icteric Weil's disease", note: "Hospital-grade parenteral therapy for jaundice, acute kidney injury, or pulmonary hemorrhage." }
+    ],
+    precautions: ["🚨 MONITOR RENAL OUTPUT & BILIRUBIN: Hospitalize urgently if jaundice, oliguria (< 400 mL/day), or hemoptysis develops", "Avoid NSAIDs (ibuprofen/diclofenac) due to acute kidney injury and thrombocytopenia risk", "Avoid wading in stagnant floodwater or rodent-contaminated mud without waterproof boots", "Check complete blood count, serum creatinine, and LFTs (LOINC 1975-2, 2160-0)"],
+    diet: ["Adequate oral or IV hydration adjusted to urine output", "Low-fat, liver-friendly soft carbohydrates if jaundiced", "Avoid alcohol and hepatotoxic herbs completely"],
+    specialist: "Infectious Disease Specialist / Nephrologist"
+  },
+  pancreatitis: {
+    icd11: "DC31",
+    conditions: ["Acute Pancreatitis", "Biliary / Gallstone Pancreatitis", "Alcohol-Induced Pancreatitis"],
+    medications: [
+      { name: "IV Ringer's Lactate Resuscitation (Inpatient)", snomed: "387160004", dose: "Goal-directed isotonic crystalloid hydration (5-10 mL/kg/hr initially under hospital monitoring)", note: "Cornerstone of early acute pancreatitis care to preserve pancreatic microcirculation." },
+      { name: "Paracetamol 1g IV / Oral (Brand: Dolo, Perfalgan)", snomed: "387584000", dose: "500-1000 mg every 6-8 hours for pain control", note: "Stepwise analgesia; severe pain requires inpatient multimodal pain management." },
+      { name: "Ondansetron 4mg (Brand: Emeset 4)", snomed: "372487007", dose: "4 mg orally/IV every 8 hours PRN for refractory nausea and vomiting", note: "5-HT3 antagonist to control persistent emesis." }
+    ],
+    precautions: ["🚨 EMERGENCY TRIAGE: Acute pancreatitis requires immediate hospital evaluation, NPO (bowel rest), and IV fluids", "Check Serum Lipase (LOINC 3040-3) and Amylase (LOINC 1798-8) — >3x upper limit of normal confirms diagnosis", "Monitor for systemic inflammatory response (SIRS), tachycardia, hypotension, or hypocalcemia", "Strictly abstain from alcohol and fatty meals"],
+    diet: ["Strict Nil Per Os (NPO / nothing by mouth) during acute severe pain and vomiting", "Advance slowly to clear liquids and low-fat soft diet only after pain and nausea resolve", "Zero alcohol and zero fried/high-triglyceride foods"],
+    specialist: "Gastroenterologist / Emergency Medicine Physician"
   }
 };
 
@@ -17805,7 +17865,9 @@ function translateToPatientTerms(conditionKey) {
     "typhoid": "Typhoid & Enteric Fever Care Guidelines",
     "gastroenteritis": "Acute Gastroenteritis & Dehydration Relief",
     "chikungunya": "Chikungunya & Joint Pain Management",
-    "scrub typhus": "Scrub Typhus & Mite-Borne Infection Care"
+    "scrub typhus": "Scrub Typhus & Mite-Borne Infection Care",
+    "leptospirosis": "Leptospirosis (Weil's Disease) & Renal Safety",
+    "pancreatitis": "Acute Pancreatitis & Emergency Digestive Care"
   };
   return mapping[conditionKey] || "General Symptoms Assessment";
 }
@@ -17942,6 +18004,16 @@ function compileRedFlags(conditionKey, vitals) {
       "Presence of a black cigarette-burn scab (eschar) with rapid onset of respiratory distress (ARDS)",
       "Altered mental status, confusion, neck stiffness, or seizures (scrub typhus meningoencephalitis)",
       "Oliguria (rapidly decreasing urine output) signaling acute kidney injury"
+    ],
+    leptospirosis: [
+      "Jaundice (yellow sclera/skin) with oliguria or dark tea-colored urine (Weil's syndrome)",
+      "Hemoptysis (coughing up blood) or sudden shortness of breath (pulmonary hemorrhage)",
+      "Severe calf tenderness with hypotension or altered sensorium"
+    ],
+    pancreatitis: [
+      "Severe unrelenting epigastric pain radiating to the back with persistent vomiting",
+      "Hypotension, tachycardia (> 110 BPM), or confusion (SIRS / hypovolemic shock)",
+      "Grey-Turner or Cullen sign (flank/periumbilical bruising indicating hemorrhagic pancreatitis)"
     ]
   };
   

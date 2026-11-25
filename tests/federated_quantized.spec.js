@@ -79,10 +79,33 @@ test.describe('Milestone 4: Federated Active Learning (DP) & Quantized SLM SOAP 
     await page.click('#btnFedExport');
     const exportedText = await page.locator('#fedPackageOutput').inputValue();
     expect(exportedText).toContain('RAMAN-FEDERATED-LEARNING-v1');
+    await expect(page.locator('#fedQrContainer svg')).toBeVisible();
 
     await page.click('#btnFedAggregate');
     await expect(page.locator('#fedSyncLog')).toContainText('FEDAVG PEER AGGREGATION APPLIED');
     await expect(page.locator('#fedSyncStatusDisplay')).toHaveText('COMPLETED');
+  });
+
+  test('should triage expanded KB conditions Leptospirosis (1B91) and Acute Pancreatitis (DC31)', async ({ page }) => {
+    await loadRamanApp(page);
+
+    const results = await page.evaluate(() => {
+      const leptoTop = window.slmClassifier.classify('leptospirosis high fever conjunctival suffusion severe calf muscle pain jaundice')[0];
+      const pancTop = window.slmClassifier.classify('acute pancreatitis severe epigastric pain radiating to back nausea vomiting')[0];
+      const leptoKb = typeof MEDICAL_KB !== 'undefined' ? MEDICAL_KB['leptospirosis'] : null;
+      const pancKb = typeof MEDICAL_KB !== 'undefined' ? MEDICAL_KB['pancreatitis'] : null;
+      return {
+        leptoCond: leptoTop ? leptoTop.condition : null,
+        leptoIcd: leptoKb ? leptoKb.icd11 : null,
+        pancCond: pancTop ? pancTop.condition : null,
+        pancIcd: pancKb ? pancKb.icd11 : null
+      };
+    });
+
+    expect(results.leptoCond).toBe('leptospirosis');
+    expect(results.leptoIcd).toBe('1B91');
+    expect(results.pancCond).toBe('pancreatitis');
+    expect(results.pancIcd).toBe('DC31');
   });
 
 });

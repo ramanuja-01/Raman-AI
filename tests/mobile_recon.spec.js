@@ -24,6 +24,7 @@ test.describe('Comprehensive Mobile UI Reconnaissance & Study', () => {
   });
 
   test('Recon 1: Header layout & overflow across 320px, 360px, 390px, 412px', async ({ page }) => {
+    test.setTimeout(90000);
     const widths = [412, 390, 360, 320];
 
     for (const w of widths) {

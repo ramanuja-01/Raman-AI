@@ -541,6 +541,26 @@ class MultimodalHubUI {
     if (outEl) {
       outEl.value = JSON.stringify(pkg);
     }
+    const qrEl = document.getElementById("fedQrContainer");
+    if (qrEl && window.RamanQrCode && typeof window.RamanQrCode.toSvg === "function") {
+      // Compact handshake digest (< 200 bytes) for offline QR peer transfer
+      const topVec = (pkg.gradientVector || []).slice(0, 8).map(v => Number(v.toFixed(2)));
+      const qrDigest = JSON.stringify({
+        p: "RMN-FED1",
+        n: pkg.sampleCount || 0,
+        e: pkg.privacyMetrics?.epsilon || 1.5,
+        g: topVec
+      });
+      const svg = window.RamanQrCode.toSvg(qrDigest, { size: 96, ecLevel: "M", margin: 1 });
+      qrEl.style.display = "flex";
+      qrEl.innerHTML = `
+        <div style="flex-shrink:0; border-radius:4px; overflow:hidden;">${svg}</div>
+        <div style="font-size:0.7rem; color:var(--text-muted); line-height:1.4;">
+          <strong style="color:var(--cyan); display:block;">📱 Offline QR Handshake</strong>
+          Scan on nearby clinic device to sync DP-protected gradient digest (${qrDigest.length}B).
+        </div>
+      `;
+    }
     if (logEl) {
       logEl.innerHTML = `
         <div style="color:var(--teal); font-weight:bold; margin-bottom:4px;">🔒 DP-PROTECTED GRADIENT PACKAGE EXPORTED</div>
