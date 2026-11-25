@@ -116,6 +116,8 @@ global.document = mockDocument;
 
 const mockWindow = {
   currentLang: 'en',
+  addEventListener() {},
+  removeEventListener() {},
   open() {
     return {
       document: {

@@ -472,6 +472,12 @@ class NaiveBayesSymptomClassifier {
     this.biases = {};
 
     const conditions = Object.keys(corpus);
+    // Pre-extract [token, value] pairs once to avoid Object.entries() allocation inside epoch loops
+    const preparedDataset = vectorizedDataset.map(s => ({
+      entries: Object.entries(s.vector),
+      label: s.label
+    }));
+    const shuffled = preparedDataset.slice();
 
     for (const targetCondition of conditions) {
       const v = {}; 
@@ -482,16 +488,24 @@ class NaiveBayesSymptomClassifier {
         const eta = learningRateInit / (1.0 + epoch * lambda); 
         const scaleFactor = 1.0 - eta * lambda;
 
-        // Shuffle dataset
-        const shuffled = [...vectorizedDataset].sort(() => Math.random() - 0.5);
+        // O(N) Fisher-Yates shuffle
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = (Math.random() * (i + 1)) | 0;
+          const tmp = shuffled[i];
+          shuffled[i] = shuffled[j];
+          shuffled[j] = tmp;
+        }
 
-        for (const sample of shuffled) {
+        for (let sIdx = 0; sIdx < shuffled.length; sIdx++) {
+          const sample = shuffled[sIdx];
+          const entries = sample.entries;
           const y = sample.label === targetCondition ? 1.0 : -1.0;
           
           let dotProduct = 0;
-          for (const [token, x_val] of Object.entries(sample.vector)) {
+          for (let k = 0; k < entries.length; k++) {
+            const token = entries[k][0];
             if (v[token] !== undefined) {
-              dotProduct += v[token] * x_val;
+              dotProduct += v[token] * entries[k][1];
             }
           }
           dotProduct *= S;
@@ -500,8 +514,10 @@ class NaiveBayesSymptomClassifier {
 
           if (decision < 1.0) {
             S *= scaleFactor;
-            for (const [token, x_val] of Object.entries(sample.vector)) {
-              v[token] = (v[token] || 0.0) + (eta * y * x_val) / S;
+            const step = (eta * y) / S;
+            for (let k = 0; k < entries.length; k++) {
+              const token = entries[k][0];
+              v[token] = (v[token] || 0.0) + step * entries[k][1];
             }
             b = b + eta * y;
           } else {
@@ -13651,26 +13667,28 @@ window.transferVisionToConsultation = function() {
 
 window.deferredPwaPrompt = null;
 
-window.addEventListener('beforeinstallprompt', (e) => {
-  e.preventDefault();
-  window.deferredPwaPrompt = e;
-  console.log('[PWA] beforeinstallprompt captured and ready for mobile install');
-  const installBtn = document.getElementById('sheetInstallBtn');
-  if (installBtn) {
-    installBtn.style.display = 'flex';
-  }
-});
+if (typeof window.addEventListener === 'function') {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.deferredPwaPrompt = e;
+    console.log('[PWA] beforeinstallprompt captured and ready for mobile install');
+    const installBtn = document.getElementById('sheetInstallBtn');
+    if (installBtn) {
+      installBtn.style.display = 'flex';
+    }
+  });
 
-window.addEventListener('appinstalled', () => {
-  window.deferredPwaPrompt = null;
-  console.log('[PWA] RAMAN AI was successfully installed as standalone PWA');
-  const installBtn = document.getElementById('sheetInstallBtn');
-  if (installBtn) {
-    const lbl = installBtn.querySelector('strong');
-    if (lbl) lbl.textContent = 'APP INSTALLED (PWA)';
-  }
-  if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
-});
+  window.addEventListener('appinstalled', () => {
+    window.deferredPwaPrompt = null;
+    console.log('[PWA] RAMAN AI was successfully installed as standalone PWA');
+    const installBtn = document.getElementById('sheetInstallBtn');
+    if (installBtn) {
+      const lbl = installBtn.querySelector('strong');
+      if (lbl) lbl.textContent = 'APP INSTALLED (PWA)';
+    }
+    if (window.BioTelemetrySFX) window.BioTelemetrySFX.playSuccess();
+  });
+}
 
 window.installPwaPrompt = async function() {
   if (window.deferredPwaPrompt) {

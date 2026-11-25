@@ -67,4 +67,22 @@ test.describe('Milestone 4: Federated Active Learning (DP) & Quantized SLM SOAP 
     expect(narrativeResult.formattedNote).toContain('[PLAN]');
   });
 
+  test('should export DP gradients and run FedAvg peer aggregation via Multimodal Hub UI', async ({ page }) => {
+    await loadRamanApp(page);
+
+    await page.evaluate(() => {
+      window.openMultimodalHub();
+      window.ramanMultimodalHubUI.switchTab('federated');
+    });
+
+    await expect(page.locator('#mmPane_federated')).toBeVisible();
+    await page.click('#btnFedExport');
+    const exportedText = await page.locator('#fedPackageOutput').inputValue();
+    expect(exportedText).toContain('RAMAN-FEDERATED-LEARNING-v1');
+
+    await page.click('#btnFedAggregate');
+    await expect(page.locator('#fedSyncLog')).toContainText('FEDAVG PEER AGGREGATION APPLIED');
+    await expect(page.locator('#fedSyncStatusDisplay')).toHaveText('COMPLETED');
+  });
+
 });

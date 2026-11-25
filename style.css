@@ -1450,16 +1450,16 @@ details[open] .hud-accordion-chevron {
   .quick-symptoms-scroller {
     margin-bottom: 6px !important;
     padding: 2px 2px 6px !important;
-    max-height: 46px !important;
+    max-height: 56px !important;
     opacity: 1 !important;
     transition: all 0.25s ease !important;
   }
   .quick-symptoms-scroller .symptom-tag {
-    padding: 6px 13px !important;
+    padding: 8px 14px !important;
     font-size: 0.74rem !important;
     font-weight: 500 !important;
-    border-radius: 16px !important;
-    min-height: 36px !important;
+    border-radius: 22px !important;
+    min-height: 44px !important;
     display: inline-flex !important;
     align-items: center !important;
     background: rgba(15, 23, 42, 0.9) !important;
@@ -1953,17 +1953,17 @@ details[open] .hud-accordion-chevron {
   }
   .media-toolbar::-webkit-scrollbar { display: none !important; }
   .media-toolbar .media-btn {
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
     flex-shrink: 0 !important;
   }
   .btn-send {
-    width: 42px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
   }
   .input-bar {
     padding: 2px 6px !important;
@@ -2656,6 +2656,20 @@ body.light-theme #mcpTerminalLog {
 /* Virtual Keyboard Encroachment Protection */
 body[data-keyboard-open="true"] .mobile-bottom-nav {
   display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+@media (max-width: 900px) {
+  .btn-consult,
+  .welcome-restore-input-row input,
+  .welcome-restore-input-row button,
+  #userInput,
+  #multimodalHubModal .mm-tab-btn,
+  #multimodalHubModal button {
+    min-height: 45px !important;
+    touch-action: manipulation !important;
+  }
 }
 
 body[data-keyboard-open="true"] .main-layout {

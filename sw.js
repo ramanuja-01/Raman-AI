@@ -1,5 +1,5 @@
 /* ===== RAMAN AI – Service Worker (sw.js) ===== */
-const CACHE_NAME = 'raman-ai-v2.10';
+const CACHE_NAME = 'raman-ai-v2.12';
 const STATIC_ASSETS = [
   './',
   './index.html',
@@ -21,6 +21,9 @@ const STATIC_ASSETS = [
   './quantized_slm.js',
   './ui_responsive_agent.js',
   './vcg_vectorcardiography.js',
+  './multimodal_diagnostic_engine.js',
+  './continuous_slm_trainer.js',
+  './multimodal_hub_ui.js',
   './favicon.svg',
   './human_body_map.webp',
   './human_body_map.png',

@@ -80,6 +80,8 @@ class MultimodalHubUI {
 
     if (tabName === "rppg" && !this.rppgRunning) {
       this.drawWaveformIdle();
+    } else if (tabName === "federated") {
+      this.updateFederatedStatus();
     }
   }
 
@@ -402,10 +404,10 @@ class MultimodalHubUI {
           <span style="background:rgba(0,243,255,0.2); padding:1px 6px; border-radius:4px;">α = 0.01</span>
         </div>
         <div style="font-size:0.75rem; color:var(--text-main);">
-          $\mathcal{C}(X) = $ { ${res.conformalPredictionSet.map(c => `<strong style="color:var(--teal);">${c}</strong>`).join(", ")} }
+          <em>C</em>(<em>X</em>) = { ${res.conformalPredictionSet.map(c => `<strong style="color:var(--teal);">${c}</strong>`).join(", ")} }
         </div>
         <small style="font-size:0.68rem; color:var(--text-muted); display:block; margin-top:4px;">
-          Guarantees the true ground truth condition is included in the prediction set with $\ge 99\%$ mathematical confidence.
+          Guarantees the true ground truth condition is included in the prediction set with &ge; 99% mathematical confidence.
         </small>
       </div>
 
@@ -485,6 +487,125 @@ class MultimodalHubUI {
         <div>MIMIC-CXR Holdout Accuracy: <strong>${sweepResult.benchmarkResults.mimicCxrAccuracy}</strong></div>
         <div>Fitzpatrick V-VI Equity Score: <strong>${sweepResult.benchmarkResults.fitzpatrickEquityScore}</strong></div>
         <div style="margin-top:6px; font-size:0.7rem; color:var(--cyan);">OTA 4-bit AWQ Package: ${sweepResult.otaPayload.cryptographicSignature.substring(0, 24)}... (8x compression)</div>
+      `;
+    }
+  }
+
+  // --- 5. Phase 5: Federated Active Learning & P2P Sync ---
+
+  updateFederatedStatus() {
+    const fl = window.ramanFederatedLearner;
+    if (!fl) return;
+    const budgetEl = document.getElementById("fedPrivacyBudgetDisplay");
+    const statusEl = document.getElementById("fedSyncStatusDisplay");
+    const epsInput = document.getElementById("fedEpsilonInput");
+    if (epsInput) {
+      const val = parseFloat(epsInput.value);
+      if (!isNaN(val) && val > 0) fl.epsilon = val;
+    }
+    if (budgetEl) {
+      budgetEl.textContent = `ε = ${fl.epsilon} | Spent: ${fl.privacyBudgetSpent.toFixed(2)}`;
+    }
+    if (statusEl) {
+      statusEl.textContent = fl.status;
+    }
+  }
+
+  exportFederatedPackage() {
+    const fl = window.ramanFederatedLearner;
+    const outEl = document.getElementById("fedPackageOutput");
+    const logEl = document.getElementById("fedSyncLog");
+    if (!fl) return;
+
+    this.updateFederatedStatus();
+    const rawDeltas = (window.localClinicianDeltas && Object.keys(window.localClinicianDeltas).length > 0)
+      ? window.localClinicianDeltas
+      : { "persistent dry cough": "asthma", "high fever chills": "fever" };
+
+    // Flatten nested or flat clinician deltas into { token: condition } map
+    const flatDeltas = {};
+    for (const [k, v] of Object.entries(rawDeltas)) {
+      if (typeof v === "string") {
+        flatDeltas[k] = v;
+      } else if (v && typeof v === "object") {
+        for (const tok of Object.keys(v)) {
+          flatDeltas[tok] = k;
+        }
+      }
+    }
+
+    const pkg = fl.exportPrivacyPreservingGradientPackage(flatDeltas);
+    this.lastFederatedPackage = pkg;
+    this.updateFederatedStatus();
+
+    if (outEl) {
+      outEl.value = JSON.stringify(pkg);
+    }
+    if (logEl) {
+      logEl.innerHTML = `
+        <div style="color:var(--teal); font-weight:bold; margin-bottom:4px;">🔒 DP-PROTECTED GRADIENT PACKAGE EXPORTED</div>
+        <div>Protocol: <strong>${pkg.protocol}</strong></div>
+        <div>Privacy Guarantee: <strong>${pkg.privacyMetrics?.guarantee || "N/A"}</strong> (σ = ${pkg.privacyMetrics?.sigma ?? "N/A"})</div>
+        <div>Encoded Tokens: <strong>${pkg.sampleCount || 0}</strong> | Tensor Dim: <strong>${pkg.gradientVector ? pkg.gradientVector.length : 0}</strong></div>
+      `;
+    }
+  }
+
+  runFederatedAggregation() {
+    const fl = window.ramanFederatedLearner;
+    const peerInput = document.getElementById("fedPeerInput");
+    const logEl = document.getElementById("fedSyncLog");
+    if (!fl || !window.RamanFederatedLearning) return;
+
+    this.updateFederatedStatus();
+    if (!this.lastFederatedPackage || !this.lastFederatedPackage.gradientVector) {
+      this.exportFederatedPackage();
+    }
+
+    const updates = [
+      {
+        gradients: new Float32Array(this.lastFederatedPackage.gradientVector),
+        sampleCount: this.lastFederatedPackage.sampleCount || 1
+      }
+    ];
+
+    const peerRaw = peerInput ? peerInput.value.trim() : "";
+    if (peerRaw) {
+      try {
+        const parsed = JSON.parse(peerRaw);
+        if (Array.isArray(parsed.gradientVector)) {
+          updates.push({
+            gradients: new Float32Array(parsed.gradientVector),
+            sampleCount: parsed.sampleCount || 1
+          });
+        }
+      } catch (e) {
+        if (logEl) {
+          logEl.innerHTML = `<span style="color:var(--red-warn);">❌ Invalid peer gradient JSON: ${e.message}</span>`;
+        }
+        return;
+      }
+    } else {
+      // Simulate a 2nd offline clinic peer delta for local demonstration
+      const peerPkg = fl.exportPrivacyPreservingGradientPackage({ "acute chest tightness": "chest pain", "dyspnea wheezing": "asthma" });
+      if (peerPkg && peerPkg.gradientVector) {
+        updates.push({
+          gradients: new Float32Array(peerPkg.gradientVector),
+          sampleCount: peerPkg.sampleCount || 2
+        });
+      }
+    }
+
+    const aggregated = window.RamanFederatedLearning.aggregateFedAvg(updates);
+    const applied = fl.applyFederatedGradients(aggregated, window.slmClassifier);
+    this.updateFederatedStatus();
+
+    if (logEl) {
+      logEl.innerHTML = `
+        <div style="color:var(--teal); font-weight:bold; margin-bottom:4px;">🌐 FEDAVG PEER AGGREGATION ${applied ? "APPLIED" : "READY"}</div>
+        <div>Peers Aggregated: <strong>${updates.length}</strong> | Status: <strong>${fl.status}</strong></div>
+        <div>Privacy Budget Spent: <strong>ε = ${fl.privacyBudgetSpent.toFixed(2)}</strong></div>
+        <div>Local SLM Bias Updated: <strong>${applied ? "Yes (η = 0.05)" : "No active classifier"}</strong></div>
       `;
     }
   }

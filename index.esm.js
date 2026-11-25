@@ -23,10 +23,17 @@ export {
   XIAOMI_UUIDS,
   XIAOMI_COMMANDS
 } from './ble_telemetry.js';
-export { generateFhirR4Bundle, downloadFhirR4Json } from './fhir_exporter.js';
+export {
+  generateFhirR4Bundle,
+  downloadFhirR4Json,
+  generateMultimodalFhirDiagnosticReport,
+  downloadMultimodalFhirJson
+} from './fhir_exporter.js';
 export { RamanZkpProver, openZkpModal, executeZkpGeneration } from './zkp_verifier.js';
 export { RamanSignatureEngine, ramanSignatureEngine } from './digital_signature.js';
 export { RamanSpeechEngine, ramanSpeechEngine, PHONETIC_MEDICAL_REPLACEMENTS } from './stt_dictation.js';
 export { RamanFederatedLearning } from './federated_learning.js';
 export { RamanQuantizedSlm } from './quantized_slm.js';
 export { RamanUiAgent } from './ui_responsive_agent.js';
+export { RamanMultimodalEngine } from './multimodal_diagnostic_engine.js';
+export { RamanContinuousSlmTrainer } from './continuous_slm_trainer.js';

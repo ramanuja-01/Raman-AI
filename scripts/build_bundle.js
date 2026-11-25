@@ -26,6 +26,9 @@ const MODULE_FILES = [
   'federated_learning.js',
   'quantized_slm.js',
   'ui_responsive_agent.js',
+  'multimodal_diagnostic_engine.js',
+  'continuous_slm_trainer.js',
+  'multimodal_hub_ui.js',
   'app.js'
 ];
 
@@ -159,7 +162,7 @@ function generateProductionServiceWorker() {
   let swContent = fs.readFileSync(srcSwPath, 'utf8');
 
   // Replace individual script entries in STATIC_ASSETS with the production bundle
-  const moduleListRegex = /'\.\/app\.js',[\s\S]*?'\.\/vcg_vectorcardiography\.js',/;
+  const moduleListRegex = /'\.\/app\.js',[\s\S]*?'\.\/multimodal_hub_ui\.js',/;
   if (moduleListRegex.test(swContent)) {
     swContent = swContent.replace(
       moduleListRegex,

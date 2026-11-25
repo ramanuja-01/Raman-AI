@@ -134,7 +134,7 @@
         <button class="btn-switch-cam" id="btnSwitchCam">🔄 Switch</button>
       </div>
       <div style="margin-top: 10px; display: flex; gap: 8px; align-items: center;">
-        <select id="visionDiagnosticMode" style="flex: 1; background: #070a14; border: 1px solid var(--cyan); color: var(--cyan); padding: 6px; border-radius: 4px; font-size: 0.72rem; outline: none;">
+        <select id="visionDiagnosticMode" aria-label="Vision Diagnostic Mode" style="flex: 1; background: #070a14; border: 1px solid var(--cyan); color: var(--cyan); padding: 6px; border-radius: 4px; font-size: 0.72rem; outline: none;">
           <option value="OCULAR">👁️ Ocular Hyperemia / Redness</option>
           <option value="SCLERAL_ICTERUS">🟡 Scleral Icterus / Jaundice (Bilirubin)</option>
           <option value="DERMATOLOGY">🔬 Dermatological Lesion (ABCD)</option>
@@ -210,7 +210,7 @@
             <span>BIO-MODE</span>
           </div>
           <!-- Language Toggle -->
-          <select id="langSelect" class="lang-select" onchange="window.currentLang = this.value" style="margin-right: 5px;">
+          <select id="langSelect" aria-label="Interface Language" class="lang-select" onchange="window.currentLang = this.value" style="margin-right: 5px;">
             <option value="en">EN</option>
             <option value="or">ଓଡ଼ିଆ</option>
             <option value="hi">हिंदी</option>
@@ -313,7 +313,7 @@
             🔍 Hybrid Medical Search (BM25 + Dense)
           </button>
         </div>
-        <input type="file" id="importBackupInput" style="display: none;" accept=".json" onchange="window.importSessionBackupJSON(this.files[0])" />
+        <input type="file" id="importBackupInput" aria-label="Import Vault Backup JSON" style="display: none;" accept=".json" onchange="window.importSessionBackupJSON(this.files[0])" />
       </div>
 
       <!-- Session History Removed for Privacy -->
@@ -920,7 +920,7 @@
               <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 8px;">
                 <strong style="color:var(--cyan); display:block; font-size:0.8rem; letter-spacing: 0.5px;">📦 SELECT CLINICAL DATASET TO AUTO-COLLECT</strong>
                 
-                <select id="mcpDatasetSelect" style="width:100%; padding:8px; background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.15); color:white; border-radius:6px; font-size:0.75rem; font-family:var(--font-ui); outline:none; cursor:pointer;">
+                <select id="mcpDatasetSelect" aria-label="MCP Clinical Dataset" style="width:100%; padding:8px; background:rgba(0,0,0,0.65); border:1px solid rgba(255,255,255,0.15); color:white; border-radius:6px; font-size:0.75rem; font-family:var(--font-ui); outline:none; cursor:pointer;">
                   <option value="otitis">👂 Ear & Otological Infections (Otitis Media, Ear Pain/Discharge)</option>
                   <option value="cardio">❤️ Cardiovascular & Arrhythmia Disorders (Arrhythmia, Heart Murmurs)</option>
                   <option value="respiratory">🫁 Respiratory & Bronchial Infections (Bronchial Asthma, Acute Bronchitis)</option>
@@ -1157,7 +1157,7 @@
               <span style="font-size:0.72rem; color:var(--text-muted);">Markov Temperature:</span>
               <span id="markovTempDisplay" style="font-family:'Orbitron'; font-weight:bold; color:var(--cyan); font-size:0.85rem;">1.0</span>
             </div>
-            <input type="range" id="markovTempSlider" min="0.1" max="2.0" step="0.1" value="1.0" style="width:100%; accent-color:var(--cyan); cursor:pointer;" oninput="document.getElementById('markovTempDisplay').textContent = this.value; window.markovTemperature = parseFloat(this.value);" />
+            <input type="range" id="markovTempSlider" aria-label="Markov Conversational Temperature" min="0.1" max="2.0" step="0.1" value="1.0" style="width:100%; accent-color:var(--cyan); cursor:pointer;" oninput="document.getElementById('markovTempDisplay').textContent = this.value; window.markovTemperature = parseFloat(this.value);" />
             <div style="display:flex; justify-content:space-between; font-size:0.6rem; color:var(--text-muted); margin-top:4px;">
               <span>Structured</span><span>Standard</span><span>Creative</span>
             </div>
@@ -1172,7 +1172,7 @@
               <span class="pain-emoji" id="painEmoji">😐</span>
               <span class="pain-value" id="painValue">5</span><span class="pain-scale">/10</span>
             </div>
-            <input type="range" id="painSlider" class="pain-slider" min="1" max="10" value="5" />
+            <input type="range" id="painSlider" aria-label="Pain Severity Scale" class="pain-slider" min="1" max="10" value="5" />
             <div class="pain-labels">
               <span>Mild</span><span>Moderate</span><span>Severe</span>
             </div>
@@ -1582,7 +1582,7 @@
           </div>
 
           <!-- Hidden file input -->
-          <input type="file" id="fileInput" accept="image/*,video/*" style="display:none;" />
+          <input type="file" id="fileInput" aria-label="Upload Medical Image or Video" accept="image/*,video/*" style="display:none;" />
 
           <div class="input-bar">
             <div class="input-icon">🩺</div>
@@ -1740,7 +1740,7 @@
       <!-- Quick Language Selection Row -->
       <div class="sheet-lang-row">
         <span class="sheet-lang-label">🌐 INTERFACE LANGUAGE:</span>
-        <select id="sheetLangSelect" class="lang-select" onchange="window.currentLang = this.value; const d=document.getElementById('langSelect'); if(d) d.value=this.value;">
+        <select id="sheetLangSelect" aria-label="Mobile Interface Language" class="lang-select" onchange="window.currentLang = this.value; const d=document.getElementById('langSelect'); if(d) d.value=this.value;">
           <option value="en">English (EN)</option>
           <option value="or">ଓଡ଼ିଆ (Odia)</option>
           <option value="hi">हिंदी (Hindi)</option>
@@ -1852,6 +1852,7 @@
       <button type="button" class="mm-tab-btn" data-tab="paper" onclick="window.ramanMultimodalHubUI.switchTab('paper')" style="padding:6px 14px; border-radius:6px; font-size:0.75rem; font-family:var(--font-head); font-weight:bold; cursor:pointer; border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); background:transparent; white-space:nowrap;">📄 PAPER LAB &amp; ECG DIGITIZER</button>
       <button type="button" class="mm-tab-btn" data-tab="fusion" onclick="window.ramanMultimodalHubUI.switchTab('fusion')" style="padding:6px 14px; border-radius:6px; font-size:0.75rem; font-family:var(--font-head); font-weight:bold; cursor:pointer; border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); background:transparent; white-space:nowrap;">🩺 MULTIMODAL FUSION &amp; CONFORMAL SET</button>
       <button type="button" class="mm-tab-btn" data-tab="slm" onclick="window.ramanMultimodalHubUI.switchTab('slm')" style="padding:6px 14px; border-radius:6px; font-size:0.75rem; font-family:var(--font-head); font-weight:bold; cursor:pointer; border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); background:transparent; white-space:nowrap;">🧬 CONTINUOUS SLM FLYWHEEL</button>
+      <button type="button" class="mm-tab-btn" data-tab="federated" onclick="window.ramanMultimodalHubUI.switchTab('federated')" style="padding:6px 14px; border-radius:6px; font-size:0.75rem; font-family:var(--font-head); font-weight:bold; cursor:pointer; border:1px solid rgba(255,255,255,0.1); color:var(--text-muted); background:transparent; white-space:nowrap;">🌐 FEDERATED P2P SYNC</button>
     </div>
 
     <div class="tut-body" style="padding:15px 0; max-height:68vh; overflow-y:auto;">
@@ -1966,6 +1967,39 @@
 
         <div id="slmSweepLog" style="background:#070c18; border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:12px; font-size:0.75rem; color:var(--text-main); line-height:1.6;">
           <span style="color:var(--text-muted);">Ready to ingest verified clinical encounters into continuous auto-training loop.</span>
+        </div>
+      </div>
+
+      <!-- PANE 5: PHASE 5 FEDERATED P2P SYNC -->
+      <div id="mmPane_federated" class="mm-tab-pane" style="display:none;">
+        <div style="background:rgba(0, 229, 255, 0.05); border:1px solid rgba(0, 229, 255, 0.2); border-radius:8px; padding:12px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+          <div>
+            <span style="font-size:0.68rem; color:var(--cyan); text-transform:uppercase; font-weight:bold;">Differential Privacy (ε, δ)-DP Budget</span>
+            <div id="fedPrivacyBudgetDisplay" style="font-size:1.05rem; font-weight:bold; color:#fff; font-family:var(--font-head);">ε = 1.5 | Spent: 0.00</div>
+            <small style="color:var(--text-muted); font-size:0.7rem;">L2 Sensitivity Clip C = 1.0 | δ = 1e-5</small>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <label for="fedEpsilonInput" style="font-size:0.72rem; color:var(--text-muted);">ε Budget:</label>
+            <input type="number" id="fedEpsilonInput" value="1.5" step="0.1" min="0.1" max="10" style="width:72px; background:#070a14; border:1px solid var(--border); border-radius:6px; color:var(--text-main); padding:6px 8px; font-size:0.8rem;" onchange="window.ramanMultimodalHubUI.updateFederatedStatus()" />
+            <span id="fedSyncStatusDisplay" style="font-size:0.72rem; padding:4px 8px; border-radius:4px; background:rgba(0,255,179,0.12); color:var(--teal); font-weight:bold;">IDLE</span>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px;">
+            <div style="font-weight:bold; color:var(--cyan); font-size:0.78rem; margin-bottom:6px;">📤 EXPORT DP GRADIENT PACKAGE</div>
+            <textarea id="fedPackageOutput" aria-label="Exported Federated Gradient Package" rows="3" readonly style="width:100%; background:#070a14; border:1px solid var(--border); border-radius:6px; color:var(--text-main); font-size:0.72rem; padding:6px; font-family:monospace; box-sizing:border-box;" placeholder="Click Export to generate DP-noised gradient delta..."></textarea>
+            <button type="button" id="btnFedExport" onclick="window.ramanMultimodalHubUI.exportFederatedPackage()" style="margin-top:8px; background:rgba(0,243,255,0.15); border:1px solid var(--cyan); color:var(--cyan); padding:6px 12px; border-radius:6px; font-size:0.74rem; cursor:pointer; font-weight:bold;">🔒 Export DP Gradients</button>
+          </div>
+          <div style="background:rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px;">
+            <div style="font-weight:bold; color:var(--teal); font-size:0.78rem; margin-bottom:6px;">📥 PEER FEDAVG AGGREGATION</div>
+            <textarea id="fedPeerInput" aria-label="Peer Gradient Package JSON" rows="3" style="width:100%; background:#070a14; border:1px solid var(--border); border-radius:6px; color:var(--text-main); font-size:0.72rem; padding:6px; font-family:monospace; box-sizing:border-box;" placeholder="Paste peer JSON package (or leave blank to simulate 2-clinic peer sync)..."></textarea>
+            <button type="button" id="btnFedAggregate" onclick="window.ramanMultimodalHubUI.runFederatedAggregation()" style="margin-top:8px; background:rgba(0,255,179,0.18); border:1px solid var(--teal); color:var(--teal); padding:6px 12px; border-radius:6px; font-size:0.74rem; cursor:pointer; font-weight:bold;">🌐 Run FedAvg &amp; Apply</button>
+          </div>
+        </div>
+
+        <div id="fedSyncLog" style="background:#070c18; border:1px solid rgba(255,255,255,0.08); border-radius:6px; padding:12px; font-size:0.75rem; color:var(--text-main); line-height:1.6;">
+          <span style="color:var(--text-muted);">Ready for offline P2P federated weight averaging with (ε, δ)-differential privacy.</span>
         </div>
       </div>
     </div>

@@ -1,5 +1,5 @@
 /* ===== RAMAN AI – Service Worker (sw.js) ===== */
-const CACHE_NAME = 'raman-ai-v2.10';
+const CACHE_NAME = 'raman-ai-v2.12';
 const STATIC_ASSETS = [
   './',
   './index.html',
